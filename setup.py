@@ -5,15 +5,17 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    'requirements.txt'
-]
+with open('requirements.txt') as req_file:
+    requirements = req_file.read().split()
+
+with open('requirements_dev.txt') as reqd_file:
+    requirements_dev = reqd_file.read().split()
 
 
 setup(
@@ -41,6 +43,9 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
-    tests_require=requirements,
+    tests_require=requirements_dev,
     setup_requires=requirements,
+    dependency_links=[
+        "git+https://github.com/mwort/modelmanager.git#egg=modelmanager"
+    ]
 )

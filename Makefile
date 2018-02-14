@@ -1,6 +1,8 @@
 .PHONY: clean clean-test clean-pyc clean-build docs help
 .DEFAULT_GOAL := help
 
+SWIM_REPO_URL := git@gitlab.pik-potsdam.de:swim/swim.git
+
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 
@@ -29,6 +31,7 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
+
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
@@ -52,7 +55,10 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 swimpy tests
 
-test: ## run tests quickly with the default Python
+tests/swim: ## clone the SWIM repo to test/swim
+	git clone $(SWIM_REPO_URL) tests/swim
+
+test: tests/swim ## run tests quickly with the default Python
 	python setup.py test
 
 test-all: ## run tests on every Python version with tox

@@ -3,13 +3,20 @@
 
 """Tests for `swimpy` package."""
 
-
+import os
 import unittest
 
 from swimpy import Project
 
 
-class TestProject(unittest.TestCase):
+SWIM_TEST_PROJECT = 'swim/project/'
+
+if not os.path.exists(SWIM_TEST_PROJECT):
+    raise IOError('The SWIM test project is not located at: %s'
+                  % SWIM_TEST_PROJECT)
+
+
+class TestFunctions(unittest.TestCase):
     """Tests for `swimpy` package."""
 
     def setUp(self):
