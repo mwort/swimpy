@@ -1,2 +1,5 @@
 pandas
-modelmanager
+django
+parse
+rpy2
+git+https://github.com/mwort/modelmanager.git#egg=modelmanager
