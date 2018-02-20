@@ -47,6 +47,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
+    scripts=['swimpy/scripts/swimpy'],
     test_suite='tests',
     tests_require=requirements_dev,
     setup_requires=requirements,

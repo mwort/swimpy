@@ -1,0 +1,16 @@
+#/usr/bin/env python
+
+import swimpy.project
+from modelmanager.settings import Function
+from modelmanager.commandline import execute_from_commandline
+from modelmanager.project import ProjectDoesNotExist
+
+try:
+    project = swimpy.project.Project()
+    functions = project.settings.functions
+    plugins = project.settings.plugins
+except ProjectDoesNotExist:
+    functions = {'setup': Function(swimpy.project.setup)}
+    plugins = {}
+
+print(execute_from_commandline(functions, plugins))
