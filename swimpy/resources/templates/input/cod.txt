@@ -1,0 +1,32 @@
+ PROGRAM CODES:
+ nbyr  iyr idaf idal   mb rch1
+   {nbyr:d}  {iyr:d}   {idaf:d}  {idal:d}    {mb:d}   {rch1:d}
+ HYDROTOPE PRINT: SUBBASIN No & HYDROTOPE No
+  is1   ih1   is2   ih2   is3   ih3   is4   ih4   is5   ih5   is6   ih6   is7   ih7
+ {is1:d}   {ih1:d}   {is2:d}   {ih2:d}   {is3:d}   {ih3:d}   {is4:d}   {ih4:d}   {is5:d}   {ih5:d}   {is6:d}   {ih6:d}   {is7:d}   {ih7:d}
+ SUBBASIN PRINT: SUBBASIN No
+ isu1  isu2  isu3  isu4  isu5
+ {isu1:d}  {isu2:d}  {isu3:d}  {isu4:d}  {isu5:d}
+PROCESS PRINT: 1/0 PRINT/NO PRINT, SUBBASIN No & HYDROTOPE No
+{icurn_print:d} {icurn_subbasin:d} {icurn_hydrotope:d}    icurn
+{isolt_print:d} {isolt_subbasin:d} {isolt_hydrotope:d}    isolt
+{itran_print:d} {itran_subbasin:d} {itran_hydrotope:d}    itran
+{iperc_print:d} {iperc_subbasin:d} {iperc_hydrotope:d}    iperc
+{ievap_print:d} {ievap_subbasin:d} {ievap_hydrotope:d}    ievap
+{icrop_print:d} {icrop_subbasin:d} {icrop_hydrotope:d}    icrop
+{ieros_print:d} {ieros_subbasin:d} {ieros_hydrotope:d}    ieros
+{inutr_print:d} {inutr_subbasin:d} {inutr_hydrotope:d}    inutr
+{irout_print:d} {irout_subbasin:d} {irout_hydrotope:d}    irout
+{iwstr_print:d} {iwstr_subbasin:d} {iwstr_hydrotope:d}    iwstr
+ SPECIAL PRINT:
+    {gis_m:d}                gis_m      # monthly gis output
+    {gis_y:d}                gis_y      # annual gis output
+    {gis_ave:d}                gis_ave    # average annual gis output
+    {iflom:d}                iflom
+    {ifloa:d}                ifloa
+    {errlog:d}                swim.err.log
+    {allSubbasinsOut:d}                allSubbasinsOut, write routed discharges for all subbasins
+    {bCamaFlood:d}                bCamaFlood,      0/1, 0 = do not create cama flood output; 1 = generate output for cama flood
+    {bAllSubbasinsDaily:d}                bAllSubbasinsDaily   (subd.prn)
+    {bAllSubbasinsMonthly:d}                bAllSubbasinsMonthly (subm.prn)
+_______________________________________________________________________

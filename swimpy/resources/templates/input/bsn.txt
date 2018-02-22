@@ -1,0 +1,54 @@
+SWITCH PARAMETERS
+{isc:d}         isc            =0/1 SC: read/calc
+{icn:d}         icn            =0/1 CN: dif for soils/cnum1,cnum3 for all
+{idlef:d}         idlef          =0/1 day length effect in crop: without/with
+{intercep:d}         intercep       =0/1 INTERCEPTION: WITHOUT/WITH
+{iemeth:d}         iemeth         =0/1,2 EVAPORATION: Priestley-Taylor/Turc-Ivanov / Turc-Ivanov no monthly correction
+{idvwk:d}         idvwk          =0/1 EVAPORATION CALCULUS: DVWK-Merkblatt 238
+{subcatch:d}         subcatch       =0/1, all subs same parameters/individual parameterization (requires input files subcatch.def and subcatch.bsn)
+{landmgt:d}         landmgt        =0/1, land mgt hard coded / mgt from input file landmgt.csv
+{bResModule:d}         bResModule     =0/1, reservoir module off / reservoir module on
+{bSnowModule:d}         bSnowModule    =0/1, snow module off / snow module on ! NOTE: This module is also extremely useful for mountainous catchments not affected by snow. Preciptiation and temperature is corrected by HRU elevation.
+{radiation:d}         radiation      =0/1, 0 = read radiation data from clim1; 1 = calculate radiation after Hargreaves (latitude in degrees in file stat-outdat.csv) required!
+{bDormancy:d}         bDormancy      =0/1, day length threshold for dormancy of natural vegetation: 0 = do not limit or extent; 1 = calculate from subbasin latitude
+{bRunoffDat:d}         bRunoffDat     =0/1, 0 = do not read runoff.dat; 1 = read runoff.dat (required only to calculate performance criteria during runtime)
+{b3SubFiles:d}         b3SubFiles     =0/1, 0 = read single .sub, .rte, .gw files from 'Sub' directory; 1 = read only three files from directory 'Sub3'
+_______________________________________________________________________
+BASIN, INITIALIZATION & CALIBRATION PARAMETERS
+da                                            BASIN PARAMETERS
+{da:f}
+cnum1     cnum2     cnum3                     Curve number, if icn=1
+{cnum1:g}   	  {cnum2:g}         {cnum3:g}
+ecal      thc       epco      ec1             EVAPORATION PARAMETERS
+{ecal:f}       {thc:f}       {epco:f}       {ec1:f}
+gwq0      abf0      bff                       Groundwater parameters
+{gwq0:f}     {abf0:f}     {bff:f}
+ekc0      prf       spcon     spexp           Erosion parameters
+{ekc0:f}     {prf:f}     {spcon:f}    {spexp:f}
+snow1     storc1    stinco                    Initial water storage
+{snow1:f}     {storc1:f}    {stinco:f}
+chwc0     chxkc0    chcc0     chnnc0          Channel parameters
+{chwc0:f}       {chxkc0:f}      {chcc0:f}     {chnnc0:f}
+roc1      roc2      roc3      roc4            Routing coefficients
+{roc1:f}     {roc2:f}     {roc3:f}     {roc4:f}
+sccor     prcor     rdcor                     Correction factors
+{sccor:f}     {prcor:f}     {rdcor:f}
+retNsur   retNsub   retNgrw   retPsur         N & P RETENTION TIME
+{retNsur:f}     {retNsub:f}   {retNgrw:f} {retPsur:f}
+degNsur   degNsub   degNgrw   degPsur         N & P DECOMPOSITION RATE
+{degNsur:f}     {degNsub:f}     {degNgrw:f}     {degPsur:f}
+tsnfall   tmelt     smrate   gmrate           SNOW FALL&MELT PARAMETERS
+{tsnfall:f}     {tmelt:f}     {smrate:f}    {gmrate:f}
+xgrad1    tgrad1    ulmax0    rnew            ELEVATION-BASED CORRECTION FOR PRECIP AND TEMPERATURE
+{xgrad1:f}   {tgrad1:f}      {ulmax0:f}      {rnew:f}
+tlrch     evrch     tlgw                      TRANSMISSION LOSSES (TL) OF CHANNELS
+{tlrch:f}       {evrch:f}       {tlgw:d}                        # tlgw: 0 = TL to shallow aquifer, 1 = TL to deep gw, 2 = to both in equal terms
+maxup                                         Riparian zone parameters
+{maxup:f}
+_______________________________________________________________________
+CO2 EFFECT ON NET PHOTOSYNTHESIS (alpha) & TRANSPIRATION (beta)
+(ialpha,ibeta) = (1,0) OR (1,1) ONLY FOR SCENARIO PERIODS!
+ialpha    ibeta     C3C4crop  CO2-ref   CO2-scen
+0/1       0/1       3/4       346       406-436   OPTIONS & RANGES
+{ialpha:d}        {ibeta:d}          {C3C4crop:d}         {CO2ref:d}         {CO2scen:d}
+_______________________________________________________________________
