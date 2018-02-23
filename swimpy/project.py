@@ -18,22 +18,24 @@ class Project(modelmanager.Project):
         """
         Set or get any values from the .bsn file by variable name.
         """
-        tmplt = self.templates['input/*.bsn']
-        if len(setvalues) > 0:
-            result = tmplt.write_values(**setvalues)
+        pat = 'input/*.bsn'
+        if getvalues or setvalues:
+            result = self.templates(templates=pat, *getvalues, **setvalues)
+        # get all values if no args
         else:
-            result = tmplt.read_values(*getvalues)
+            result = self.templates[pat].read_values()
         return result
 
     def config_parameters(self, *getvalues, **setvalues):
         """
-        Set or get any values from the .cod file by variable name.
+        Set or get any values from the .cod or swim.conf file by variable name.
         """
-        tmplt = self.templates['input/*.cod']
-        if len(setvalues) > 0:
-            result = tmplt.write_values(**setvalues)
-        else:
-            result = tmplt.read_values(*getvalues)
+        pat = ['input/*.cod', 'swim.conf']
+        if getvalues or setvalues:
+            result = self.templates(templates=pat, *getvalues, **setvalues)
+        else:  # get all values if no args
+            result = self.templates[pat[0]].read_values()
+            result.update(self.templates[pat[1]].read_values())
         return result
 
     def subcatch_parameters(self, *getvalues, **setvalues):
