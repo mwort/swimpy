@@ -1,4 +1,4 @@
-from modelmanager.plugins import Browser, Clones, Templates
+from modelmanager.plugins import Browser, Clone, Templates
 
 # input files
 subcatch_parameter_file = 'input/subcatch.prm'

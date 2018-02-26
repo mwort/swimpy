@@ -41,7 +41,7 @@ class TestSetup(unittest.TestCase):
         self.assertTrue(isinstance(self.project, swimpy.Project))
         self.assertTrue(osp.exists(self.resourcedir))
         self.assertTrue(osp.exists(self.project.resourcedir))
-        for a in ['browser', 'clones', 'templates']:
+        for a in ['browser', 'clone', 'templates']:
             self.assertTrue(hasattr(self.project, a))
             self.assertIsNot(getattr(self.project, a), None)
 
