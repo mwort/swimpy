@@ -144,7 +144,7 @@ class Project(modelmanager.Project):
         **funcargs:
             Arguments parsed to function.
         """
-        self._is_method(functionname, fail=True)
+        assert callable(self.settings[functionname])
         script = ("import swimpy; p=swimpy.Project(); p.%s(**%r)" %
                   (functionname, funcargs))
         # dir for slurm job, output, error files
@@ -176,13 +176,15 @@ class Project(modelmanager.Project):
         functions = (functions if functions
                      else getattr(self, 'result_indicator_functions'))
         emsg = "Not all functions are method names: %r" % functions
-        assert all([hasattr(self, m) for m in functions]), emsg
+        assert all([self.settings.is_valid(m) for m in functions]), emsg
         indicators = []
         for i in functions:
             try:
-                iv = (getattr(self, i)() if self._is_method(i)
-                      else getattr(self, i))
-            except Exception:
+                iv = self.settings[i]
+                if callable(iv):
+                    iv = iv()
+            except Exception as e:
+                print(e)
                 raise Exception('Failed to evaluate indicator function %s' % i)
             emsg = ('Indicator function %s did not return a number ' % i +
                     'or a dictionary of numbers. Instead: %r' % iv)
@@ -201,7 +203,7 @@ class Project(modelmanager.Project):
         Get all result files.
 
         functions:
-            List of metho or attribute names that return a file instance, a
+            List of method or attribute names that return a file instance, a
             file path or a pandas.DataFrame/Series (via to_csv). If None,
             'result_file_functions' setting is used.
 
@@ -211,16 +213,18 @@ class Project(modelmanager.Project):
         functions = (functions if functions
                      else getattr(self, 'result_file_functions'))
         emsg = ("Not all functions are method names: %r" % functions)
-        assert all([hasattr(self, m) for m in functions]), emsg
+        assert all([self.settings.is_valid(m) for m in functions]), emsg
 
         def is_valid(f):
             return isinstance(f, file) or (type(f) is str and osp.exists(f))
         files = []
         for f in functions:
             try:
-                fv = (getattr(self, f)() if self._is_method(f)
-                      else getattr(self, f))
-            except Exception:
+                fv = self.settings[f]
+                if callable(fv):
+                    fv = fv()
+            except Exception as e:
+                print(e)
                 raise Exception('Failed to call result file function %s' % f)
             if isinstance(fv, pa.DataFrame) or isinstance(fv, pa.Series):
                 fi = tempfile.SpooledTemporaryFile()
@@ -265,13 +269,6 @@ class Project(modelmanager.Project):
             for attr in values:
                 self.browser.insert(table, run=run, **attr)
         return run
-
-    def _is_method(self, methodname, fail=False):
-        ismethod = (hasattr(self, methodname) and
-                    hasattr(getattr(self, methodname), '__call__'))
-        if fail:
-            assert ismethod, "%s is not a project method." % methodname
-        return ismethod
 
     def changed_parameters(self, verbose=False):
         """
