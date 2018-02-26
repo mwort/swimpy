@@ -1,4 +1,9 @@
 from modelmanager.plugins import Browser, Clones, Templates
 
 # input files
-subcatch_paramter_file = 'input/subcatch.prm'
+subcatch_parameter_file = 'input/subcatch.prm'
+
+swim = './swim'
+
+# cluster SLURM arguments
+slurmargs = {'qos': 'short', 'account': 'swim'}

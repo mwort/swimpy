@@ -9,6 +9,8 @@ import subprocess
 import shutil
 import unittest
 
+import pandas as pd
+
 import swimpy
 
 
@@ -69,14 +71,13 @@ class TestParameters(ProjectTestCase):
             self.assertEqual(self.project.config_parameters(k), v)
 
     def test_subcatch_parameters(self):
-        from pandas import DataFrame, Series
         # read
         sbc = self.project.subcatch_parameters()
-        self.assertIsInstance(sbc, DataFrame)
+        self.assertIsInstance(sbc, pd.DataFrame)
         BLKS = self.project.subcatch_parameters('BLANKENSTEIN')
-        self.assertIsInstance(BLKS, Series)
+        self.assertIsInstance(BLKS, pd.Series)
         roc2 = self.project.subcatch_parameters('roc2')
-        self.assertIsInstance(roc2, Series)
+        self.assertIsInstance(roc2, pd.Series)
         # write
         self.project.subcatch_parameters(roc2=1)
         self.assertEqual(self.project.subcatch_parameters('roc2').mean(), 1)
@@ -93,6 +94,75 @@ class TestParameters(ProjectTestCase):
         self.project.subcatch_parameters(sbc.copy())
         nsbc = self.project.subcatch_parameters()
         self.assertTrue((nsbc == sbc).all().all())
+
+    def test_changed_parameters(self):
+        verbose = False
+        from random import random
+        original = self.project.changed_parameters(verbose=verbose)
+        bsn = self.project.basin_parameters()
+        scp = self.project.subcatch_parameters().T.stack().to_dict()
+        nametags = [(k, None) for k in bsn] + scp.keys()
+        nametags_original = [(e['name'], e['tags']) for e in original]
+        for nt in nametags:
+            self.assertIn(nt, nametags_original)
+        run = self.project.browser.insert('run')
+        for attr in original:
+            self.project.browser.insert('parameter', run=run, **attr)
+        self.project.basin_parameters(roc4=random(), da=random()*1000)
+        changed = self.project.changed_parameters(verbose=verbose)
+        self.assertEqual(sorted([e['name'] for e in changed]), ['da', 'roc4'])
+        self.project.basin_parameters(**bsn)
+        self.assertEqual(self.project.changed_parameters(verbose=verbose), [])
+        self.project.subcatch_parameters(roc4=random())
+        changed = self.project.changed_parameters(verbose=verbose)
+        expresult = [('roc4', 'BLANKENSTEIN'), ('roc4', 'HOF')]
+        nametags = sorted([(e['name'], e['tags']) for e in changed])
+        self.assertEqual(nametags, expresult)
+
+
+class TestProcessing(ProjectTestCase):
+    def test_cluster_run(self):
+        self.project.submit_cluster('testjob', 'run', dryrun=True, somearg=123)
+        jfp = osp.join(self.project.resourcedir, 'cluster', 'testjob.py')
+        self.assertTrue(osp.exists(jfp))
+
+    def test_save_run(self):
+        import tempfile
+        # result_indicators
+        with self.assertRaises(AttributeError):
+            self.project.result_indicators()
+        indicators = ['indicator1', 'indicator2']
+        functions = [lambda p: 5, lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
+        self.project.settings(**dict(zip(indicators, functions)))
+        idct = self.project.result_indicators(indicators)
+        self.assertEqual(len(idct), 3)
+        expresult = {('indicator1', None): 5, ('indicator2', 'HOF'): 0.1,
+                     ('indicator2', 'BLANKENSTEIN'): 0.2}
+        for i in idct:
+            self.assertEqual(i['value'], expresult[(i['name'], i['tags'])])
+
+        # test_result_files
+        with self.assertRaises(AttributeError):
+            self.project.result_files()
+        files = ['file1', 'file2']
+        functions = [lambda p: pd.DataFrame(range(100)),
+                     lambda p: {'HOF': file(__file__),
+                                'BLANKENSTEIN': __file__}]
+        self.project.settings(**dict(zip(files, functions)))
+        fls = self.project.result_files(files)
+        self.assertEqual(len(idct), 3)
+        expresult = {'file1': tempfile.SpooledTemporaryFile,
+                     'file2 HOF': file, 'file2 BLANKENSTEIN': str}
+        for i in fls:
+            self.assertIsInstance(i['file'], expresult[i['tags']])
+
+        # save run
+        run = self.project.save_run(indicators=indicators, files=files,
+                                    notes='Some run notes',
+                                    tags='testing test')
+        self.assertEqual(len(run.resultfile_set.all()), 3)
+        self.assertEqual(len(run.resultindicator_set.all()), 3)
+        self.assertIn('test', run.tags.split())
 
 
 if __name__ == '__main__':
