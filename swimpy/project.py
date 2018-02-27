@@ -50,18 +50,19 @@ class Project(modelmanager.Project):
         '''
         Read or write parameters in the subcatch.bsn file.
 
-        # Reading
-        subcatch_parameters(<param> or <stationID>) -> pa.Series
-        subcatch_parameters(<list of param/stationID>) -> subset pa.DataFrame
-        subcatch_parameters() -> pa.DataFrame of entire table
+        Reading:
+        --------
+        (<param> or <stationID>): returns pd.Series
+        (<list of param/stationID>): returns subset pa.DataFrame
+        (): returns entire table as pd.DataFrame
 
-        # Writing
-        # assign values or list to parameter column / stationID row (maybe new)
-        subcatch_parameters(<param>=value, <stationID>=<list-like>)
-        # set individual values
-        subcatch_parameters(<param>={<stationID>: value, ...})
-        # override entire table, DataFrame must have stationID index
-        subcatch_parameters(<pa.DataFrame>)
+        Writing:
+        --------
+        (<param>=value, <stationID>=<list-like>): Assign values or list to
+            parameter column or stationID row. Is inserted if not existent.
+        (<param>={<stationID>: value, ...}): Set individual values.
+        (<pd.DataFrame>): Override entire table, DataFrame must have stationID
+            index.
         '''
         filepath = self.subcatch_parameter_file
         # read subcatch.bsn
