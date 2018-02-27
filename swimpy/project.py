@@ -167,7 +167,7 @@ class Project(modelmanager.Project):
         Evaluate result indicators.
 
         functions:
-            List of names of method or attribute names that return a result
+            List or dictionary of method or attribute names that return an
             indicator (float) or dictionary of those. If None,
             'result_indicator_functions' setting is used.
 
@@ -175,10 +175,12 @@ class Project(modelmanager.Project):
         """
         functions = (functions if functions
                      else getattr(self, 'result_indicator_functions'))
+        functions = (functions.items() if type(functions) == dict
+                     else zip(functions, functions))
         emsg = "Not all functions are method names: %r" % functions
-        assert all([self.settings.is_valid(m) for m in functions]), emsg
+        assert all([self.settings.is_valid(m) for n, m in functions]), emsg
         indicators = []
-        for i in functions:
+        for n, i in functions:
             try:
                 iv = self.settings[i]
                 if callable(iv):
@@ -189,10 +191,10 @@ class Project(modelmanager.Project):
             emsg = ('Indicator function %s did not return a number ' % i +
                     'or a dictionary of numbers. Instead: %r' % iv)
             if isinstance(iv, Number):
-                indicators += [dict(name=i, value=iv, tags=None)]
+                indicators += [dict(name=n, value=iv, tags=None)]
             elif type(iv) is dict:
                 assert all([isinstance(v, Number) for v in iv.values()]), emsg
-                indicators += [dict(name=i, value=v, tags=k)
+                indicators += [dict(name=n, value=v, tags=k)
                                for k, v in iv.items()]
             else:
                 raise IOError(emsg)
@@ -203,22 +205,25 @@ class Project(modelmanager.Project):
         Get all result files.
 
         functions:
-            List of method or attribute names that return a file instance, a
-            file path or a pandas.DataFrame/Series (via to_csv). If None,
-            'result_file_functions' setting is used.
+            List or dictionary of method or attribute names that return any of
+            file instance, a file path or a pandas.DataFrame/Series (will be
+            converted to file via to_csv) or a dictionary of any of those.
+            If None, 'result_file_functions' setting is used.
 
         Returns: List of dictionaries containing attributes including the
                  'file' entry.
         """
         functions = (functions if functions
                      else getattr(self, 'result_file_functions'))
+        functions = (functions.items() if type(functions) == dict
+                     else zip(functions, functions))
         emsg = ("Not all functions are method names: %r" % functions)
-        assert all([self.settings.is_valid(m) for m in functions]), emsg
+        assert all([self.settings.is_valid(m) for n, m in functions]), emsg
 
-        def is_valid(f):
-            return isinstance(f, file) or (type(f) is str and osp.exists(f))
+        def is_valid(fu):
+            return isinstance(fu, file) or (type(fu) is str and osp.exists(fu))
         files = []
-        for f in functions:
+        for n, f in functions:
             try:
                 fv = self.settings[f]
                 if callable(fv):
@@ -229,13 +234,13 @@ class Project(modelmanager.Project):
             if isinstance(fv, pa.DataFrame) or isinstance(fv, pa.Series):
                 fi = tempfile.SpooledTemporaryFile()
                 fv.to_csv(fi)
-                files += [dict(file=fi, tags=f)]
+                files += [dict(file=fi, tags=n)]
             elif type(fv) == dict:
                 assert all([is_valid(v) for v in fv.values()])
-                files += [dict(file=v, tags='%s %s' % (f, k))
+                files += [dict(file=v, tags='%s %s' % (n, k))
                           for k, v in fv.items()]
             elif is_valid(fv):
-                files += [dict(file=fi, tags=f)]
+                files += [dict(file=fi, tags=n)]
             else:
                 raise IOError('%s did not return a file instance, existing ' +
                               'path or pandas DataFrame/Series. Instead: %r'

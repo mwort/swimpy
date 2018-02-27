@@ -135,7 +135,9 @@ class TestProcessing(ProjectTestCase):
         functions = [lambda p: 5, lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
         self.project.settings(**dict(zip(indicators, functions)))
         idct = self.project.result_indicators(indicators)
-        self.assertEqual(len(idct), 3)
+        # call with dict
+        idct += self.project.result_indicators(dict(zip(indicators, indicators)))
+        self.assertEqual(len(idct), 6)
         expresult = {('indicator1', None): 5, ('indicator2', 'HOF'): 0.1,
                      ('indicator2', 'BLANKENSTEIN'): 0.2}
         for i in idct:
@@ -150,7 +152,9 @@ class TestProcessing(ProjectTestCase):
                                 'BLANKENSTEIN': __file__}]
         self.project.settings(**dict(zip(files, functions)))
         fls = self.project.result_files(files)
-        self.assertEqual(len(idct), 3)
+        # call with dict
+        fls += self.project.result_files(dict(zip(files, files)))
+        self.assertEqual(len(idct), 6)
         expresult = {'file1': tempfile.SpooledTemporaryFile,
                      'file2 HOF': file, 'file2 BLANKENSTEIN': str}
         for i in fls:
