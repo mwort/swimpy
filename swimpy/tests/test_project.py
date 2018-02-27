@@ -1,60 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""Tests for swimpy package."""
 
-"""Tests for `swimpy` package."""
-
-import os
 import os.path as osp
-import subprocess
-import shutil
-import unittest
 
 import pandas as pd
 
-import swimpy
 
-
-SWIM_TEST_PROJECT = 'swim/project/'
-
-if not os.path.exists(SWIM_TEST_PROJECT):
-    raise IOError('The SWIM test project is not located at: %s'
-                  % SWIM_TEST_PROJECT)
-
-
-class ProjectTestCase(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(self):
-        self.project = swimpy.project.setup(SWIM_TEST_PROJECT)
-
-    @classmethod
-    def tearDownClass(self):
-        shutil.rmtree(self.project.resourcedir)
-
-
-class TestSetup(unittest.TestCase):
-
-    resourcedir = osp.join(SWIM_TEST_PROJECT, 'swimpy')
-
-    def test_setup(self):
-        self.project = swimpy.project.setup(SWIM_TEST_PROJECT)
-        self.assertTrue(isinstance(self.project, swimpy.Project))
-        self.assertTrue(osp.exists(self.resourcedir))
-        self.assertTrue(osp.exists(self.project.resourcedir))
-        for a in ['browser', 'clone', 'templates']:
-            self.assertTrue(hasattr(self.project, a))
-            self.assertIsNot(getattr(self.project, a), None)
-
-    def test_setup_commandline(self):
-        subprocess.call(['swimpy', 'setup',
-                         '--projectdir=%s' % SWIM_TEST_PROJECT])
-        self.assertTrue(osp.exists(self.resourcedir))
-
-    def tearDown(self):
-        shutil.rmtree(self.resourcedir)
-
-
-class TestParameters(ProjectTestCase):
+class Parameters:
 
     def test_basin_parameters(self):
         bsn = self.project.basin_parameters()
@@ -120,7 +71,7 @@ class TestParameters(ProjectTestCase):
         self.assertEqual(nametags, expresult)
 
 
-class TestProcessing(ProjectTestCase):
+class Processing:
     def test_cluster_run(self):
         self.project.submit_cluster('testjob', 'run', dryrun=True, somearg=123)
         jfp = osp.join(self.project.resourcedir, 'cluster', 'testjob.py')
@@ -168,7 +119,3 @@ class TestProcessing(ProjectTestCase):
         run = self.project.save_run()
         check_indicators(run.resultindicator_set.all())
         check_files(run.resultfile_set.all())
-
-
-if __name__ == '__main__':
-    unittest.main()
