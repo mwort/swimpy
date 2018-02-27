@@ -127,46 +127,47 @@ class TestProcessing(ProjectTestCase):
         self.assertTrue(osp.exists(jfp))
 
     def test_save_run(self):
-        import tempfile
-        # result_indicators
-        with self.assertRaises(AttributeError):
-            self.project.result_indicators()
+        # test indicators and files
         indicators = ['indicator1', 'indicator2']
-        functions = [lambda p: 5, lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
-        self.project.settings(**dict(zip(indicators, functions)))
-        idct = self.project.result_indicators(indicators)
-        # call with dict
-        idct += self.project.result_indicators(dict(zip(indicators, indicators)))
-        self.assertEqual(len(idct), 6)
-        expresult = {('indicator1', None): 5, ('indicator2', 'HOF'): 0.1,
-                     ('indicator2', 'BLANKENSTEIN'): 0.2}
-        for i in idct:
-            self.assertEqual(i['value'], expresult[(i['name'], i['tags'])])
-
-        # test_result_files
-        with self.assertRaises(AttributeError):
-            self.project.result_files()
+        ri_functions = [lambda p: 5,
+                        lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
+        ri_values = {i: f(None) for i, f in zip(indicators, ri_functions)}
         files = ['file1', 'file2']
-        functions = [lambda p: pd.DataFrame(range(100)),
-                     lambda p: {'HOF': file(__file__),
-                                'BLANKENSTEIN': __file__}]
-        self.project.settings(**dict(zip(files, functions)))
-        fls = self.project.result_files(files)
-        # call with dict
-        fls += self.project.result_files(dict(zip(files, files)))
-        self.assertEqual(len(idct), 6)
-        expresult = {'file1': tempfile.SpooledTemporaryFile,
-                     'file2 HOF': file, 'file2 BLANKENSTEIN': str}
-        for i in fls:
-            self.assertIsInstance(i['file'], expresult[i['tags']])
+        rf_functions = [lambda p: pd.DataFrame(range(100)),
+                        lambda p: {'HOF': file(__file__),
+                                   'BLANKENSTEIN': __file__}]
+        rf_values = {i: f(None) for i, f in zip(files, rf_functions)}
 
-        # save run
-        run = self.project.save_run(indicators=indicators, files=files,
-                                    notes='Some run notes',
+        def check_files(fileobjects):
+            self.assertEqual(len(fileobjects), 3)
+            for fo in fileobjects:
+                self.assertTrue(osp.exists(fo.file.path))
+                self.assertIn(fo.tags.split()[0], files)
+            return
+
+        def check_indicators(indicatorobjects):
+            self.assertEqual(len(indicatorobjects), 3)
+            for io in indicatorobjects:
+                self.assertIn(io.name, indicators)
+            return
+        # save run without any files or indicators
+        run = self.project.save_run(notes='Some run notes',
                                     tags='testing test')
-        self.assertEqual(len(run.resultfile_set.all()), 3)
-        self.assertEqual(len(run.resultindicator_set.all()), 3)
+        self.assertIsInstance(run, self.project.browser.models['run'])
+        self.assertTrue(hasattr(run, 'notes'))
         self.assertIn('test', run.tags.split())
+        # pass indicators + files to save_run
+        run = self.project.save_run(indicators=ri_values, files=rf_values)
+        check_indicators(run.resultindicator_set.all())
+        check_files(run.resultfile_set.all())
+        # pass as settings variables
+        self.project.settings(**dict(zip(indicators, ri_functions)))
+        self.project.settings(**dict(zip(files, rf_functions)))
+        self.project.settings(resultfile_functions=files,
+                              resultindicator_functions=indicators)
+        run = self.project.save_run()
+        check_indicators(run.resultindicator_set.all())
+        check_files(run.resultfile_set.all())
 
 
 if __name__ == '__main__':

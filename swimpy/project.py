@@ -9,6 +9,7 @@ import shutil
 import datetime as dt
 import subprocess
 import tempfile
+import StringIO
 from numbers import Number
 from decimal import Decimal
 
@@ -162,118 +163,135 @@ class Project(modelmanager.Project):
         """
         return self.run(*runargs, **runkwargs)
 
-    def result_indicators(self, functions=None):
+    def save_resultindicator(self, run, name, value, tags=''):
         """
-        Evaluate result indicators.
+        Save a result indicator with a run.
 
-        functions:
-            List or dictionary of method or attribute names that return an
-            indicator (float) or dictionary of those. If None,
-            'result_indicator_functions' setting is used.
+        run: Django run object or ID.
+        name: String name of indicator.
+        value: Number or dictionary of indicators (float/int will be converted
+            to Decimal).
+        tags: Additional tags (space separated).
 
-        Returns: List of dictionaries containing indicator attributes.
+        Returns: ResultIndicator (Django model) instance or list of instances.
         """
-        functions = (functions if functions
-                     else getattr(self, 'result_indicator_functions'))
-        functions = (functions.items() if type(functions) == dict
-                     else zip(functions, functions))
-        emsg = "Not all functions are method names: %r" % functions
-        assert all([self.settings.is_valid(m) for n, m in functions]), emsg
-        indicators = []
-        for n, i in functions:
-            try:
-                iv = self.settings[i]
-                if callable(iv):
-                    iv = iv()
-            except Exception as e:
-                print(e)
-                raise Exception('Failed to evaluate indicator function %s' % i)
-            emsg = ('Indicator function %s did not return a number ' % i +
-                    'or a dictionary of numbers. Instead: %r' % iv)
-            if isinstance(iv, Number):
-                indicators += [dict(name=n, value=iv, tags=None)]
-            elif type(iv) is dict:
-                assert all([isinstance(v, Number) for v in iv.values()]), emsg
-                indicators += [dict(name=n, value=v, tags=k)
-                               for k, v in iv.items()]
-            else:
-                raise IOError(emsg)
-        return indicators
+        def insert_ind(**kwargs):
+            return self.browser.insert('resultindicator', **kwargs)
+        emsg = ('Indicator %s is not a number ' % name +
+                'or a dictionary of numbers. Instead: %r' % value)
+        if isinstance(value, Number):
+            i = insert_ind(run=run, name=name, value=value, tags=tags)
+        elif type(value) is dict:
+            assert all([isinstance(v, Number) for v in value.values()]), emsg
+            i = [insert_ind(run=run, name=name, value=v, tags=tags+' '+str(k))
+                 for k, v in value.items()]
+        else:
+            raise IOError(emsg)
+        return i
 
-    def result_files(self, functions=None):
+    def save_resultfile(self, run, tags, value):
         """
-        Get all result files.
+        Save a result file with a run.
 
-        functions:
-            List or dictionary of method or attribute names that return any of
-            file instance, a file path or a pandas.DataFrame/Series (will be
-            converted to file via to_csv) or a dictionary of any of those.
-            If None, 'result_file_functions' setting is used.
+        run: Django run object or ID.
+        tags: Space-separated tags. Will be used as file name if pandas objects
+            are parsed.
+        value: A file instance, a file path or a pandas.DataFrame/Series (will
+            be converted to file via to_csv) or a dictionary of any of those.
 
-        Returns: List of dictionaries containing attributes including the
-                 'file' entry.
+        Returns: ResultFile (Django model) instance or list of instances.
         """
-        functions = (functions if functions
-                     else getattr(self, 'result_file_functions'))
-        functions = (functions.items() if type(functions) == dict
-                     else zip(functions, functions))
-        emsg = ("Not all functions are method names: %r" % functions)
-        assert all([self.settings.is_valid(m) for n, m in functions]), emsg
+        errmsg = ('%s is not a file instance, existing path or ' % value +
+                  'pandas DataFrame/Series or dictionary of those.')
 
         def is_valid(fu):
             return isinstance(fu, file) or (type(fu) is str and osp.exists(fu))
-        files = []
-        for n, f in functions:
-            try:
-                fv = self.settings[f]
-                if callable(fv):
-                    fv = fv()
-            except Exception as e:
-                print(e)
-                raise Exception('Failed to call result file function %s' % f)
-            if isinstance(fv, pa.DataFrame) or isinstance(fv, pa.Series):
-                fi = tempfile.SpooledTemporaryFile()
-                fv.to_csv(fi)
-                files += [dict(file=fi, tags=n)]
-            elif type(fv) == dict:
-                assert all([is_valid(v) for v in fv.values()])
-                files += [dict(file=v, tags='%s %s' % (n, k))
-                          for k, v in fv.items()]
-            elif is_valid(fv):
-                files += [dict(file=fi, tags=n)]
-            else:
-                raise IOError('%s did not return a file instance, existing ' +
-                              'path or pandas DataFrame/Series. Instead: %r'
-                              % (f, fv))
-        return files
 
-    def save_run(self, indicators=None, files=None, **run_fields):
+        def insert_file(**kwargs):
+            return self.browser.insert('resultfile', **kwargs)
+
+        if isinstance(value, pa.DataFrame) or isinstance(value, pa.Series):
+            fi = StringIO.StringIO()
+            value.to_csv(fi)
+            fn = '_'.join(tags.split())+'.csv'
+            f = insert_file(run=run, tags=tags, file=fi, filename=fn)
+        elif type(value) == dict:
+            assert all([is_valid(v) for v in value.values()]), errmsg
+            f = [insert_file(run=run, file=v, tags=tags+' '+str(k))
+                 for k, v in value.items()]
+        elif is_valid(value):
+            f = insert_file(run=run, tags=tags, file=value)
+        else:
+            raise IOError(errmsg)
+        return f
+
+    def save_run(self, indicators={}, files={}, **run_fields):
         """
         Save the current SWIM input/output as a run in the browser database.
 
         Arguments:
         ----------
         indicators:
-            functions argument passed to self.result_indicators
+            Dictionary of indicator values or the functions argument passed
+            to self.result_indicators (dict or list of method/attribute names).
         files:
-            functions argument passed to self.resul_files
+            Dictionary of file values (valid file, path or dict of those) or
+            functions argument passed to self.result_files (dict or list of
+            method/attribute names).
         **run_fields:
             Set fields of the run browser table. Default fields: notes, tags
 
+        Optional settings:
+        ------------------
+        resultindicator_functions:
+            List or dictionary of method or attribute names that return an
+            indicator (float) or dictionary of those.
+        resultfile_functions:
+            List or dictionary of method or attribute names that return any of
+            file instance, a file path or a pandas.DataFrame/Series (will be
+            converted to file via to_csv) or a dictionary of any of those.
+
         Returns: Run object (Django model object).
         """
-        runattr = [('resultindicator', self.result_indicators(indicators)),
-                   ('resultfile', self.result_files(files)),
-                   ('parameter', self.changed_parameters())]
+        assert type(indicators) is dict, 'indicators must be a dictionary.'
+        assert type(files) is dict, 'files must be a dictionary.'
         # config
         sty, nbyr = self.config_parameters('iyr', 'nbyr')
         run_fields.update({'start': dt.date(sty, 1, 1),
                            'end': dt.date(sty + nbyr - 1, 12, 31)})
+        # create run
         run = self.browser.insert('run', **run_fields)
-        for table, values in runattr:
-            for attr in values:
-                self.browser.insert(table, run=run, **attr)
+        # add parameter changes
+        for attr in self.changed_parameters():
+            self.browser.insert('parameter', run=run, **attr)
+        # add files and indicators
+        for tbl, a in [('resultindicator', indicators), ('resultfile', files)]:
+            save_function = getattr(self, 'save_' + tbl)
+            # insert passed ones
+            for k, v in a.items():
+                save_function(run, k, v)
+            # handle settings variable
+            set_var = getattr(self, tbl + '_functions', False)
+            if set_var:
+                # ensure dictionary items
+                items = (set_var.items() if type(set_var) == dict
+                         else zip(set_var, set_var))
+                for n, m in items:
+                    value = self._attribute_or_function_result(m)
+                    save_function(run, n, value)
         return run
+
+    def _attribute_or_function_result(self, m):
+        em = "%s is not a valid method or attribute name." % m
+        assert self.settings.is_valid(m), em
+        try:
+            fv = self.settings[m]
+            if callable(fv):
+                fv = fv()
+        except Exception as e:
+            print(e)
+            raise Exception('Failed to call function %s' % m)
+        return fv
 
     def changed_parameters(self, verbose=False):
         """
