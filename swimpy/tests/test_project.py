@@ -84,15 +84,18 @@ class Processing:
                         lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
         ri_values = {i: f(None) for i, f in zip(indicators, ri_functions)}
         files = ['file1', 'file2']
+        somefile = osp.join(osp.dirname(__file__), '__init__.py')
         rf_functions = [lambda p: pd.DataFrame(range(100)),
                         lambda p: {'HOF': file(__file__),
-                                   'BLANKENSTEIN': __file__}]
+                                   'BLANKENSTEIN': somefile}]
         rf_values = {i: f(None) for i, f in zip(files, rf_functions)}
 
         def check_files(fileobjects):
             self.assertEqual(len(fileobjects), 3)
+            fdir = osp.join(self.project.browser.settings.filesdir, 'runs')
             for fo in fileobjects:
                 self.assertTrue(osp.exists(fo.file.path))
+                self.assertTrue(fo.file.path.startswith(fdir))
                 self.assertIn(fo.tags.split()[0], files)
             return
 

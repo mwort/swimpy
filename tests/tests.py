@@ -8,6 +8,7 @@ import os.path as osp
 import subprocess
 import shutil
 import unittest
+import cProfile, pstats
 
 
 import swimpy
@@ -62,4 +63,6 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    cProfile.run('unittest.main()', 'pstats')
+    # print profile stats ordered by time
+    pstats.Stats('pstats').strip_dirs().sort_stats('time').print_stats(5)
