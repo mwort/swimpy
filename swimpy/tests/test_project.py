@@ -112,13 +112,13 @@ class Processing:
         self.assertIn('test', run.tags.split())
         # pass indicators + files to save_run
         run = self.project.save_run(indicators=ri_values, files=rf_values)
-        check_indicators(run.resultindicator_set.all())
-        check_files(run.resultfile_set.all())
+        check_indicators(run.resultindicators.all())
+        check_files(run.resultfiles.all())
         # pass as settings variables
         self.project.settings(**dict(zip(indicators, ri_functions)))
         self.project.settings(**dict(zip(files, rf_functions)))
         self.project.settings(resultfile_functions=files,
                               resultindicator_functions=indicators)
         run = self.project.save_run()
-        check_indicators(run.resultindicator_set.all())
-        check_files(run.resultfile_set.all())
+        check_indicators(run.resultindicators.all())
+        check_files(run.resultfiles.all())

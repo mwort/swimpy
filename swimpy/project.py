@@ -311,7 +311,7 @@ class Project(modelmanager.Project):
             n, sid = k if type(k) == tuple else (k, None)
             # convert to minimal precision decimal via string
             dv = Decimal(str(v))
-            saved = self.browser.get_table('parameter', name=n, tags=sid)
+            saved = self.browser.get('parameter', name=n, tags=sid)
             if not saved or saved[-1]['value'] != dv:
                 changed += [dict(name=n, value=v, tags=sid)]
                 if verbose:
