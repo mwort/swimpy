@@ -260,11 +260,11 @@ class Project(modelmanager.Project):
         sty, nbyr = self.config_parameters('iyr', 'nbyr')
         run_fields.update({'start': dt.date(sty, 1, 1),
                            'end': dt.date(sty + nbyr - 1, 12, 31)})
+        # add parameter changes
+        run_fields['parameters'] = self.changed_parameters()
         # create run
         run = self.browser.insert('run', **run_fields)
-        # add parameter changes
-        for attr in self.changed_parameters():
-            self.browser.insert('parameter', run=run, **attr)
+
         # add files and indicators
         for tbl, a in [('resultindicator', indicators), ('resultfile', files)]:
             save_function = getattr(self, 'save_' + tbl)
@@ -311,8 +311,8 @@ class Project(modelmanager.Project):
             n, sid = k if type(k) == tuple else (k, None)
             # convert to minimal precision decimal via string
             dv = Decimal(str(v))
-            saved = self.browser.get('parameter', name=n, tags=sid)
-            if not saved or saved[-1]['value'] != dv:
+            saved = self.browser.parameters.filter(name=n, tags=sid).last()
+            if not saved or saved.value != dv:
                 changed += [dict(name=n, value=v, tags=sid)]
                 if verbose:
                     sv = saved[-1]['value'] if saved else None
