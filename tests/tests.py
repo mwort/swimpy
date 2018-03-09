@@ -62,6 +62,10 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
     pass
 
 
+class TestRun(ProjectTestCase, test_project.Run):
+    pass
+
+
 if __name__ == '__main__':
     cProfile.run('unittest.main()', 'pstats')
     # print profile stats ordered by time

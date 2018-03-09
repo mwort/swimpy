@@ -16,8 +16,7 @@ class Tests:
         # add all test cases (mixin classes)
         testpaths = glob.glob(osp.join(osp.dirname(__file__), 'test_*.py'))
         for modpath in testpaths:
-            modulename = osp.splitext(osp.basename(modpath))[0]
-            testmodule = load_module_path(modulename, modpath)
+            testmodule = load_module_path(modpath)
             classes = [getattr(testmodule, i) for i in dir(testmodule)
                        if inspect.isclass(getattr(testmodule, i))]
             for Tc in classes:

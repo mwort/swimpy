@@ -122,3 +122,16 @@ class Processing:
         run = self.project.save_run()
         check_indicators(run.resultindicators.all())
         check_files(run.resultfiles.all())
+
+
+class Run:
+    def test_project_run_data(self):
+        from swimpy import results
+        for r in results.properties.keys():
+            df_project = getattr(self.project, r)
+            self.project.settings(resultfile_functions=[r])
+            run = self.project.save_run(notes='test saved ' + r)
+            df_run = getattr(run, r)
+            self.assertTrue(all(df_project.index == df_run.index))
+            self.assertTrue(all(df_project.columns == df_run.columns))
+            self.assertAlmostEqual((df_project-df_run).sum().sum(), 0)

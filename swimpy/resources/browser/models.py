@@ -28,13 +28,12 @@ and documentation.
 
 from django.db import models
 from modelmanager.plugins.browser.database import models as mmmodels
+from swimpy.browser import SwimRun
 
 
-class Run(mmmodels.Run):
+class Run(SwimRun):
     # columns shown in browser table, can also be method names!!!
     show_columns = ['id', 'time', 'tags', 'notes']
-    start = models.DateField('Start date', null=True)
-    end = models.DateField('End date', null=True)
     pass
 
 
