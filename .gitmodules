@@ -1,0 +1,4 @@
+[submodule "dependencies/swim"]
+	path = dependencies/swim
+	url = https://gitlab.pik-potsdam.de/swim/swim.git
+	branch = develop

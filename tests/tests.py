@@ -14,11 +14,11 @@ import cProfile, pstats
 import swimpy
 from swimpy.tests import test_project
 
-SWIM_TEST_PROJECT = 'swim/project/'
+SWIM_TEST_PROJECT = 'project/'
+SWIM_REPO_PROJECT = '../dependencies/swim/project'
 
 if not os.path.exists(SWIM_TEST_PROJECT):
-    raise IOError('The SWIM test project is not located at: %s'
-                  % SWIM_TEST_PROJECT)
+    shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT, symlinks=True)
 
 
 class TestSetup(unittest.TestCase):
