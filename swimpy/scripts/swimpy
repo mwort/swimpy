@@ -5,12 +5,13 @@ from modelmanager.settings import Function
 from modelmanager.commandline import execute_from_commandline
 from modelmanager.project import ProjectDoesNotExist
 
+description = "SWIM python command line interface."
+
 try:
     project = swimpy.project.Project()
-    functions = project.settings.functions
-    plugins = project.settings.plugins
+    functions = {}
 except ProjectDoesNotExist:
     functions = {'setup': Function(swimpy.project.setup)}
-    plugins = {}
+    project = None
 
-print(execute_from_commandline(functions, plugins))
+print(execute_from_commandline(project, functions, description))
