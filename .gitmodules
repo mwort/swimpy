@@ -2,3 +2,6 @@
 	path = dependencies/swim
 	url = https://gitlab.pik-potsdam.de/swim/swim.git
 	branch = develop
+[submodule "dependencies/modelmanager"]
+	path = dependencies/modelmanager
+	url = https://github.com/mwort/modelmanager.git
