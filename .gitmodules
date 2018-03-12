@@ -5,3 +5,4 @@
 [submodule "dependencies/modelmanager"]
 	path = dependencies/modelmanager
 	url = https://github.com/mwort/modelmanager.git
+	branch = master
