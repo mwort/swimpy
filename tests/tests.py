@@ -51,6 +51,7 @@ class ProjectTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
+        self.project.browser.settings.unset()
         shutil.rmtree(self.project.resourcedir)
 
 

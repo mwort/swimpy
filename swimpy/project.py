@@ -7,7 +7,10 @@ import os
 import os.path as osp
 import datetime as dt
 import subprocess
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from numbers import Number
 from decimal import Decimal
 
@@ -101,7 +104,7 @@ class Project(modelmanager.Project):
 
         if getvalues:
             if all([k in bsn.index for k in getvalues]):
-                return bsn.loc[k]
+                return bsn.loc[getvalues]
             elif all([k in bsn.columns for k in getvalues]):
                 ix = getvalues[0] if len(getvalues) == 1 else list(getvalues)
                 return bsn[ix]
@@ -141,7 +144,7 @@ class Project(modelmanager.Project):
             run = None
         # report runtime
         delta = dt.datetime.now() - st
-        print 'Execution took %s hh:mm:ss' % delta
+        print('Execution took %s hh:mm:ss' % delta)
         return run
 
     def submit_cluster(self, jobname, functionname, dryrun=False, **funcargs):
@@ -217,13 +220,13 @@ class Project(modelmanager.Project):
                   'pandas DataFrame/Series or dictionary of those.')
 
         def is_valid(fu):
-            return isinstance(fu, file) or (type(fu) is str and osp.exists(fu))
+            return hasattr(fu, 'read') or (type(fu) is str and osp.exists(fu))
 
         def insert_file(**kwargs):
             return self.browser.insert('resultfile', **kwargs)
 
         if isinstance(value, pa.DataFrame) or isinstance(value, pa.Series):
-            fi = StringIO.StringIO()
+            fi = StringIO()
             value.to_csv(fi)
             fn = '_'.join(tags.split())+'.csv'
             f = insert_file(run=run, tags=tags, file=fi, filename=fn)
@@ -318,7 +321,7 @@ class Project(modelmanager.Project):
         # create dicts with (pnam, stationID): value
         bsnp = self.basin_parameters()
         scp = self.subcatch_parameters().T.stack().to_dict()
-        for k, v in bsnp.items() + scp.items():
+        for k, v in list(bsnp.items()) + list(scp.items()):
             n, sid = k if type(k) == tuple else (k, None)
             # convert to minimal precision decimal via string
             dv = Decimal(str(v))

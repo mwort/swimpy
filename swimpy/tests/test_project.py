@@ -52,7 +52,7 @@ class Parameters:
         original = self.project.changed_parameters(verbose=verbose)
         bsn = self.project.basin_parameters()
         scp = self.project.subcatch_parameters().T.stack().to_dict()
-        nametags = [(k, None) for k in bsn] + scp.keys()
+        nametags = [(k, None) for k in bsn] + list(scp.keys())
         nametags_original = [(e['name'], e['tags']) for e in original]
         for nt in nametags:
             self.assertIn(nt, nametags_original)
@@ -85,8 +85,8 @@ class Processing:
         ri_values = {i: f(None) for i, f in zip(indicators, ri_functions)}
         files = ['file1', 'file2']
         somefile = osp.join(osp.dirname(__file__), '__init__.py')
-        rf_functions = [lambda p: pd.DataFrame(range(100)),
-                        lambda p: {'HOF': file(__file__),
+        rf_functions = [lambda p: pd.DataFrame(list(range(100))),
+                        lambda p: {'HOF': open(__file__),
                                    'BLANKENSTEIN': somefile}]
         rf_values = {i: f(None) for i, f in zip(files, rf_functions)}
 
