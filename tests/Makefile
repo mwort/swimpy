@@ -1,6 +1,6 @@
 PY = python
 
-all: default
+all: clean default
 
 default:
 	$(PY) tests.py -v
@@ -10,5 +10,5 @@ clean:
 
 coverage:
 	$(MAKE) PY='coverage run -a' all
-	coverage html -i --include=../modelmanager/*
+	coverage html -i --include=../swimpy/*
 	rm .coverage

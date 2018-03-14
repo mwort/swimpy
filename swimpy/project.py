@@ -27,7 +27,7 @@ class Project(modelmanager.Project):
     def __init__(self, projectdir='.', **settings):
         allsettings = {}
         # attach results as propertyplugins
-        self.results = modelmanager.utils.load_settings(results)
+        self.results = modelmanager.settings.load_settings(results)
         projectorrunproperties = self.results.pop('properties')
         allsettings.update(self.results)
         # make sure ProjectOrRunData classes are loaded as properties

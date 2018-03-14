@@ -43,7 +43,7 @@ def slurm_submit(jobname, scriptstr, outputdir='.', dryrun=False, **slurmargs):
     jcf.write(scriptstr)
     jcf.close()
     # make file executable
-    subprocess.call(['chmod', '740', jcfpath])
+    subprocess.call(['chmod', '+x', jcfpath])
     # submit
     submit = ['sbatch', jcfpath]
     if not dryrun:
