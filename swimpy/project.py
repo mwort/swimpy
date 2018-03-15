@@ -247,12 +247,9 @@ class Project(modelmanager.Project):
         Arguments:
         ----------
         indicators:
-            Dictionary of indicator values or the functions argument passed
-            to self.result_indicators (dict or list of method/attribute names).
+            Dictionary of indicator values passed to self.save_resultindicator.
         files:
-            Dictionary of file values (valid file, path or dict of those) or
-            functions argument passed to self.result_files (dict or list of
-            method/attribute names).
+            Dictionary of file values passed to self.save_resultfile.
         **run_fields:
             Set fields of the run browser table. Default fields: notes, tags
 
@@ -272,12 +269,12 @@ class Project(modelmanager.Project):
         assert type(files) is dict, 'files must be a dictionary.'
         # config
         sty, nbyr = self.config_parameters('iyr', 'nbyr')
-        run_fields.update({'start': dt.date(sty, 1, 1),
-                           'end': dt.date(sty + nbyr - 1, 12, 31)})
-        # add parameter changes
-        run_fields['parameters'] = self.changed_parameters()
+        run_kwargs = {'start': dt.date(sty, 1, 1),
+                      'end': dt.date(sty + nbyr - 1, 12, 31),
+                      'parameters': self.changed_parameters()}
+        run_kwargs.update(run_fields)
         # create run
-        run = self.browser.insert('run', **run_fields)
+        run = self.browser.insert('run', **run_kwargs)
 
         # add files and indicators
         for tbl, a in [('resultindicator', indicators), ('resultfile', files)]:
