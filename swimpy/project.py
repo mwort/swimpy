@@ -19,21 +19,18 @@ import pandas as pa
 import modelmanager
 
 from swimpy import utils
-from swimpy import results
+from swimpy import defaultsettings
 
 
 class Project(modelmanager.Project):
 
     def __init__(self, projectdir='.', **settings):
-        allsettings = {}
-        # attach results as propertyplugins
-        self.results = modelmanager.settings.load_settings(results)
-        projectorrunproperties = self.results.pop('properties')
-        allsettings.update(self.results)
-        # make sure ProjectOrRunData classes are loaded as properties
-        allsettings.update(projectorrunproperties)
-        allsettings.update(settings)
-        super(Project, self).__init__(projectdir, **allsettings)
+        super(Project, self).__init__(projectdir, **settings)
+        # add defaults if not already set
+        defaults = modelmanager.settings.load_settings(defaultsettings)
+        defaults = {k: v for k, v in defaults.items()
+                    if not (hasattr(self, k) or k in self.settings.classes)}
+        self.settings(**defaults)
         return
 
     def basin_parameters(self, *getvalues, **setvalues):
