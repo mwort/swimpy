@@ -10,11 +10,13 @@ file selection.
 
 Conventions:
 ------------
-- names should be lowercase, words separated by _, singular descriptions
+- class and method names should be lowercase, words separated by _ and
+    descriptions should be singular (subbasin rather than subbasins)
 - name word order: spatial domain (catchment, subbasin, hydrotope, station
     etc.), timestep adjective (daily, monthly, annually, average), variable
     and/or other descriptions. Pattern:
         domain_timestep_variable[_description...]
+- all read from_* methods should parse **readkwargs to the pandas.read call
 """
 import os.path as osp
 import datetime as dt
@@ -30,19 +32,19 @@ gisdir = 'output/GIS'
 
 
 @mmutils.propertyplugin
-class station_daily_discharge_routed(utils.ProjectOrRunData):
+class station_daily_discharge(utils.ProjectOrRunData):
     swim_path = osp.join(resdir, 'Q_gauges_sel_sub_routed_m3s.csv')
     plugin_functions = []
 
-    def from_project(self):
-        df = pd.read_csv(self.path)
+    def from_project(self, **readkwargs):
+        df = pd.read_csv(self.path, **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YEAR'), df.pop('DAY'))]
         df.index = pd.PeriodIndex(dtms, freq='d', name='time')
         return df
 
-    def from_csv(self):
-        df = pd.read_csv(self.path, index_col=0, parse_dates=[0])
+    def from_csv(self, **readkwargs):
+        df = pd.read_csv(self.path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='d')
         return df
 
@@ -52,8 +54,8 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(resdir, 'subd.prn')
     plugin_functions = []
 
-    def from_project(self):
-        df = pd.read_table(self.path, delim_whitespace=True)
+    def from_project(self, **readkwargs):
+        df = pd.read_table(self.path, delim_whitespace=True, **readkwargs)
         dtms = [dt.date(1900 + y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YR'), df.pop('DAY'))]
         dtmspi = pd.PeriodIndex(dtms, freq='d', name='time')
@@ -61,8 +63,8 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
 
         return df
 
-    def from_csv(self):
-        df = pd.read_csv(self.path, index_col=0, parse_dates=[0])
+    def from_csv(self, **readkwargs):
+        df = pd.read_csv(self.path, index_col=0, parse_dates=[0], **readkwargs)
         pix = df.index.to_period(freq='d')
         df.index = pd.MultiIndex.from_arrays([pix, df.pop('SUB')])
         return df
@@ -72,15 +74,15 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
 class catchment_daily_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(resdir, 'bad.prn')
 
-    def from_project(self):
-        df = pd.read_table(self.path, delim_whitespace=True)
+    def from_project(self, **readkwargs):
+        df = pd.read_table(self.path, delim_whitespace=True, **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YR'), df.pop('DAY'))]
         df.index = pd.PeriodIndex(dtms, freq='d', name='time')
         return df
 
-    def from_csv(self):
-        df = pd.read_csv(self.path, index_col=0, parse_dates=[0])
+    def from_csv(self, **readkwargs):
+        df = pd.read_csv(self.path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='d')
         return df
 
@@ -89,10 +91,11 @@ class catchment_daily_waterbalance(utils.ProjectOrRunData):
 class catchment_monthly_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(resdir, 'bam.prn')
 
-    def from_project(self):
+    def from_project(self, **readkwargs):
         with open(self.path, 'r') as f:
             iyr = int(f.readline().strip().split('=')[1])
-            df = pd.read_table(f, delim_whitespace=True, index_col=False)
+            df = pd.read_table(f, delim_whitespace=True, index_col=False,
+                               **readkwargs)
         df.dropna(inplace=True)  # exclude Year = ...
         df = df.drop(df.index[range(12, len(df), 12+1)])  # excluded headers
         dtms = ['%04i-%02i' % (iyr+int((i-1)/12.), m)
@@ -100,8 +103,8 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
         df.index = pd.PeriodIndex(dtms, freq='m', name='time')
         return df.astype(float)
 
-    def from_csv(self):
-        df = pd.read_csv(self.path, index_col=0, parse_dates=[0])
+    def from_csv(self, **readkwargs):
+        df = pd.read_csv(self.path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='m')
         return df
 
@@ -110,13 +113,13 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
 class catchment_annual_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(resdir, 'bay.prn')
 
-    def from_project(self):
-        df = pd.read_table(self.path, delim_whitespace=True,
-                           index_col=0, parse_dates=[0])
+    def from_project(self, **readkwargs):
+        df = pd.read_table(self.path, delim_whitespace=True, index_col=0,
+                           parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='a')
         return df
 
-    def from_csv(self):
-        df = pd.read_csv(self.path, index_col=0, parse_dates=[0])
+    def from_csv(self, **readkwargs):
+        df = pd.read_csv(self.path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='a')
         return df
