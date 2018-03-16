@@ -5,7 +5,8 @@ They can be overriden in the settings.py file or when creating a project using
 Project(setting=value)
 """
 from modelmanager.plugins import Browser, Clone, Templates
-from .results import *
+from .output import *
+from .input import *
 
 # input files
 subcatch_parameter_file = 'input/subcatch.prm'
