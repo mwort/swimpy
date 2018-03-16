@@ -18,7 +18,7 @@ class SwimRun(browser.database.models.Run):
         super(SwimRun, self).__init__(*args, **kwargs)
         # attach result propertyplugins
         for n, p in settings.PROJECT.settings.properties.items():
-            if (hasattr(p, 'is_plugin') and
+            if (hasattr(p, 'isplugin') and
                ProjectOrRunData in p.plugin_class.__bases__):
                 setattr(self.__class__, n, p)
         return

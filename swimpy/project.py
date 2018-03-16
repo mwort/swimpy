@@ -7,14 +7,8 @@ import os
 import os.path as osp
 import datetime as dt
 import subprocess
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 from numbers import Number
 from decimal import Decimal
-
-import pandas as pa
 
 import modelmanager
 
@@ -124,38 +118,42 @@ class Project(modelmanager.Project):
             raise IOError(emsg)
         return i
 
-    def save_resultfile(self, run, tags, value):
+    def save_resultfile(self, run, tags, filelike):
         """
         Save a result file with a run.
 
         run: Django run object or ID.
         tags: Space-separated tags. Will be used as file name if pandas objects
             are parsed.
-        value: A file instance, a file path or a pandas.DataFrame/Series (will
-            be converted to file via to_csv) or a dictionary of any of those.
+        filelike: A file instance, a file path or a pandas.DataFrame/Series
+            (will be converted to file via to_csv) or a dictionary of any of
+            those types (keys will be appended to tags).
 
         Returns: ResultFile (Django model) instance or list of instances.
         """
-        errmsg = ('%s is not a file instance, existing path or ' % value +
+        errmsg = ('%s is not a file instance, existing path or ' % filelike +
                   'pandas DataFrame/Series or dictionary of those.')
 
         def is_valid(fu):
-            return hasattr(fu, 'read') or (type(fu) is str and osp.exists(fu))
+            flik = all([hasattr(fu, m) for m in ['read', 'close', 'seek']])
+            return flik or (type(fu) is str and osp.exists(fu))
 
         def insert_file(**kwargs):
             return self.browser.insert('resultfile', **kwargs)
 
-        if isinstance(value, pa.DataFrame) or isinstance(value, pa.Series):
-            fi = StringIO()
-            value.to_csv(fi)
-            fn = '_'.join(tags.split())+'.csv'
-            f = insert_file(run=run, tags=tags, file=fi, filename=fn)
-        elif type(value) == dict:
-            assert all([is_valid(v) for v in value.values()]), errmsg
-            f = [insert_file(run=run, file=v, tags=tags+' '+str(k))
-                 for k, v in value.items()]
-        elif is_valid(value):
-            f = insert_file(run=run, tags=tags, file=value)
+        if hasattr(filelike, 'to_run'):
+            f = filelike.to_run(run)
+        elif hasattr(filelike, 'to_csv'):
+            fn = '_'.join(tags.split())+'.csv.gzip'
+            tmpf = osp.join(self.browser.settings.tmpfilesdir, fn)
+            filelike.to_csv(tmpf, compression='gzip')
+            f = insert_file(run=run, tags=tags, file=tmpf)
+        elif type(filelike) == dict:
+            assert all([is_valid(v) for v in filelike.values()]), errmsg
+            f = [self.save_resultfile(run=run, file=v, tags=tags+' '+str(k))
+                 for k, v in filelike.items()]
+        elif is_valid(filelike):
+            f = insert_file(run=run, tags=tags, file=filelike)
         else:
             raise IOError(errmsg)
         return f

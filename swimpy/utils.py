@@ -80,7 +80,7 @@ class ProjectOrRunData(pd.DataFrame):
         pd.DataFrame.__init__(self, self.read())
         return
 
-    def from_run(self):
+    def from_run(self, **readkwargs):
         """
         Read data from a run instance with resultfiles.
         """
@@ -92,16 +92,26 @@ class ProjectOrRunData(pd.DataFrame):
         elif fileqs.count() == 0:
             raise IOError('No resultfile found for %s!' % self.name)
         fileobj = fileqs.last()
-        # determine function according to extension
-        ext = osp.splitext(fileobj.file.path)[1][1:]  # no dot
-        readmethodname = 'from_' + ext
-        if not hasattr(self, readmethodname):
-            raise NotImplementedError('No method %s to read file %s defined!' %
-                                      (readmethodname, fileobj.file.path))
         self.path = fileobj.file.path
-        return getattr(self, readmethodname)()
+        return self._reader_by_ext(fileobj.file.path)(**readkwargs)
 
-    def from_project(self):
+    def from_project(self, **kw):
         """!Overwrite me!"""
         raise NotImplementedError('Cant read this ProjectOrRunData from '
                                   'project, define a from_project method!')
+
+    def from_gzip(self, **readkwargs):
+        readkwargs['compression'] = 'gzip'
+        return self.reader_by_ext(osp.splitext(self.path)[0])(**readkwargs)
+
+    def reader_by_ext(self, path):
+        """
+        Return the read method from_* using the self.path extension.
+        Raises a NotImplementedError if none found.
+        """
+        ext = osp.splitext(path)[1][1:]  # no dot
+        readmethodname = 'from_' + ext
+        if not hasattr(self, readmethodname):
+            raise NotImplementedError('No method %s to read file %s defined!' %
+                                      (readmethodname, path))
+        return getattr(self, readmethodname)

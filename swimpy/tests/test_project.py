@@ -127,10 +127,12 @@ class Processing:
 class Run:
     def test_project_run_data(self):
         from swimpy.utils import ProjectOrRunData
-        resultproperties = [p for p in self.project.settings.properties.keys()
-                            if (hasattr(p, 'is_plugin') and
+        projectprops = self.project.settings.properties
+        resultproperties = [n for n, p in projectprops.items()
+                            if (hasattr(p, 'isplugin') and
                                 ProjectOrRunData in p.plugin_class.__bases__)]
-        for r in resultproperties:
+        self.assertGreater(len(resultproperties), 0)
+        for r in sorted(resultproperties):
             df_project = getattr(self.project, r)
             self.project.settings(resultfile_functions=[r])
             run = self.project.save_run(notes='test saved ' + r)
