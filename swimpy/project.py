@@ -21,9 +21,10 @@ class Project(modelmanager.Project):
     def __init__(self, projectdir='.', **settings):
         super(Project, self).__init__(projectdir, **settings)
         # add defaults if not already set
-        defaults = modelmanager.settings.load_settings(defaultsettings)
-        defaults = {k: v for k, v in defaults.items()
-                    if not (hasattr(self, k) or k in self.settings.classes)}
+        self.defaults = modelmanager.settings.load_settings(defaultsettings)
+        alset = [a for t in self.settings.types
+                 for a in getattr(self.settings, t).keys()]
+        defaults = {k: v for k, v in self.defaults.items() if k not in alset}
         self.settings(**defaults)
         return
 
@@ -150,7 +151,7 @@ class Project(modelmanager.Project):
             f = insert_file(run=run, tags=tags, file=tmpf)
         elif type(filelike) == dict:
             assert all([is_valid(v) for v in filelike.values()]), errmsg
-            f = [self.save_resultfile(run=run, file=v, tags=tags+' '+str(k))
+            f = [self.save_resultfile(run, tags+' '+str(k), v)
                  for k, v in filelike.items()]
         elif is_valid(filelike):
             f = insert_file(run=run, tags=tags, file=filelike)
@@ -213,7 +214,6 @@ class Project(modelmanager.Project):
 
     def _attribute_or_function_result(self, m):
         em = "%s is not a valid method or attribute name." % m
-        assert self.settings.is_valid(m), em
         try:
             fv = self.settings[m]
             if callable(fv):
