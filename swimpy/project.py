@@ -234,8 +234,8 @@ class Project(modelmanager.Project):
         """
         changed = []
         # create dicts with (pnam, stationID): value
-        bsnp = self.basin_parameters()
-        scp = self.subcatch_parameters().T.stack().to_dict()
+        bsnp = self.basin_parameters
+        scp = self.subcatch_parameters.T.stack().to_dict()
         for k, v in list(bsnp.items()) + list(scp.items()):
             n, sid = k if type(k) == tuple else (k, None)
             # convert to minimal precision decimal via string

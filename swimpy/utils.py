@@ -93,7 +93,7 @@ class ProjectOrRunData(pd.DataFrame):
             raise IOError('No resultfile found for %s!' % self.name)
         fileobj = fileqs.last()
         self.path = fileobj.file.path
-        return self._reader_by_ext(fileobj.file.path)(**readkwargs)
+        return self.reader_by_ext(fileobj.file.path)(**readkwargs)
 
     def from_project(self, **kw):
         """!Overwrite me!"""
@@ -115,3 +115,83 @@ class ProjectOrRunData(pd.DataFrame):
             raise NotImplementedError('No method %s to read file %s defined!' %
                                       (readmethodname, path))
         return getattr(self, readmethodname)
+
+
+class ReadWriteDataFrame(pd.DataFrame):
+    """
+    A representation of data read and written to file.
+
+    Intended for use as a superclass of a @propertyplugin to map file table to
+    a pandas DataFrame.
+
+    Usage:
+    ------
+    @propertyplugin
+    class ProjectData(ReadWriteData):
+        path = 'some/relative/path.csv'
+
+        def read(self, *kw):
+            <read data from file and assign pd.DataFrame.__init__(self, data)>
+        def write(self, *kw):
+            <write data from file, possible error/consistency checking>
+
+    """
+    path = None
+    plugin_functions = []
+
+    def __init__(self, project):
+        # init DataFrame
+        pd.DataFrame.__init__(self)
+        self.name = self.__class__.__name__
+        self.project = project
+        self.path = osp.join(self.project.projectdir, self.path)
+        errmsg = self.name + 'file does not exist: ' + self.path
+        assert osp.exists(self.path), errmsg
+        # read file
+        self.read()
+        return
+
+    def __call__(self, data=None, **setvalues):
+        """
+        Assign read data from file and optionally set and write new values.
+
+        data: <2D-array-like>
+            Set entire dataframe.
+        **setvalues: <array-like> | <dict>
+            Set columns or rows by kew. Subset of values can be set by parsing
+            a dict. Creates new row if key is neither in columns or index.
+        """
+        if data is not None:
+            pd.DataFrame.__init__(self, data)
+            self.write()
+        elif setvalues:
+            self.read()
+            for k, v in setvalues.items():
+                ix = slice(None)
+                if type(v) == dict:
+                    ix, v = zip(*v.items())
+                if k in self.columns:
+                    self.loc[ix, k] = v
+                else:
+                    self.loc[k, ix] = v
+            self.write()
+        else:
+            self.read()
+        return
+
+    def __repr__(self):
+        rpr = '<%s: %s >\n' % (self.name, osp.relpath(self.path))
+        return rpr + pd.DataFrame.__repr__(self)
+
+    def read(self, **kwargs):
+        """
+        Override me and reinitialise the data by calling:
+            pd.DataFrame.__init__(self, data)
+        """
+        raise NotImplementedError('Reading of %s not implemented.' % self.name)
+
+    def write(self, **kwargs):
+        """
+        Override me. Error checking and writing to file should be done here.
+        """
+        raise NotImplementedError('Writing of %s not implemented.' % self.name)

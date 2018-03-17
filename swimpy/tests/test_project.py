@@ -1,5 +1,4 @@
 """Tests for swimpy package."""
-
 import os.path as osp
 
 import pandas as pd
@@ -8,50 +7,50 @@ import pandas as pd
 class Parameters:
 
     def test_basin_parameters(self):
-        bsn = self.project.basin_parameters()
-        self.assertEqual(type(bsn), dict)
+        bsn = self.project.basin_parameters
         self.assertGreater(len(bsn), 0)
         for k, v in bsn.items():
-            self.assertEqual(self.project.basin_parameters(k), v)
+            self.assertEqual(self.project.basin_parameters(k)[0], v)
 
     def test_config_parameters(self):
-        cod = self.project.config_parameters()
-        self.assertEqual(type(cod), dict)
+        cod = self.project.config_parameters
         self.assertGreater(len(cod), 0)
         for k, v in cod.items():
-            self.assertEqual(self.project.config_parameters(k), v)
+            self.assertEqual(self.project.config_parameters(k)[0], v)
 
     def test_subcatch_parameters(self):
         # read
-        sbc = self.project.subcatch_parameters()
-        self.assertIsInstance(sbc, pd.DataFrame)
-        BLKS = self.project.subcatch_parameters('BLANKENSTEIN')
+        sbc = self.project.subcatch_parameters
+        scpclass = self.project.settings.plugins['subcatch_parameters'][0]
+        self.assertIsInstance(sbc, scpclass)
+        BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN']
         self.assertIsInstance(BLKS, pd.Series)
-        roc2 = self.project.subcatch_parameters('roc2')
+        roc2 = self.project.subcatch_parameters['roc2']
         self.assertIsInstance(roc2, pd.Series)
         # write
         self.project.subcatch_parameters(roc2=1)
-        self.assertEqual(self.project.subcatch_parameters('roc2').mean(), 1)
+        self.assertEqual(self.project.subcatch_parameters['roc2'].mean(), 1)
         self.project.subcatch_parameters(BLANKENSTEIN=2)
-        BLKS = self.project.subcatch_parameters('BLANKENSTEIN').mean()
+        BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN'].mean()
         self.assertEqual(BLKS, 2)
+        HOF = self.project.subcatch_parameters.loc['HOF']
         newparamdict = {'roc2': 3.0, 'roc4': 10.0}
-        HOF = self.project.subcatch_parameters('HOF')
+        self.project.subcatch_parameters(HOF=newparamdict)
         for k, v in newparamdict.items():
             HOF[k] = v
-        self.project.subcatch_parameters(HOF=newparamdict)
-        self.assertTrue((self.project.subcatch_parameters('HOF') == HOF).all())
+        self.assertTrue((self.project.subcatch_parameters.loc['HOF'] ==
+                         HOF).all())
         # write entire DataFrame
         self.project.subcatch_parameters(sbc.copy())
-        nsbc = self.project.subcatch_parameters()
+        nsbc = self.project.subcatch_parameters
         self.assertTrue((nsbc == sbc).all().all())
 
     def test_changed_parameters(self):
         verbose = False
         from random import random
         original = self.project.changed_parameters(verbose=verbose)
-        bsn = self.project.basin_parameters()
-        scp = self.project.subcatch_parameters().T.stack().to_dict()
+        bsn = self.project.basin_parameters
+        scp = self.project.subcatch_parameters.T.stack().to_dict()
         nametags = [(k, None) for k in bsn] + list(scp.keys())
         nametags_original = [(e['name'], e['tags']) for e in original]
         for nt in nametags:

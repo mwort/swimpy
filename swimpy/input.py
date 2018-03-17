@@ -2,84 +2,46 @@
 SWIM input functionality.
 """
 import pandas as pd
+from modelmanager import utils as mmutils
+from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
+
+from swimpy import utils
 
 
-def basin_parameters(self, *getvalues, **setvalues):
+@mmutils.propertyplugin
+class basin_parameters(_TemplatesDict):
     """
     Set or get any values from the .bsn file by variable name.
     """
-    pat = 'input/*.bsn'
-    if getvalues or setvalues:
-        result = self.templates(templates=pat, *getvalues, **setvalues)
-    # get all values if no args
-    else:
-        result = self.templates[pat].read_values()
-    return result
+    template_patterns = ['input/*.bsn']
 
 
-def config_parameters(self, *getvalues, **setvalues):
+@mmutils.propertyplugin
+class config_parameters(_TemplatesDict):
     """
     Set or get any values from the .cod or swim.conf file by variable name.
     """
-    pat = ['input/*.cod', 'swim.conf']
-    if getvalues or setvalues:
-        result = self.templates(templates=pat, *getvalues, **setvalues)
-    else:  # get all values if no args
-        result = self.templates[pat[0]].read_values()
-        result.update(self.templates[pat[1]].read_values())
-    return result
+    template_patterns = ['input/*.cod', 'swim.conf']
 
 
-def subcatch_parameters(self, *getvalues, **setvalues):
-    '''
-    Read or write parameters in the subcatch.bsn file.
+@mmutils.propertyplugin
+class subcatch_parameters(utils.ReadWriteDataFrame):
+    """
+    Read or write parameters in the subcatch.prm file.
+    """
+    path = 'input/subcatch.prm'
 
-    Reading:
-    --------
-    (<param> or <stationID>): returns pd.Series
-    (<list of param/stationID>): returns subset pa.DataFrame
-    (): returns entire table as pd.DataFrame
-
-    Writing:
-    --------
-    (<param>=value, <stationID>=<list-like>): Assign values or list to
-        parameter column or stationID row. Is inserted if not existent.
-    (<param>={<stationID>: value, ...}): Set individual values.
-    (<pd.DataFrame>): Override entire table, DataFrame must have stationID
-        index.
-    '''
-    filepath = self.subcatch_parameter_file
-    # read subcatch.bsn
-    bsn = pd.read_table(filepath, delim_whitespace=True)
-    stn = 'stationID' if 'stationID' in bsn.columns else 'station'
-    bsn.set_index(stn, inplace=True)
-    is_df = len(getvalues) == 1 and isinstance(getvalues[0], pd.DataFrame)
-
-    if setvalues or is_df:
-        if is_df:
-            bsn = getvalues[0]
-        for k, v in setvalues.items():
-            ix = slice(None)
-            if type(v) == dict:
-                ix, v = zip(*v.items())
-            if k in bsn.columns:
-                bsn.loc[ix, k] = v
-            else:
-                bsn.loc[k, ix] = v
-        # write table again
-        bsn['stationID'] = bsn.index
-        strtbl = bsn.to_string(index=False, index_names=False)
-        with open(filepath, 'w') as f:
-            f.write(strtbl)
+    def read(self, **kwargs):
+        bsn = pd.read_table(self.path, delim_whitespace=True)
+        stn = 'stationID' if 'stationID' in bsn.columns else 'station'
+        bsn.set_index(stn, inplace=True)
+        pd.DataFrame.__init__(self, bsn)
         return
 
-    if getvalues:
-        if all([k in bsn.index for k in getvalues]):
-            return bsn.loc[getvalues]
-        elif all([k in bsn.columns for k in getvalues]):
-            ix = getvalues[0] if len(getvalues) == 1 else list(getvalues)
-            return bsn[ix]
-        else:
-            raise KeyError('Cant find %s in either paramter or stations'
-                           % getvalues)
-    return bsn
+    def write(self, **kwargs):
+        bsn = self.copy()
+        bsn['stationID'] = bsn.index
+        strtbl = bsn.to_string(index=False, index_names=False)
+        with open(self.path, 'w') as f:
+            f.write(strtbl)
+        return
