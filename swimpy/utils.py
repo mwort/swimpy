@@ -73,17 +73,15 @@ class ProjectOrRunData(pd.DataFrame):
         # instantiated with run
         elif hasattr(projectorrun, 'resultfiles'):
             self.run = projectorrun
+            self.path = self.find_resultfile()
             self.read = self.from_run
         else:
             raise IOError('Run includes no saved files.')
         # read file
-        pd.DataFrame.__init__(self, self.read())
+        pd.DataFrame.__init__(self, self.read(self.path))
         return
 
-    def from_run(self, **readkwargs):
-        """
-        Read data from a run instance with resultfiles.
-        """
+    def find_resultfile(self):
         # find file
         fileqs = (self.run.resultfiles.filter(tags__contains=self.name) or
                   self.run.resultfiles.filter(file__contains=self.name))
@@ -92,17 +90,23 @@ class ProjectOrRunData(pd.DataFrame):
         elif fileqs.count() == 0:
             raise IOError('No resultfile found for %s!' % self.name)
         fileobj = fileqs.last()
-        self.path = fileobj.file.path
-        return self.reader_by_ext(fileobj.file.path)(**readkwargs)
+        return fileobj.file.path
 
-    def from_project(self, **kw):
+    def from_run(self, path, **readkwargs):
+        """
+        Read data from a run instance with resultfiles.
+        """
+        reader = self.reader_by_ext(path)
+        return reader(path, **readkwargs)
+
+    def from_project(self, path, **kw):
         """!Overwrite me!"""
         raise NotImplementedError('Cant read this ProjectOrRunData from '
                                   'project, define a from_project method!')
 
-    def from_gzip(self, **readkwargs):
+    def from_gzip(self, path, **readkwargs):
         readkwargs['compression'] = 'gzip'
-        return self.reader_by_ext(osp.splitext(self.path)[0])(**readkwargs)
+        return self.reader_by_ext(osp.splitext(path)[0])(path, **readkwargs)
 
     def reader_by_ext(self, path):
         """

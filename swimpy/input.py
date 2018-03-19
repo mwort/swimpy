@@ -2,13 +2,11 @@
 SWIM input functionality.
 """
 import pandas as pd
-from modelmanager import utils as mmutils
 from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
 
 from swimpy import utils
 
 
-@mmutils.propertyplugin
 class basin_parameters(_TemplatesDict):
     """
     Set or get any values from the .bsn file by variable name.
@@ -16,7 +14,6 @@ class basin_parameters(_TemplatesDict):
     template_patterns = ['input/*.bsn']
 
 
-@mmutils.propertyplugin
 class config_parameters(_TemplatesDict):
     """
     Set or get any values from the .cod or swim.conf file by variable name.
@@ -24,7 +21,6 @@ class config_parameters(_TemplatesDict):
     template_patterns = ['input/*.cod', 'swim.conf']
 
 
-@mmutils.propertyplugin
 class subcatch_parameters(utils.ReadWriteDataFrame):
     """
     Read or write parameters in the subcatch.prm file.
