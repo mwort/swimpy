@@ -1,0 +1,77 @@
+swimpy package
+==============
+
+.. autoclass:: swimpy.Project
+
+swimpy.project module
+---------------------
+
+.. automodule:: swimpy.project
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+swimpy.input module
+-------------------
+
+.. automodule:: swimpy.input
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+swimpy.output module
+--------------------
+
+.. automodule:: swimpy.output
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+swimpy.defaultsettings module
+-----------------------------
+
+.. automodule:: swimpy.defaultsettings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+
+swimpy.utils module
+-------------------
+
+.. automodule:: swimpy.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+swimpy.browser module
+---------------------
+
+.. automodule:: swimpy.browser
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+
+swimpy.tests package
+====================
+
+swimpy.tests.test\_project module
+---------------------------------
+
+.. automodule:: swimpy.tests.test_project
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: swimpy.tests
+    :members:
+    :undoc-members:
+    :show-inheritance:
