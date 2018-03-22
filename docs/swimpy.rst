@@ -35,7 +35,13 @@ swimpy.defaultsettings module
     :undoc-members:
     :show-inheritance:
 
+swimpy.plot module
+-----------------------------
 
+.. automodule:: swimpy.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 swimpy.utils module
 -------------------

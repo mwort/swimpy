@@ -19,11 +19,15 @@ Conventions:
 - all read from_* methods should parse **readkwargs to the pandas.read call
 """
 import os.path as osp
+import sys
+
 import datetime as dt
 
 import pandas as pd
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
-from swimpy import utils
+from swimpy import utils, plot
 
 
 RESDIR = 'output/Res'
@@ -32,14 +36,13 @@ GISDIR = 'output/GIS'
 
 class station_daily_discharge(utils.ProjectOrRunData):
     """
-    Daily station discharge output.
+    Daily discharge of selected stations.
     """
     swim_path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
     plugin_functions = []
 
     @staticmethod
     def from_project(path, **readkwargs):
-        """"""
         df = pd.read_csv(path, **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YEAR'), df.pop('DAY'))]
@@ -48,7 +51,6 @@ class station_daily_discharge(utils.ProjectOrRunData):
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        """"""
         df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='d')
         return df
@@ -60,7 +62,6 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        """"""
         df = pd.read_table(path, delim_whitespace=True, **readkwargs)
         dtms = [dt.date(1900 + y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YR'), df.pop('DAY'))]
@@ -70,7 +71,6 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        """"""
         df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
         pix = df.index.to_period(freq='d')
         df.index = pd.MultiIndex.from_arrays([pix, df.pop('SUB')])
@@ -82,7 +82,6 @@ class catchment_daily_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        """"""
         df = pd.read_table(path, delim_whitespace=True, **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YR'), df.pop('DAY'))]
@@ -91,7 +90,6 @@ class catchment_daily_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        """"""
         df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='d')
         return df
@@ -102,7 +100,6 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        """"""
         with open(path, 'r') as f:
             iyr = int(f.readline().strip().split('=')[1])
             df = pd.read_table(f, delim_whitespace=True, index_col=False,
@@ -116,7 +113,6 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        """"""
         df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='m')
         return df
@@ -124,10 +120,10 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
 
 class catchment_annual_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bay.prn')
+    plugin_functions = ['plot_mean', 'print_mean']
 
     @staticmethod
     def from_project(path, **readkwargs):
-        """"""
         df = pd.read_table(path, delim_whitespace=True, index_col=0,
                            parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='a')
@@ -135,7 +131,16 @@ class catchment_annual_waterbalance(utils.ProjectOrRunData):
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        """"""
         df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='a')
         return df
+
+    def plot_mean(self, ax=plt.gca(), output=None, size=(160, 125)):
+        bars = plot.plot_mean_waterbalance(self)
+        plot.save_or_show(output=output, **(dict(size=size) if size else {}))
+        return bars
+
+    def print_mean(self):
+        mean = self.mean()
+        print(mean.to_string())
+        return
