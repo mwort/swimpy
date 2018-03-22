@@ -17,6 +17,20 @@ from swimpy import defaultsettings
 
 
 class Project(modelmanager.Project):
+    """The project object with settings attached.
+
+    All settings are available as attributes, methods, properties and plugin
+    instances (i.e. also attributes) from the project instance.
+
+    Attributes (those not defined in settings.py)
+    ----------
+    projectdir : str path
+        Absolute path to the project directory.
+    resourcedir : str path
+        Absoulte path to the swimpy resource directory.
+    settings : modelmanager.SettingsManager
+        A manager object that is used to attach, record and check settings.
+    """
 
     def __init__(self, projectdir='.', **settings):
         super(Project, self).__init__(projectdir, **settings)
@@ -32,14 +46,20 @@ class Project(modelmanager.Project):
         """
         Execute SWIM.
 
-        Arguments:
-        ----------
-        save:
+        Arguments
+        ---------
+        save : bool
             Run save_run after successful execution of SWIM.
-        cluster:
+        cluster : bool
             False or a job name to submit this run to SLURM.
-        **save_run_kwargs:
+        **save_run_kwargs : optional
             Keyword arguments passed to save_run.
+
+        Retrurns
+        --------
+        Run instance (Django model object) | None
+            A run instance with all attributes and methods attached.
+            If save=False, None is returned.
         """
         # starting clock
         st = dt.datetime.now()
@@ -66,13 +86,15 @@ class Project(modelmanager.Project):
         """
         Run a project function (method) by submitting it to SLURM.
 
-        functionname:
+        Arguments
+        ---------
+        functionname : str
             A name string of a project function.
-        jobname:
+        jobname : str
             SLURM job name.
-        dryrun:
+        dryrun : bool
             If True, only write jobfile to cluster resourcedir.
-        **funcargs:
+        **funcargs : optional
             Arguments parsed to function.
         """
         assert callable(self.settings[functionname])
@@ -89,7 +111,7 @@ class Project(modelmanager.Project):
 
     def __call__(self, *runargs, **runkwargs):
         """
-        Shortcut for run(); check run documentation.
+        Shortcut for run(); see run documentation.
         """
         return self.run(*runargs, **runkwargs)
 
@@ -97,13 +119,21 @@ class Project(modelmanager.Project):
         """
         Save a result indicator with a run.
 
-        run: Django run object or ID.
-        name: String name of indicator.
-        value: Number or dictionary of indicators (float/int will be converted
-            to Decimal).
-        tags: Additional tags (space separated).
+        Arguments
+        ---------
+        run : models.Run instance | int
+            SWIM run object or an ID.
+        name : str
+            Name of indicator.
+        value : number or dict of numbers
+            Number or dictionary of indicator values (float/int will be
+            converted to Decimal).
+        tags : str
+            Additional tags (space separated).
 
-        Returns: ResultIndicator (Django model) instance or list of instances.
+        Returns
+        -------
+        ResultIndicator (Django model) instance or list of instances.
         """
         def insert_ind(**kwargs):
             return self.browser.insert('resultindicator', **kwargs)
@@ -123,14 +153,20 @@ class Project(modelmanager.Project):
         """
         Save a result file with a run.
 
-        run: Django run object or ID.
-        tags: Space-separated tags. Will be used as file name if pandas objects
+        Arguments
+        ---------
+        run : Run instance (Django model) | int
+        tags : str
+            Space-separated tags. Will be used as file name if pandas objects
             are parsed.
-        filelike: A file instance, a file path or a pandas.DataFrame/Series
+        filelike : file-like object | pandas.Dataframe/Series | dict of those
+            A file instance, a file path or a pandas.DataFrame/Series
             (will be converted to file via to_csv) or a dictionary of any of
             those types (keys will be appended to tags).
 
-        Returns: ResultFile (Django model) instance or list of instances.
+        Returns
+        -------
+        ResultFile (Django model) instance or list of instances.
         """
         errmsg = ('%s is not a file instance, existing path or ' % filelike +
                   'pandas DataFrame/Series or dictionary of those.')
@@ -163,26 +199,28 @@ class Project(modelmanager.Project):
         """
         Save the current SWIM input/output as a run in the browser database.
 
-        Arguments:
-        ----------
-        indicators:
+        Arguments
+        ---------
+        indicators : dict
             Dictionary of indicator values passed to self.save_resultindicator.
-        files:
+        files : dict
             Dictionary of file values passed to self.save_resultfile.
-        **run_fields:
+        **run_fields : optional
             Set fields of the run browser table. Default fields: notes, tags
 
-        Optional settings:
-        ------------------
-        resultindicator_functions:
+        Optional settings
+        -----------------
+        resultindicator_functions : list | dict
             List or dictionary of method or attribute names that return an
             indicator (float) or dictionary of those.
-        resultfile_functions:
+        resultfile_functions : list | dict
             List or dictionary of method or attribute names that return any of
             file instance, a file path or a pandas.DataFrame/Series (will be
             converted to file via to_csv) or a dictionary of any of those.
 
-        Returns: Run object (Django model object).
+        Returns
+        -------
+        Run object (Django model object).
         """
         assert type(indicators) is dict, 'indicators must be a dictionary.'
         assert type(files) is dict, 'files must be a dictionary.'
@@ -213,7 +251,6 @@ class Project(modelmanager.Project):
         return run
 
     def _attribute_or_function_result(self, m):
-        em = "%s is not a valid method or attribute name." % m
         try:
             fv = self.settings[m]
             if callable(fv):
@@ -228,9 +265,14 @@ class Project(modelmanager.Project):
         Compare currently set basin and subcatch parameters with the last in
         the parameter browser table.
 
-        verbose: print changes.
+        Arguments
+        ---------
+        verbose : bool
+            Print changes.
 
-        Returns: List of dictionaries with parameter browser attributes.
+        Returns
+        -------
+        List of dictionaries with parameter browser attributes.
         """
         changed = []
         # create dicts with (pnam, stationID): value
@@ -252,6 +294,17 @@ class Project(modelmanager.Project):
 def setup(projectdir='.', resourcedir='swimpy'):
     """
     Setup a swimpy project.
+
+    Arguments
+    ---------
+    projectdir : str path
+        Project directory. Will be created if not existing.
+    resourcedir : str
+        Name of swimpy resource directory in projectdir.
+
+    Returns
+    -------
+    Project instance.
     """
     mmproject = modelmanager.project.setup(projectdir, resourcedir)
     # swim specific customisation of resourcedir
