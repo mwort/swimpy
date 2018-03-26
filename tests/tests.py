@@ -106,7 +106,7 @@ class TestGrass(ProjectTestCase):
         # needed settings
         self.project.settings(**self.grass_settings)
         # update subbasins (runs all other modules in postprocess)
-        self.project.subbasins()
+        self.project.subbasins(verbose=False)
         for p in files_created:
             self.assertTrue(osp.exists(p))
 

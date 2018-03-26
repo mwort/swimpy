@@ -143,11 +143,14 @@ class GrassModulePlugin(object):
         assert self.module, errmsg
         return
 
-    def create(self, **moduleargs):
+    def create(self, verbose=True, **moduleargs):
         """Run the related grass module.
 
         Arguments
         ---------
+        verbose : bool
+            Print all module output. If False, only WARNINGS and ERRORS are
+            printed at the end.
         **moduleargs :
             Override any arguments of the module alredy set in settings.
         """
@@ -165,8 +168,15 @@ class GrassModulePlugin(object):
                 elif p.required:
                     em = p.name + ' argument is required by ' + self.module
                     raise AttributeError(em)
+            if not verbose:
+                args['stderr_'] = subprocess.PIPE
+                args['stdout_'] = subprocess.PIPE
             # run module
             module(**args).run()
+            if not verbose:
+                for l in module.outputs.stderr.split('\n'):
+                    if 'ERROR' in l or 'WARNING' in l:
+                        print(l)
         return
 
     def update(self, **modulekwargs):
@@ -184,7 +194,7 @@ class GrassModulePlugin(object):
         """Shortcut for `update`."""
         return self.update(**modulekwargs)
 
-    def postprocess(self):
+    def postprocess(self, **modulekwargs):
         """Overwrite to perform follow up tasks."""
         return
 
