@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Unit test package for swimpy."""
+"""Unit test package for any swimpy project."""
 import glob
 import os.path as osp
 import unittest
@@ -11,6 +11,17 @@ from modelmanager.utils import load_module_path
 
 
 class Tests:
+    """The swimpy test project plugin.
+
+    The plugin makes project-unspecifc tests available to the project instance
+    through the following syntax:
+    ```
+        project.tests.<testcaseclass>()
+        project.tests.all()
+    ```
+    Test case classes maybe defined in any submodule of the tests package and
+    should be named test_*.py.
+    """
     def __init__(self, project):
         self.project = project
         # add all test cases (mixin classes)
