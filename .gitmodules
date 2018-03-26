@@ -6,3 +6,7 @@
 	path = dependencies/modelmanager
 	url = https://github.com/mwort/modelmanager.git
 	branch = master
+[submodule "dependencies/m.swim"]
+	path = dependencies/m.swim
+	url = https://github.com/mwort/m.swim.git
+	branch = master

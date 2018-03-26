@@ -67,6 +67,45 @@ class TestRun(ProjectTestCase, test_project.Run):
     pass
 
 
+class TestGrass(ProjectTestCase):
+    grass_settings = dict(
+        grass_db = "../../dependencies/m.swim/test/grassdb",
+        grass_location = "utm32n",
+        grass_mapset =  "swim",
+        elevation = "elevation@PERMANENT",
+        stations = "stations@PERMANENT",
+        landuse = "landuse@PERMANENT",
+        soil = "soil@PERMANENT",
+        upthresh=40,
+        lothresh=11,
+    )
+    files_created = ['file.cio', 'blank.str', 'file.cio',
+                     'Sub/groundwater.tab', 'Sub/routing.tab',
+                     'Sub/subbasin.tab']
+
+    def test_session(self):
+        from swimpy.grass import ProjectGrassSession
+        self.project.settings(**self.grass_settings)
+        with ProjectGrassSession(self.project, mapset='PERMANENT') as grass:
+            rasts = grass.list_strings('rast')
+            vects = grass.list_strings('vect')
+            for m in ['elevation', 'landuse', 'soil']:
+                self.assertIn(self.grass_settings[m], rasts)
+            self.assertIn(self.grass_settings['stations'], vects)
+        return
+
+    def test_mswim_setup(self):
+        files_created = [osp.join(self.project.projectdir, 'input', p)
+                         for p in self.files_created]
+        [os.remove(p) for p in files_created if osp.exists(p)]
+        # needed settings
+        self.project.settings(**self.grass_settings)
+        # update subbasins (runs all other modules in postprocess)
+        self.project.subbasins()
+        for p in files_created:
+            self.assertTrue(osp.exists(p))
+
+
 if __name__ == '__main__':
     cProfile.run('unittest.main()', 'pstats')
     # print profile stats ordered by time

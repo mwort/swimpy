@@ -4,12 +4,13 @@ Default project settings.
 They can be overriden in the `settings.py` file or temporarily when
 instantiating a project using `p = Project(setting=value)`.
 """
+# local imports
 from modelmanager.utils import propertyplugin as _propertyplugin
+from swimpy import input, output
 
-# modelmanager plugins
+# plugins
 from modelmanager.plugins import Browser, Clone, Templates
-
-from . import input, output
+from swimpy.grass import Subbasins, Hydrotopes, Routing, Substats
 
 # SWIM executable
 swim = './swim'

@@ -19,6 +19,14 @@ swimpy.input module
     :undoc-members:
     :show-inheritance:
 
+swimpy.grass module
+-------------------
+
+.. automodule:: swimpy.grass
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 swimpy.output module
 --------------------
 
