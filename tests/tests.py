@@ -17,8 +17,13 @@ from swimpy.tests import test_project
 SWIM_TEST_PROJECT = 'project/'
 SWIM_REPO_PROJECT = '../dependencies/swim/project'
 
+TEST_GRASSDB = 'grassdb'
+MSWIM_GRASSDB = '../dependencies/m.swim/test/grassdb'
+
 if not os.path.exists(SWIM_TEST_PROJECT):
     shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT, symlinks=True)
+if not os.path.exists(TEST_GRASSDB):
+    shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB, symlinks=True)
 
 
 class TestSetup(unittest.TestCase):
@@ -69,7 +74,7 @@ class TestRun(ProjectTestCase, test_project.Run):
 
 class TestGrass(ProjectTestCase):
     grass_settings = dict(
-        grass_db = "../../dependencies/m.swim/test/grassdb",
+        grass_db = TEST_GRASSDB,
         grass_location = "utm32n",
         grass_mapset =  "swim",
         elevation = "elevation@PERMANENT",
