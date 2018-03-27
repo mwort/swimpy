@@ -11,6 +11,7 @@ from swimpy import input, output
 # plugins
 from modelmanager.plugins import Browser, Clone, Templates
 from swimpy.grass import Subbasins, Hydrotopes, Routing, Substats
+from swimpy.tests import Tests
 
 # SWIM executable
 swim = './swim'

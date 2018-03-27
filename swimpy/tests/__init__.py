@@ -18,6 +18,7 @@ class Tests:
     ```
         project.tests.<testcaseclass>()
         project.tests.all()
+        project.tests()  # same as all
     ```
     Test case classes maybe defined in any submodule of the tests package and
     should be named test_*.py.

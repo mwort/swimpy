@@ -73,19 +73,15 @@ swimpy.browser module
 swimpy.tests package
 ====================
 
-swimpy.tests.test\_project module
----------------------------------
-
-.. automodule:: swimpy.tests.test_project
+.. automodule:: swimpy.tests
     :members:
     :undoc-members:
     :show-inheritance:
 
+swimpy.tests.test\_project module
+---------------------------------
 
-Module contents
----------------
-
-.. automodule:: swimpy.tests
+.. automodule:: swimpy.tests.test_project
     :members:
     :undoc-members:
     :show-inheritance:
