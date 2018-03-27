@@ -195,8 +195,8 @@ class TestGrass(ProjectTestCase):
             rasts = grass.list_strings('rast')
             vects = grass.list_strings('vect')
             for m in ['elevation', 'landuse', 'soil']:
-                self.assertIn(self.grass_settings[m], rasts)
-            self.assertIn(self.grass_settings['stations'], vects)
+                self.assertIn(self.grass_settings[m].encode(), rasts)
+            self.assertIn(self.grass_settings['stations'].encode(), vects)
         return
 
     def test_mswim_setup(self):

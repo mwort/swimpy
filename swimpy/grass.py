@@ -46,7 +46,7 @@ class GrassSession(object):
             raise ImportError("ERROR: Cannot find GRASS GIS 7 start script "
                               "using %s. Try passing correct grassbin."
                               % (' '.join(startcmd)))
-        self.gisbase = out.strip().split('\n')[-1]
+        self.gisbase = out.decode().strip().split('\n')[-1]
         userdir = osp.expanduser("~")
         self.addonpath = osp.join(userdir, '.grass7', 'addons', 'scripts')
         self.python_package = os.path.join(self.gisbase, "etc", "python")
@@ -79,7 +79,9 @@ class GrassSession(object):
         self.rcfile = setup.init(self.gisbase, self.gisdb,
                                  self.location, 'PERMANENT')
         # always create mapset if it doesnt exist
-        grass.run_command('g.mapset', mapset=self.mapset, flags='c', quiet=1)
+        if self.mapset != 'PERMANENT':
+            grass.run_command('g.mapset', mapset=self.mapset, flags='c',
+                              quiet=True)
         return grass
 
     def __enter__(self):
