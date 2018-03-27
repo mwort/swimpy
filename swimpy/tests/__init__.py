@@ -24,6 +24,7 @@ class Tests:
     """
     def __init__(self, project):
         self.project = project
+        self.test_methods = {}
         # add all test cases (mixin classes)
         testpaths = glob.glob(osp.join(osp.dirname(__file__), 'test_*.py'))
         for modpath in testpaths:
@@ -31,13 +32,15 @@ class Tests:
             classes = [getattr(testmodule, i) for i in dir(testmodule)
                        if inspect.isclass(getattr(testmodule, i))]
             for Tc in classes:
-                test_function = self.create_test_function(Tc)
+                test_function = self._create_test_function(Tc)
                 # attach function to Tests class
                 method = types.MethodType(test_function, self)
-                setattr(self, Tc.__name__.lower(), method)
+                name = Tc.__name__.lower()
+                setattr(self, name, method)
+                self.test_methods[name] = method
         return
 
-    def create_test_function(self, testcaseclass):
+    def _create_test_function(self, testcaseclass):
         PROJECT = self.project
 
         class TestCase(unittest.TestCase, testcaseclass):
@@ -48,3 +51,12 @@ class Tests:
             suite = loader.loadTestsFromTestCase(TestCase)
             return unittest.TextTestRunner().run(suite)
         return test_function
+
+    def all(self):
+        for n, m in self.test_methods.items():
+            m()
+        return
+
+    def __call__(self):
+        self.all()
+        return
