@@ -3,6 +3,9 @@ import os
 import os.path as osp
 import sys
 import subprocess
+import sqlite3
+
+import pandas as pd
 
 from modelmanager import utils as mmutils
 
@@ -129,6 +132,62 @@ class ProjectGrassSession(GrassSession):
             kw['grassbin'] = project.grassbin
         kw.update(override)
         super(ProjectGrassSession, self).__init__(**kw)
+        return
+
+
+class GrassAttributeTable(pd.DataFrame):
+    """A plugin to represent a grass vector attribute table.
+
+    Specify `database` and `table`, if you dont want to rely on grass to get
+    the table connection parameters.
+    """
+    vector = None
+    #: Optional
+    layer = 1
+    #: Specify a different key index, default is same as grass table or 'cat'
+    key = None
+    #: dictionary of dictionary-like data or names project setting of those
+    #: data must have the same keys as table
+    add_attributes = {}
+    #: optional if it shouldnt call grass to find out
+    database = None
+    #: optional if it shouldnt call grass to find out
+    table = None
+
+    def __init__(self, project, **override):
+        super(GrassAttributeTable, self).__init__()
+        self.__dict__.update(override)
+        self._project = project
+        con = self.dbconnection
+        tbl = pd.read_sql('select * from %s;' % self.table, con)
+        tbl.set_index(self.key, inplace=True, verify_integrity=True)
+        # fill DataFrame
+        super(GrassAttributeTable, self).__init__(tbl)
+        # append dictionary-like data
+        if self.add_attributes:
+            self.append_attributes(self.add_attributes)
+        return
+
+    @property
+    def dbconnection(self):
+        em = 'vector or (database and table) class attributes needed.'
+        assert self.vector or (self.database and self.table), em
+        if not (self.database and self.table):
+            with ProjectGrassSession(self._project) as grass:
+                tblcon = grass.vector_db(self.vector)[self.layer]
+            self.database = tblcon['database']
+            self.table = tblcon['table']
+            self.key = self.key or tblcon['key']
+        self.key = self.key or 'cat'
+        return sqlite3.connect(self.database)
+
+    def append_attributes(self, appenddict):
+        em = 'append attribute must be a dictionary. %r' % appenddict
+        assert type(appenddict) == dict, em
+        for k, v in appenddict.items():
+            if type(v) == str:
+                v = self._project._attribute_or_function_result(v)
+            self.loc[:, k] = pd.Series(v)
         return
 
 

@@ -188,6 +188,11 @@ class TestGrass(ProjectTestCase):
                      'Sub/groundwater.tab', 'Sub/routing.tab',
                      'Sub/subbasin.tab']
 
+    class TestGrassTbl(swimpy.grass.GrassAttributeTable):
+        vector = 'stations@PERMANENT'
+        key = 'NAME'
+        add_attributes = {'obs': {'HOF': pd.Series([12,2,2,4])}}
+
     def test_session(self):
         from swimpy.grass import ProjectGrassSession
         self.project.settings(**self.grass_settings)
@@ -209,6 +214,11 @@ class TestGrass(ProjectTestCase):
         self.project.subbasins(verbose=False)
         for p in files_created:
             self.assertTrue(osp.exists(p))
+
+    def test_attribute_table(self):
+        self.project.settings(self.TestGrassTbl, **self.grass_settings)
+        self.assertTrue(hasattr(self.project, 'testgrasstbl'))
+        self.assertIsInstance(self.project.testgrasstbl.obs.HOF, pd.Series)
 
 
 if __name__ == '__main__':
