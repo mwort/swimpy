@@ -158,18 +158,6 @@ class GrassAttributeTable(pd.DataFrame):
         super(GrassAttributeTable, self).__init__()
         self.__dict__.update(override)
         self._project = project
-        con = self.dbconnection
-        tbl = pd.read_sql('select * from %s;' % self.table, con)
-        tbl.set_index(self.key, inplace=True, verify_integrity=True)
-        # fill DataFrame
-        super(GrassAttributeTable, self).__init__(tbl)
-        # append dictionary-like data
-        if self.add_attributes:
-            self.append_attributes(self.add_attributes)
-        return
-
-    @property
-    def dbconnection(self):
         em = 'vector or (database and table) class attributes needed.'
         assert self.vector or (self.database and self.table), em
         if not (self.database and self.table):
@@ -179,6 +167,24 @@ class GrassAttributeTable(pd.DataFrame):
             self.table = tblcon['table']
             self.key = self.key or tblcon['key']
         self.key = self.key or 'cat'
+        # fill dataframe
+        self.read()
+        # append dictionary-like data
+        if self.add_attributes:
+            self.append_attributes(self.add_attributes)
+        return
+
+    def read(self):
+        """Read table from db."""
+        with self.dbconnection as con:
+            tbl = pd.read_sql('select * from %s;' % self.table, con)
+        tbl.set_index(self.key, inplace=True, verify_integrity=True)
+        # fill DataFrame
+        super(GrassAttributeTable, self).__init__(tbl)
+        return
+
+    @property
+    def dbconnection(self):
         return sqlite3.connect(self.database)
 
     def append_attributes(self, appenddict):
@@ -188,6 +194,14 @@ class GrassAttributeTable(pd.DataFrame):
             if type(v) == str:
                 v = self._project._attribute_or_function_result(v)
             self.loc[:, k] = pd.Series(v)
+        return
+
+    def write(self):
+        """Save table back to GRASS sqlite3 database.
+        """
+        cleantbl = self.drop(self.add_attributes.keys(), axis=1)
+        with self.dbconnection as con:
+            cleantbl.to_sql(self.table, con, if_exists='replace')
         return
 
 

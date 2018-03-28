@@ -219,6 +219,10 @@ class TestGrass(ProjectTestCase):
         self.project.settings(self.TestGrassTbl, **self.grass_settings)
         self.assertTrue(hasattr(self.project, 'testgrasstbl'))
         self.assertIsInstance(self.project.testgrasstbl.obs.HOF, pd.Series)
+        self.project.testgrasstbl['new'] = 1000
+        self.project.testgrasstbl.write()
+        self.project.testgrasstbl.read()
+        self.assertEqual(self.project.testgrasstbl['new'].mean(), 1000)
 
 
 if __name__ == '__main__':
