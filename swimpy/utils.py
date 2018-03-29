@@ -11,13 +11,27 @@ def slurm_submit(jobname, scriptstr, outputdir='.', dryrun=False, **slurmargs):
     '''
     Submit the script string as a python script to slurm.
 
-    jobname: job identifier
-    scriptstr: valid python code string (ensure correct indent and linebreaks)
-    outputdir: directory where the script, error and output files are written
-    slurmkwargs: any additional slurm header arguments, some useful ones:
-        qos: job class (short, medium, long)
-        workdir: working directory
-        account: CPU accounting
+    Arguments
+    ---------
+    jobname : str
+        Job identifier without spaces.
+    scriptstr : str
+         Valid python code string (ensure correct indent and linebreaks).
+    outputdir : str path
+        Directory where the script, error and output files are written.
+    dryrun : bool
+        If true, dont submit job but just write jobfile.
+    **slurmkwargs
+        Any additional slurm header arguments, some useful ones:
+            * qos: job class (short, medium, long)
+            * workdir: working directory
+            * account: CPU accounting
+
+    Example
+    -------
+    >>> slurm_submit('testjob', 'import swimpy; swimpy.Project().run()',
+    ...              workdir='project/', dryrun=True)  # doctest: +ELLIPSIS
+    Would execute: sbatch .../testjob.py
     '''
     import ast
     import subprocess
@@ -125,20 +139,30 @@ class ReadWriteDataFrame(pd.DataFrame):
     """
     A representation of data read and written to file.
 
-    Intended for use as a superclass of a @propertyplugin to map file table to
-    a pandas DataFrame.
+    The ``read`` method has to reinitialise the dataframe. An example use as a
+    plugin (instantiated on project instantiation)::
 
-    Usage:
-    ------
-    @propertyplugin
-    class ProjectData(ReadWriteData):
-        path = 'some/relative/path.csv'
+        class ProjectData(ReadWriteData):
+            path = 'some/relative/path.csv'
 
-        def read(self, *kw):
-            <read data from file and assign pd.DataFrame.__init__(self, data)>
-        def write(self, *kw):
-            <write data from file, possible error/consistency checking>
+            def read(self, **kw):
+                data = pd.read_table(self.path)
+                super(ProjectData, self).__init__(data)
+                return
+            def write(self, **kw):
+                # possible error/consistency checking
+                assert len(self.columns) == 2, 'must have only 2 columns'
+                self.to_csv(self.path)
+        # add to project
+        p = swimpy.Project('project/')
+        p.settings(ProjectData)
+        # access the DataFrame
+        p.projectdata
+        # or modify and write out again
+        p.projectdata.write()
 
+    To defer reading of the dataframe until it is actually accessed, decorate
+    the class with a ``@modelmanager.utils.propertyplugin``.
     """
     path = None
     plugin_functions = []
