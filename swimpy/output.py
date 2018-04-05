@@ -20,12 +20,13 @@ Conventions:
 """
 import os.path as osp
 import sys
-
+import inspect
 import datetime as dt
 
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from modelmanager.utils import propertyplugin
 
 from swimpy import utils, plot
 
@@ -144,3 +145,15 @@ class catchment_annual_waterbalance(utils.ProjectOrRunData):
         mean = self.mean()
         print(mean.to_string())
         return
+
+
+class output(object):
+    """Collection of output file interfaces."""
+    def __init__(self, project):
+        self.project = project
+        self.interfaces = {}
+        for n, c in globals().items():
+            if inspect.isclass(c) and utils.ProjectOrRunData in c.__bases__:
+                prop = propertyplugin(c)
+                setattr(self.__class__, n, prop)
+                self.interfaces[n] = prop

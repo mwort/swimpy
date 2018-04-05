@@ -68,10 +68,10 @@ class ProjectTestCase(unittest.TestCase):
 class TestParameters(ProjectTestCase, test_project.Parameters):
 
     def test_subcatch_parameters(self):
+        from swimpy.input import subcatch_parameters as SubcatchParameters
         # read
         sbc = self.project.subcatch_parameters
-        scpclass = self.project.settings.plugins['subcatch_parameters'][0]
-        self.assertIsInstance(sbc, scpclass)
+        self.assertIsInstance(sbc, SubcatchParameters)
         BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN']
         self.assertIsInstance(BLKS, pd.Series)
         roc2 = self.project.subcatch_parameters['roc2']

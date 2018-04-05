@@ -5,8 +5,6 @@ from modelmanager.plugins import browser
 from django.db import models
 from django.conf import settings
 
-from .utils import ProjectOrRunData
-
 
 class SwimRun(browser.database.models.Run):
     class Meta:
@@ -17,8 +15,6 @@ class SwimRun(browser.database.models.Run):
     def __init__(self, *args, **kwargs):
         super(SwimRun, self).__init__(*args, **kwargs)
         # attach result propertyplugins
-        for n, p in settings.PROJECT.settings.properties.items():
-            if (hasattr(p, 'isplugin') and
-               ProjectOrRunData in p.plugin_class.__bases__):
-                setattr(self.__class__, n, p)
+        for n, p in settings.PROJECT.output.interfaces.items():
+            setattr(self.__class__, n, p)
         return

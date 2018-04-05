@@ -10,13 +10,13 @@ import subprocess
 from numbers import Number
 from decimal import Decimal
 
-import modelmanager
+import modelmanager as mm
 
 from swimpy import utils
 from swimpy import defaultsettings
 
 
-class Project(modelmanager.Project):
+class Project(mm.Project):
     """The project object with settings attached.
 
     All settings are available as attributes, methods, properties and plugin
@@ -33,13 +33,11 @@ class Project(modelmanager.Project):
     """
 
     def __init__(self, projectdir='.', **settings):
+        defaults = mm.settings.load_settings(defaultsettings)
+        for k, v in defaults.items():
+            settings.setdefault(k, v)
         super(Project, self).__init__(projectdir, **settings)
-        # add defaults if not already set
-        self.defaults = modelmanager.settings.load_settings(defaultsettings)
-        alset = [a for t in self.settings.types
-                 for a in getattr(self.settings, t).keys()]
-        defaults = {k: v for k, v in self.defaults.items() if k not in alset}
-        self.settings(**defaults)
+        self.settings.defaults = defaults
         return
 
     def run(self, save=True, cluster=False, **save_run_kwargs):
@@ -306,14 +304,13 @@ def setup(projectdir='.', resourcedir='swimpy'):
     -------
     Project instance.
     """
-    mmproject = modelmanager.project.setup(projectdir, resourcedir)
+    mmproject = mm.project.setup(projectdir, resourcedir)
     # swim specific customisation of resourcedir
     defaultsdir = osp.join(osp.dirname(__file__), 'resources')
-    modelmanager.utils.copy_resources(defaultsdir, mmproject.resourcedir,
-                                      overwrite=True)
+    mm.utils.copy_resources(defaultsdir, mmproject.resourcedir, overwrite=True)
     # FIXME rename templates with project name in filename
     for fp in ['cod', 'bsn']:
-        ppn = modelmanager.utils.get_paths_pattern('input/*.' + fp, projectdir)
+        ppn = mm.utils.get_paths_pattern('input/*.' + fp, projectdir)
         tp = osp.join(mmproject.resourcedir, 'templates')
         os.rename(osp.join(tp, 'input/%s.txt' % fp), osp.join(tp, ppn[0]))
     # load as a swim project

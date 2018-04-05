@@ -72,7 +72,7 @@ class ProjectOrRunData(pd.DataFrame):
     A representation of data read from either the SWIM project or Run instance.
     """
     swim_path = None
-    plugin_functions = []
+    plugin = []
 
     def __init__(self, projectorrun):
         from swimpy.project import Project  # avoid circular import
@@ -165,7 +165,7 @@ class ReadWriteDataFrame(pd.DataFrame):
     the class with a ``@modelmanager.utils.propertyplugin``.
     """
     path = None
-    plugin_functions = []
+    plugin = []
 
     def __init__(self, project):
         # init DataFrame

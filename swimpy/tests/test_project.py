@@ -26,15 +26,11 @@ class Processing:
 
 class Run:
     def test_project_run_data(self):
-        from swimpy.utils import ProjectOrRunData
-        projectprops = self.project.settings.properties
-        resultproperties = [n for n, p in projectprops.items()
-                            if (hasattr(p, 'isplugin') and
-                                ProjectOrRunData in p.plugin_class.__bases__)]
+        resultproperties = self.project.output.interfaces.keys()
         self.assertGreater(len(resultproperties), 0)
         for r in sorted(resultproperties):
-            df_project = getattr(self.project, r)
-            self.project.settings(resultfile_functions=[r])
+            df_project = getattr(self.project.output, r)
+            self.project.settings(resultfile_functions=['output.'+r])
             run = self.project.save_run(notes='test saved ' + r)
             df_run = getattr(run, r)
             self.assertTrue(all(df_project.index == df_run.index))
