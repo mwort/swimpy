@@ -2,4 +2,4 @@ testjob:
   tags:
     - python27
     - test
-script: "echo $HOSTNAME; echo $PWD; ls"
+  script: "echo $HOSTNAME; echo $PWD; ls"
