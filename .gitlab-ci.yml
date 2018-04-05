@@ -1,9 +1,5 @@
-# Config file for automatic testing on gitlab
-
-build:
-    - apt-get python-pip
-    - pip install install tox
-
-# Command to run tests, e.g. python setup.py test
-test:
-    - tox
+testjob:
+  tags:
+    - python27
+    - test
+script: "echo $HOSTNAME; echo $PWD; ls"
