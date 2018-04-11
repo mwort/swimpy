@@ -147,7 +147,7 @@ class ReadWriteDataFrame(pd.DataFrame):
 
             def read(self, **kw):
                 data = pd.read_table(self.path)
-                super(ProjectData, self).__init__(data)
+                pd.DataFrame.__init__(self, data)
                 return
             def write(self, **kw):
                 # possible error/consistency checking
@@ -167,7 +167,7 @@ class ReadWriteDataFrame(pd.DataFrame):
     path = None
     plugin = []
 
-    def __init__(self, project):
+    def __init__(self, project, oninit='read', **kwargs):
         # init DataFrame
         pd.DataFrame.__init__(self)
         self.name = self.__class__.__name__
@@ -175,26 +175,26 @@ class ReadWriteDataFrame(pd.DataFrame):
         self.path = osp.join(self.project.projectdir, self.path)
         errmsg = self.name + 'file does not exist: ' + self.path
         assert osp.exists(self.path), errmsg
-        # read file
-        self.read()
+        if oninit:
+            getattr(self, oninit)(**kwargs)
         return
 
-    def __call__(self, data=None, **setvalues):
+    def __call__(self, data=None, **set):
         """
         Assign read data from file and optionally set and write new values.
 
         data: <2D-array-like>
             Set entire dataframe.
-        **setvalues: <array-like> | <dict>
-            Set columns or rows by kew. Subset of values can be set by parsing
+        **set: <array-like> | <dict>
+            Set columns or rows by key. Subset of values can be set by parsing
             a dict. Creates new row if key is neither in columns or index.
         """
         if data is not None:
             pd.DataFrame.__init__(self, data)
             self.write()
-        elif setvalues:
+        elif set:
             self.read()
-            for k, v in setvalues.items():
+            for k, v in set.items():
                 ix = slice(None)
                 if type(v) == dict:
                     ix, v = zip(*v.items())
