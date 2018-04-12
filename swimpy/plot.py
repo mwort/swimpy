@@ -70,3 +70,26 @@ def plot_mean_waterbalance(df, ax=plt.gca(), **barkwargs):
     ax.set_ylabel('mm per year')
     ax.set_title('Catchment mean water balance')
     return bars
+
+
+def plot_temperature_range(series, ax=plt.gca(), minmax=[], **kw):
+    if hasattr(series.index, 'to_timestamp'):
+        series.index = series.index.to_timestamp()
+    if minmax:
+        mmfill = ax.fill_between(series.index, minmax[0], minmax[1],
+                                 alpha=0.3, color='k')
+    line = ax.plot(series.index, series, **kw)
+    ax.set_ylabel('Temperature [C]')
+    ax.set_xlabel('Time')
+    return (line, mmfill) if minmax else line
+
+
+def plot_precipitation_bars(series, ax=plt.gca(), **barkwargs):
+    if hasattr(series.index, 'to_timestamp'):
+        if series.index.freq == 'm':
+            barkwargs.setdefault('width', series.index.days_in_month*0.8)
+        series.index = series.index.to_timestamp()
+    bars = ax.bar(series.index, series, **barkwargs)
+    ax.set_ylabel('Precipitation [mm]')
+    ax.set_xlabel('Time')
+    return bars

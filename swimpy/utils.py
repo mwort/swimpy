@@ -223,3 +223,33 @@ class ReadWriteDataFrame(pd.DataFrame):
         Override me. Error checking and writing to file should be done here.
         """
         raise NotImplementedError('Writing of %s not implemented.' % self.name)
+
+
+def aggregate_time(obj, freq='d', regime=False, resamplemethod='mean'):
+    """Resample a DataFrame or Series to a different frequency and/or regime.
+
+    Arguments
+    ---------
+    obj : pd.Series | pd.DataFrame
+        Must have a time-like index.
+    freq : <pandas frequency>
+        Aggregate to different frequency, any pandas frequency string
+        or object is allowed.
+    regime : bool
+        Aggregate to month or day-of-year mean regime. freq must be 'a' | 'd'.
+    resamplemethod :
+        The aggregator for the resample method. See DataFrame.groupby.agg.
+    """
+    assert hasattr(obj, 'index') and hasattr(obj.index, 'freq')
+    if freq != obj.index.freq:
+        obj = obj.resample(freq).aggregate(resamplemethod)
+    if regime:
+        if freq == 'd':
+            igb = obj.index.dayofyear
+        elif freq == 'm':
+            igb = obj.index.month
+        else:
+            raise TypeError("freq must be either 'm' or 'd' with "
+                            "regime=True.")
+        obj = obj.groupby(igb).mean()
+    return obj
