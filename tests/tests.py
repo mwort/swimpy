@@ -71,7 +71,7 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
         from swimpy.input import subcatch_parameters as SubcatchParameters
         # read
         sbc = self.project.subcatch_parameters
-        self.assertIsInstance(sbc, SubcatchParameters)
+        self.assertIsInstance(sbc, SubcatchParameters.plugin)
         BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN']
         self.assertIsInstance(BLKS, pd.Series)
         roc2 = self.project.subcatch_parameters['roc2']
@@ -191,7 +191,7 @@ class TestGrass(ProjectTestCase):
     class TestGrassTbl(swimpy.grass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
         key = 'NAME'
-        add_attributes = {'obs': {'HOF': pd.Series([12,2,2,4])}}
+        add_attributes = {'obs': {'HOF': pd.Series([12, 2, 2, 4])}}
 
     def test_session(self):
         from swimpy.grass import ProjectGrassSession
