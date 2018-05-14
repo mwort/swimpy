@@ -40,7 +40,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
     Daily discharge of selected stations.
     """
     swim_path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
-    plugin_functions = []
+    plugin = []
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -59,7 +59,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
 
 class subbasin_daily_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'subd.prn')
-    plugin_functions = []
+    plugin = []
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -121,7 +121,7 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
 
 class catchment_annual_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bay.prn')
-    plugin_functions = ['plot_mean', 'print_mean']
+    plugin = ['plot_mean', 'print_mean']
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -136,9 +136,9 @@ class catchment_annual_waterbalance(utils.ProjectOrRunData):
         df.index = df.index.to_period(freq='a')
         return df
 
-    def plot_mean(self, ax=plt.gca(), output=None, size=(160, 125)):
-        bars = plot.plot_mean_waterbalance(self)
-        plot.save_or_show(output=output, **(dict(size=size) if size else {}))
+    def plot_mean(self, ax=plt.gca(), output=None):
+        bars = plot.plot_waterbalance(self.mean(), ax=ax)
+        plot.save_or_show(output)
         return bars
 
     def print_mean(self):

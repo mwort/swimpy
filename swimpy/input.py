@@ -144,7 +144,7 @@ class climate(object):
             return aggregated
 
         def plot_temperature(self, ax=pl.gca(), regime=False, freq='d',
-                             minmax=True, output=None, **kw):
+                             minmax=True, output=None, **linekw):
             """Line plot of mean catchment temperature.
 
             Arguments
@@ -165,16 +165,16 @@ class climate(object):
             clim = self.aggregate(variables=['tmean', 'tmin', 'tmax'],
                                   freq=freq, regime=regime)
             minmax = [clim.tmin, clim.tmax] if minmax else []
-            line = plot.plot_temperature_range(clim.tmean, minmax=minmax, **kw)
+            line = plot.plot_temperature_range(clim.tmean, ax, minmax=minmax,
+                                               **linekw)
             if regime:
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
-            savekw = (output if type(output) is dict else dict(output=output))
-            plot.save_or_show(**savekw)
+            plot.save_or_show(output)
             return line
 
         def plot_precipitation(self, ax=pl.gca(), regime=False, freq='d',
-                               output=None, **kw):
+                               output=None, **barkwargs):
             """Bar plot of mean catchment precipitation.
 
             Arguments
@@ -187,15 +187,14 @@ class climate(object):
                 Any pandas frequency to aggregate to.
             output : str path | dict
                 Path to writeout or dict of keywords to parse to save_or_show.
-            **kw :
+            **barkwargs :
                 Parse any keyword to the bar plot function.
             """
             clim = self.aggregate(variables=['precipitation'],
                                   freq=freq, regime=regime)['precipitation']
-            bars = plot.plot_precipitation_bars(clim, ax, **kw)
+            bars = plot.plot_precipitation_bars(clim, ax, **barkwargs)
             if regime:
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
-            savekw = (output if type(output) is dict else dict(output=output))
-            plot.save_or_show(**savekw)
+            plot.save_or_show(output)
             return bars

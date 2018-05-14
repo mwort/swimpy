@@ -15,6 +15,7 @@ import unittest
 import cProfile, pstats
 
 import pandas as pd
+import pylab as pl
 
 import swimpy
 from swimpy.tests import test_project
@@ -223,6 +224,28 @@ class TestGrass(ProjectTestCase):
         self.project.testgrasstbl.write()
         self.project.testgrasstbl.read()
         self.assertEqual(self.project.testgrasstbl['new'].mean(), 1000)
+
+
+class TestPlotting(ProjectTestCase):
+    plot_prefix = 'plot_'
+
+    @property
+    def plot_functions(self):
+        fitems = self.project.settings.functions.items()
+        fd = {n: f for n, f in fitems
+              if n.split('.')[-1].startswith(self.plot_prefix)}
+        return fd
+
+    def test_output(self):
+        print('Testing plot functions...')
+        for a, f in self.plot_functions.items():
+            print(a)
+            self.assertIn('ax', f.optional_arguments)
+            self.assertIn('output', f.optional_arguments)
+            ppath = osp.join(self.project.projectdir, a+'.png')
+            fig, ax = pl.subplots()
+            self.assertIsNotNone(self.project.settings[a](ax=ax, output=ppath))
+        return
 
 
 if __name__ == '__main__':
