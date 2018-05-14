@@ -6,9 +6,10 @@ Project unspecific test are also included through inherited classes from the
 swimpy.tests package that serves as a test suite to check the validity of any
 project setup.
 """
-
+from __future__ import print_function, absolute_import
 import os
 import os.path as osp
+import sys
 import subprocess
 import shutil
 import unittest
@@ -173,6 +174,12 @@ class TestRun(ProjectTestCase, test_project.Run):
     pass
 
 
+def skip_if_py3(f):
+    """Unittest skip test if PY3 decorator."""
+    PY2 = sys.version_info < (3, 0)
+    return f if PY2 else lambda self: print('not run in PY3.')
+
+
 class TestGrass(ProjectTestCase):
     grass_settings = dict(
         grass_db = TEST_GRASSDB,
@@ -205,6 +212,7 @@ class TestGrass(ProjectTestCase):
             self.assertIn(self.grass_settings['stations'].encode(), vects)
         return
 
+    @skip_if_py3
     def test_mswim_setup(self):
         files_created = [osp.join(self.project.projectdir, 'input', p)
                          for p in self.files_created]
@@ -216,6 +224,7 @@ class TestGrass(ProjectTestCase):
         for p in files_created:
             self.assertTrue(osp.exists(p))
 
+    @skip_if_py3
     def test_attribute_table(self):
         self.project.settings(self.TestGrassTbl, **self.grass_settings)
         self.assertTrue(hasattr(self.project, 'testgrasstbl'))
