@@ -140,7 +140,7 @@ class climate(object):
             vars = variables or self.variables
             subs = self[vars].mean(axis=1, level='variable')
             aggm = {v: 'sum' if v == 'precipitation' else 'mean' for v in vars}
-            aggregated = utils.aggregate_time(subs, resamplemethod=aggm, **kw)
+            aggregated = utils.aggregate_time(subs, resample_method=aggm, **kw)
             return aggregated
 
         def plot_temperature(self, ax=pl.gca(), regime=False, freq='d',

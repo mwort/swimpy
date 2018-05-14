@@ -225,7 +225,8 @@ class ReadWriteDataFrame(pd.DataFrame):
         raise NotImplementedError('Writing of %s not implemented.' % self.name)
 
 
-def aggregate_time(obj, freq='d', regime=False, resamplemethod='mean'):
+def aggregate_time(obj, freq='d', regime=False, resample_method='mean',
+                   regime_method='mean'):
     """Resample a DataFrame or Series to a different frequency and/or regime.
 
     Arguments
@@ -237,12 +238,14 @@ def aggregate_time(obj, freq='d', regime=False, resamplemethod='mean'):
         or object is allowed.
     regime : bool
         Aggregate to month or day-of-year mean regime. freq must be 'a' | 'd'.
-    resamplemethod :
+    resample_method :
         The aggregator for the resample method. See DataFrame.groupby.agg.
+    regime_method :
+        The aggregator for the regime groupby.agg. See DataFrame.groupby.agg.
     """
     assert hasattr(obj, 'index') and hasattr(obj.index, 'freq')
     if freq != obj.index.freq:
-        obj = obj.resample(freq).aggregate(resamplemethod)
+        obj = obj.resample(freq).aggregate(resample_method)
     if regime:
         if freq == 'd':
             igb = obj.index.dayofyear
@@ -251,5 +254,5 @@ def aggregate_time(obj, freq='d', regime=False, resamplemethod='mean'):
         else:
             raise TypeError("freq must be either 'm' or 'd' with "
                             "regime=True.")
-        obj = obj.groupby(igb).mean()
+        obj = obj.groupby(igb).agg(regime_method)
     return obj
