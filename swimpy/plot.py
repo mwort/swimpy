@@ -124,6 +124,14 @@ def plot_precipitation_bars(series, ax=plt.gca(), **barkwargs):
     return bars
 
 
+def plot_discharge(series, ax=plt.gca(), **linekwargs):
+    """Plot several discharge lines."""
+    lines = ax.plot(_index_to_timestamp(series.index), series, **linekwargs)
+    ax.set_ylabel('Discharge [m$^3$s$^{-1}$]')
+    ax.set_xlabel('Time')
+    return lines
+
+
 def _index_to_timestamp(index):
     """Convert a pandas index to timestamps if needed.
     Needed to parse pandas PeriodIndex to pyplot plotting functions."""

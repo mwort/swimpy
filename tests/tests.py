@@ -28,9 +28,9 @@ TEST_GRASSDB = 'grassdb'
 MSWIM_GRASSDB = '../dependencies/m.swim/test/grassdb'
 
 if not os.path.exists(SWIM_TEST_PROJECT):
-    shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT, symlinks=True)
+    shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT)
 if not os.path.exists(TEST_GRASSDB):
-    shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB, symlinks=True)
+    shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB)
 
 
 class TestSetup(unittest.TestCase):
@@ -236,7 +236,7 @@ class TestGrass(ProjectTestCase):
 
 
 class TestPlotting(ProjectTestCase):
-    plot_prefix = 'plot_'
+    plot_prefix = 'plot'
 
     @property
     def plot_functions(self):

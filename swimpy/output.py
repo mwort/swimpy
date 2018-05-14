@@ -40,7 +40,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
     Daily discharge of selected stations.
     """
     swim_path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
-    plugin = []
+    plugin = ['plot']
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -55,6 +55,54 @@ class station_daily_discharge(utils.ProjectOrRunData):
         df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='d')
         return df
+
+    def plot(self, ax=plt.gca(), stations=None, regime=False,
+             minmax=False, freq='d', output=None, **linekw):
+        """Line plot of daily discharge of selected stations.
+
+        Arguments
+        ---------
+        ax : <matplotlib.Axes>, optional
+            Axes to plot to. Default is the current axes.
+        stations: None | str | iterable
+            Only show single (str) or subset (iterable) of stations. If None,
+            show all found in file.
+        regime : bool
+            Plot regime. freq must be 'd' or 'm'.
+        freq : <pandas frequency>
+            Any pandas frequency to aggregate to.
+        minmax : bool | dict
+            Show min-max range if regime=True. Maybe a dictionary kwargs parsed
+            to ax.fill_between.
+        output : str path | dict
+            Path to writeout or dict of keywords to parse to save_or_show.
+        **linekw :
+            Parse any keyword to the line plot function.
+        """
+        if stations is None:
+            stations = self.columns[1:]  # first column is observed
+        else:
+            assert type(stations) == str or len(stations) > 0
+            stations = [stations] if type(stations) == str else stations
+
+        data = {}
+        for st in ['mean'] + (['min', 'max'] if regime and minmax else []):
+            data[st] = utils.aggregate_time(self[stations], regime=regime,
+                                            freq=freq, regime_method=st)
+        # show range first if required
+        if regime and minmax:
+            for s in stations:
+                fbkw = minmax if type(minmax) == dict else {}
+                fbkw.setdefault("alpha", 0.5)
+                ax.fill_between(data['min'][s].index, data['max'][s], **fbkw)
+        for s in stations:
+            line = plot.plot_discharge(data['mean'][s], ax, **linekw)
+
+        if regime:
+            xlabs = {'d': 'Day of year', 'm': 'Month'}
+            ax.set_xlabel(xlabs[freq])
+        plot.save_or_show(output)
+        return line
 
 
 class subbasin_daily_waterbalance(utils.ProjectOrRunData):
