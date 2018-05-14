@@ -79,13 +79,13 @@ def save_or_show(output=None, figure=plt.gcf(), **savekwargs):
     return
 
 
-def plot_waterbalance(df, ax=plt.gca(), **barkwargs):
+def plot_waterbalance(series, ax=plt.gca(), **barkwargs):
     """Bar plot of water balance terms.
 
     Arguments:
     ----------
-    df : pd.DataFrame
-        Will be averaged over index, column names will be used as x labels.
+    df : pd.Series
+        Values to plot. Index will be used as x labels.
     ax : plt.Axes, optional
         An axes to plot to. If None given, the current axes are used.
     **barkwargs :
@@ -93,7 +93,7 @@ def plot_waterbalance(df, ax=plt.gca(), **barkwargs):
 
     Returns: bars
     """
-    bars = df.plot.bar(ax=ax, **barkwargs)
+    bars = series.plot.bar(ax=ax, **barkwargs)
     ax.set_ylabel('mm per year')
     ax.set_title('Catchment mean water balance')
     return bars
@@ -102,12 +102,11 @@ def plot_waterbalance(df, ax=plt.gca(), **barkwargs):
 def plot_temperature_range(series, ax=plt.gca(), minmax=[], **linekwargs):
     """Plot temperature with optional min-max range."""
     assert len(minmax) in [0, 2]
-    if hasattr(series.index, 'to_timestamp'):
-        series.index = series.index.to_timestamp()
     if minmax:
         kw = dict(alpha=0.3, color='k')
-        mmfill = ax.fill_between(series.index, minmax[0], minmax[1], **kw)
-    line = ax.plot(series.index, series, **linekwargs)
+        mmfill = ax.fill_between(_index_to_timestamp(series.index), minmax[0],
+                                 minmax[1], **kw)
+    line = ax.plot(_index_to_timestamp(series.index), series, **linekwargs)
     ax.set_ylabel('Temperature [C]')
     ax.set_xlabel('Time')
     return (line, mmfill) if minmax else line
@@ -119,8 +118,13 @@ def plot_precipitation_bars(series, ax=plt.gca(), **barkwargs):
         freqstr = series.index.freqstr.split('-')[0][-1].lower()  # last letter
         width = {'a': 365, 'm': series.index.days_in_month, 'd': 1}
         barkwargs.setdefault('width', width[freqstr]*0.8)
-        series.index = series.index.to_timestamp()
-    bars = ax.bar(series.index, series, **barkwargs)
+    bars = ax.bar(_index_to_timestamp(series.index), series, **barkwargs)
     ax.set_ylabel('Precipitation [mm]')
     ax.set_xlabel('Time')
     return bars
+
+
+def _index_to_timestamp(index):
+    """Convert a pandas index to timestamps if needed.
+    Needed to parse pandas PeriodIndex to pyplot plotting functions."""
+    return index.to_timestamp() if hasattr(index, 'to_timestamp') else index
