@@ -247,13 +247,15 @@ class TestPlotting(ProjectTestCase):
 
     def test_output(self):
         print('Testing plot functions...')
+        fig = pl.figure()
         for a, f in self.plot_functions.items():
+            fig.clear()
             print(a)
             self.assertIn('ax', f.optional_arguments)
             self.assertIn('output', f.optional_arguments)
             ppath = osp.join(self.project.projectdir, a+'.png')
-            fig, ax = pl.subplots()
-            self.assertIsNotNone(self.project.settings[a](ax=ax, output=ppath))
+            self.assertIsNotNone(self.project.settings[a](output=ppath))
+            self.assertTrue(osp.exists(ppath))
         return
 
 

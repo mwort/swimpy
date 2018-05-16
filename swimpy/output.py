@@ -19,13 +19,10 @@ Conventions:
 - all read from_* methods should parse **readkwargs to the pandas.read call
 """
 import os.path as osp
-import sys
 import inspect
 import datetime as dt
 
 import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 from modelmanager.utils import propertyplugin
 
 from swimpy import utils, plot
@@ -56,7 +53,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
         df.index = df.index.to_period(freq='d')
         return df
 
-    def plot(self, ax=plt.gca(), stations=None, regime=False,
+    def plot(self, ax=None, stations=None, regime=False,
              minmax=False, freq='d', output=None, **linekw):
         """Line plot of daily discharge of selected stations.
 
@@ -184,7 +181,7 @@ class catchment_annual_waterbalance(utils.ProjectOrRunData):
         df.index = df.index.to_period(freq='a')
         return df
 
-    def plot_mean(self, ax=plt.gca(), output=None):
+    def plot_mean(self, ax=None, output=None):
         bars = plot.plot_waterbalance(self.mean(), ax=ax)
         plot.save_or_show(output)
         return bars

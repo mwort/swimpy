@@ -21,7 +21,7 @@ SAVEFIG_DEFAULTS = dict(
 )
 
 
-def save(output, figure=plt.gcf(), **savekwargs):
+def save(output, figure=None, **savekwargs):
     """Convenience function to set figure size and save a matplotlib figure.
 
     Arguements:
@@ -39,6 +39,7 @@ def save(output, figure=plt.gcf(), **savekwargs):
 
     Returns: None
     """
+    figure = figure or plt.gcf()
     if type(output) is dict:
         op = output.pop('output')
         savekwargs.update(output)
@@ -54,7 +55,7 @@ def save(output, figure=plt.gcf(), **savekwargs):
     return
 
 
-def save_or_show(output=None, figure=plt.gcf(), **savekwargs):
+def save_or_show(output=None, figure=None, **savekwargs):
     """Convenience function to set figure size and save (if output given) or
     show figure (if run from commandline).
 
@@ -79,7 +80,7 @@ def save_or_show(output=None, figure=plt.gcf(), **savekwargs):
     return
 
 
-def plot_waterbalance(series, ax=plt.gca(), **barkwargs):
+def plot_waterbalance(series, ax=None, **barkwargs):
     """Bar plot of water balance terms.
 
     Arguments:
@@ -93,15 +94,17 @@ def plot_waterbalance(series, ax=plt.gca(), **barkwargs):
 
     Returns: bars
     """
+    ax = plt.gca()
     bars = series.plot.bar(ax=ax, **barkwargs)
     ax.set_ylabel('mm per year')
     ax.set_title('Catchment mean water balance')
     return bars
 
 
-def plot_temperature_range(series, ax=plt.gca(), minmax=[], **linekwargs):
+def plot_temperature_range(series, ax=None, minmax=[], **linekwargs):
     """Plot temperature with optional min-max range."""
     assert len(minmax) in [0, 2]
+    ax = ax or plt.gca()
     if minmax:
         kw = dict(alpha=0.3, color='k')
         mmfill = ax.fill_between(_index_to_timestamp(series.index), minmax[0],
@@ -112,8 +115,9 @@ def plot_temperature_range(series, ax=plt.gca(), minmax=[], **linekwargs):
     return (line, mmfill) if minmax else line
 
 
-def plot_precipitation_bars(series, ax=plt.gca(), **barkwargs):
+def plot_precipitation_bars(series, ax=None, **barkwargs):
     """Plot precipitation as bars."""
+    ax = ax or plt.gca()
     if hasattr(series.index, 'to_timestamp'):
         freqstr = series.index.freqstr.split('-')[0][-1].lower()  # last letter
         width = {'a': 365, 'm': series.index.days_in_month, 'd': 1}
@@ -124,8 +128,9 @@ def plot_precipitation_bars(series, ax=plt.gca(), **barkwargs):
     return bars
 
 
-def plot_discharge(series, ax=plt.gca(), **linekwargs):
+def plot_discharge(series, ax=None, **linekwargs):
     """Plot several discharge lines."""
+    ax = ax or plt.gca()
     lines = ax.plot(_index_to_timestamp(series.index), series, **linekwargs)
     ax.set_ylabel('Discharge [m$^3$s$^{-1}$]')
     ax.set_xlabel('Time')

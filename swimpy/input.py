@@ -4,7 +4,6 @@ SWIM input functionality.
 import os.path as osp
 
 import pandas as pd
-from matplotlib import pylab as pl
 from modelmanager.utils import propertyplugin as _propertyplugin
 from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
 
@@ -143,7 +142,7 @@ class climate(object):
             aggregated = utils.aggregate_time(subs, resample_method=aggm, **kw)
             return aggregated
 
-        def plot_temperature(self, ax=pl.gca(), regime=False, freq='d',
+        def plot_temperature(self, ax=None, regime=False, freq='d',
                              minmax=True, output=None, **linekw):
             """Line plot of mean catchment temperature.
 
@@ -173,7 +172,7 @@ class climate(object):
             plot.save_or_show(output)
             return line
 
-        def plot_precipitation(self, ax=pl.gca(), regime=False, freq='d',
+        def plot_precipitation(self, ax=None, regime=False, freq='d',
                                output=None, **barkwargs):
             """Bar plot of mean catchment precipitation.
 
