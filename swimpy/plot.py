@@ -4,13 +4,19 @@ SWIM related plotting functions.
 Standalone functions to create plots for SWIM input/output. They are used
 throught the SWIMpy package but collected here to enable reuse.
 
-All functions should accept an optional ax=plt.gca() argument to plot to, i.e.
-defaulting to the current axes.
+All functions should accept an optional ax=None argument to plot to, i.e.
+defaulting to the current axes (ax = ax or plt.gca()).
 """
 import sys
+import os
+from functools import wraps
 
+from modelmanager.settings import FunctionInfo
 import matplotlib as mpl
+if len(sys.argv) > 1 and sys.argv[1] == 'browser':
+    mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 
 SAVEFIG_DEFAULTS = dict(
     bbox_inches='tight',
@@ -26,10 +32,8 @@ def save(output, figure=None, **savekwargs):
 
     Arguements:
     -----------
-    output : str | dict
-        Path to save figure to. Extension determines format. May also be a dict
-        of savekwargs including an ``output`` keyword with an output path.
-        See **savekwargs for options.
+    output : str
+        Path to save figure to. Extension determines format.
     figure : matplotlib.Figure object, optional
         Defaults to current figure.
     **savekwargs :
@@ -40,10 +44,6 @@ def save(output, figure=None, **savekwargs):
     Returns: None
     """
     figure = figure or plt.gcf()
-    if type(output) is dict:
-        op = output.pop('output')
-        savekwargs.update(output)
-        output = op
     assert type(output) == str, 'output %r must be string path.'
     for d, v in SAVEFIG_DEFAULTS.items():
         savekwargs.setdefault(d, v)
@@ -55,29 +55,56 @@ def save(output, figure=None, **savekwargs):
     return
 
 
-def save_or_show(output=None, figure=None, **savekwargs):
-    """Convenience function to set figure size and save (if output given) or
-    show figure (if run from commandline).
+def plot_function(function):
+    """A decorator to enforce and handle generic plot function tasks.
 
-    Arguements:
-    -----------
-    output : None | str | dict, optional
-        Path to save figure to. Extension determines format. May also be a dict
-        of savekwargs including an ``output`` keyword with an output path.
-        swimpy.plot.save options.
-    figure : matplotlib.Figure object, optional
-        Defaults to current figure.
-    **savekwargs :
-        Any keyword argument parsed to swimpy.plot.save()
-
-    Returns: None
+    - enforces name starting with 'plot'.
+    - enforces output=None and ax=None arugments.
+    - allows saving figure to file with output argument that may either be
+      string path or a dict with kwargs to save.
+    - displays interactive plot if executed from commandline.
+    - saves current figure to a temp path when executed in browser API.
     """
-    if output:
-        save(output, figure, **savekwargs)
-    # if from commandline, show figure
-    elif sys.argv[0].endswith('swimpy'):
-        plt.show(block=True)
-    return
+    finfo = FunctionInfo(function)
+    oargs = dict(zip(finfo.optional_arguments, finfo.defaults))
+    errmsg = finfo.name + ' has no optional argument "%s=None".'
+    assert 'output' in oargs and oargs['output'] is None, errmsg % 'output'
+    assert 'ax' in oargs and oargs['ax'] is None, errmsg % 'ax'
+    errmsg = finfo.name + ' should start with "plot".'
+    assert finfo.name.startswith('plot'), errmsg
+
+    @wraps(function)
+    def f(*args, **kwargs):
+        result = function(*args, **kwargs)
+        # unpack savekwargs
+        savekwargs = {}
+        output = kwargs.get('output', None)
+        ax = kwargs.get('ax', None)
+        figure = ax.get_figure() if ax else plt.gcf()
+        if type(output) is dict:
+            op = output.pop('output', None)
+            savekwargs.update(output)
+            output = op
+        # save to file
+        if output:
+            save(output, figure, **savekwargs)
+        # display if from commandline or browser api
+        elif sys.argv[0].endswith('swimpy'):
+            # in Django API
+            if len(sys.argv) > 1 and sys.argv[1] == 'browser':
+                imgpath = os.tmpnam() + '.png'
+                save(imgpath, figure, **savekwargs)
+                figure.clear()
+                return imgpath
+            # in CLI
+            plt.show(block=True)
+        return result
+
+    # add signiture if PY2
+    if sys.version_info < (3, 0):
+        f.__doc__ = '%s(%s)\n' % (finfo.name, finfo.signiture) + finfo.doc
+        f.decorated_function = function
+    return f
 
 
 def plot_waterbalance(series, ax=None, **barkwargs):

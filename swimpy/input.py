@@ -121,9 +121,9 @@ class climate(object):
 
         def print_stats(self):
             """Print statistics for all variables."""
-            stats = self.mean(axis=1, level=0).describe().round(2)
-            print(stats.to_string())
-            return
+            stats = self.mean(axis=1, level=0).describe().round(2).to_string()
+            print(stats)
+            return stats
 
         def aggregate(self, variables=[], **kw):
             """Mean data over all subbasins and optionally subset and aggregate
@@ -142,6 +142,7 @@ class climate(object):
             aggregated = utils.aggregate_time(subs, resample_method=aggm, **kw)
             return aggregated
 
+        @plot.plot_function
         def plot_temperature(self, ax=None, regime=False, freq='d',
                              minmax=True, output=None, **linekw):
             """Line plot of mean catchment temperature.
@@ -169,9 +170,9 @@ class climate(object):
             if regime:
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
-            plot.save_or_show(output)
             return line
 
+        @plot.plot_function
         def plot_precipitation(self, ax=None, regime=False, freq='d',
                                output=None, **barkwargs):
             """Bar plot of mean catchment precipitation.
@@ -195,5 +196,4 @@ class climate(object):
             if regime:
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
-            plot.save_or_show(output)
             return bars

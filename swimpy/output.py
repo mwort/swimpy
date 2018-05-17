@@ -27,6 +27,7 @@ from modelmanager.utils import propertyplugin
 
 from swimpy import utils, plot
 
+from matplotlib import pyplot as plt
 
 RESDIR = 'output/Res'
 GISDIR = 'output/GIS'
@@ -53,6 +54,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
         df.index = df.index.to_period(freq='d')
         return df
 
+    @plot.plot_function
     def plot(self, ax=None, stations=None, regime=False,
              minmax=False, freq='d', output=None, **linekw):
         """Line plot of daily discharge of selected stations.
@@ -76,6 +78,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
         **linekw :
             Parse any keyword to the line plot function.
         """
+        ax = ax or plt.gca()
         if stations is None:
             stations = self.columns[1:]  # first column is observed
         else:
@@ -98,7 +101,6 @@ class station_daily_discharge(utils.ProjectOrRunData):
         if regime:
             xlabs = {'d': 'Day of year', 'm': 'Month'}
             ax.set_xlabel(xlabs[freq])
-        plot.save_or_show(output)
         return line
 
 
@@ -181,15 +183,15 @@ class catchment_annual_waterbalance(utils.ProjectOrRunData):
         df.index = df.index.to_period(freq='a')
         return df
 
+    @plot.plot_function
     def plot_mean(self, ax=None, output=None):
         bars = plot.plot_waterbalance(self.mean(), ax=ax)
-        plot.save_or_show(output)
         return bars
 
     def print_mean(self):
-        mean = self.mean()
-        print(mean.to_string())
-        return
+        mean = self.mean().to_string()
+        print(mean)
+        return mean
 
 
 class output(object):
