@@ -40,7 +40,7 @@ class Project(mm.Project):
         self.settings.defaults = defaults
         return
 
-    def run(self, save=True, cluster=False, **save_run_kwargs):
+    def run(self, save=True, cluster=False, **kw):
         """
         Execute SWIM.
 
@@ -50,7 +50,7 @@ class Project(mm.Project):
             Run save_run after successful execution of SWIM.
         cluster : bool
             False or a job name to submit this run to SLURM.
-        **save_run_kwargs : optional
+        **kw : optional
             Keyword arguments passed to save_run.
 
         Retrurns
@@ -64,7 +64,7 @@ class Project(mm.Project):
         # if submitting to cluster
         if cluster:
             assert type(cluster) is str, "cluster must be a string."
-            self.submit_cluster(cluster, 'run', **save_run_kwargs)
+            self.submit_cluster(cluster, 'run', **kw)
             return
 
         swimcommand = [self.swim, self.projectdir+'/']
@@ -72,7 +72,7 @@ class Project(mm.Project):
         subprocess.check_call(swimcommand)
         # save
         if save:
-            run = self.save_run(**save_run_kwargs)
+            run = self.save_run(**kw)
         else:
             run = None
         # report runtime
@@ -193,7 +193,7 @@ class Project(mm.Project):
             raise IOError(errmsg)
         return f
 
-    def save_run(self, indicators={}, files={}, **run_fields):
+    def save_run(self, indicators={}, files={}, **kw):
         """
         Save the current SWIM input/output as a run in the browser database.
 
@@ -203,7 +203,7 @@ class Project(mm.Project):
             Dictionary of indicator values passed to self.save_resultindicator.
         files : dict
             Dictionary of file values passed to self.save_resultfile.
-        **run_fields : optional
+        **kw : optional
             Set fields of the run browser table. Default fields: notes, tags
 
         Optional settings
@@ -227,7 +227,7 @@ class Project(mm.Project):
         run_kwargs = {'start': dt.date(sty, 1, 1),
                       'end': dt.date(sty + nbyr - 1, 12, 31),
                       'parameters': self.changed_parameters()}
-        run_kwargs.update(run_fields)
+        run_kwargs.update(kw)
         # create run
         run = self.browser.insert('run', **run_kwargs)
 
@@ -312,7 +312,8 @@ def setup(projectdir='.', resourcedir='swimpy'):
     for fp in ['cod', 'bsn']:
         ppn = mm.utils.get_paths_pattern('input/*.' + fp, projectdir)
         tp = osp.join(mmproject.resourcedir, 'templates')
-        os.rename(osp.join(tp, 'input/%s.txt' % fp), osp.join(tp, ppn[0]))
+        if len(ppn) > 0:
+            os.rename(osp.join(tp, 'input/%s.txt' % fp), osp.join(tp, ppn[0]))
     # load as a swim project
     project = Project(projectdir)
     return project

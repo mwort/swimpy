@@ -8,6 +8,7 @@ from modelmanager.utils import propertyplugin as _propertyplugin
 from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
 
 from swimpy import utils, plot
+import matplotlib.pyplot as plt  # after plot
 
 
 @_propertyplugin
@@ -162,6 +163,7 @@ class climate(object):
             **kw :
                 Parse any keyword to the tmean line plot function.
             """
+            ax = ax or plt.gca()
             clim = self.aggregate(variables=['tmean', 'tmin', 'tmax'],
                                   freq=freq, regime=regime)
             minmax = [clim.tmin, clim.tmax] if minmax else []
@@ -190,6 +192,7 @@ class climate(object):
             **barkwargs :
                 Parse any keyword to the bar plot function.
             """
+            ax = ax or plt.gca()
             clim = self.aggregate(variables=['precipitation'],
                                   freq=freq, regime=regime)['precipitation']
             bars = plot.plot_precipitation_bars(clim, ax, **barkwargs)

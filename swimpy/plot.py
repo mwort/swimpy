@@ -8,7 +8,7 @@ All functions should accept an optional ax=None argument to plot to, i.e.
 defaulting to the current axes (ax = ax or plt.gca()).
 """
 import sys
-import os
+import tempfile
 from functools import wraps
 
 from modelmanager.settings import FunctionInfo
@@ -22,8 +22,8 @@ SAVEFIG_DEFAULTS = dict(
     bbox_inches='tight',
     pad_inches=0.03,
     orientation='portrait',
-    dpi=300,
-    size=(160, 125),  # mm
+    dpi=200,
+    size=(180, 120),  # mm
 )
 
 
@@ -92,7 +92,7 @@ def plot_function(function):
         elif sys.argv[0].endswith('swimpy'):
             # in Django API
             if len(sys.argv) > 1 and sys.argv[1] == 'browser':
-                imgpath = os.tmpnam() + '.png'
+                imgpath = tempfile.mkstemp()[1] + '.png'
                 save(imgpath, figure, **savekwargs)
                 figure.clear()
                 return imgpath
@@ -100,10 +100,10 @@ def plot_function(function):
             plt.show(block=True)
         return result
 
+    f.decorated_function = function
     # add signiture if PY2
     if sys.version_info < (3, 0):
         f.__doc__ = '%s(%s)\n' % (finfo.name, finfo.signiture) + finfo.doc
-        f.decorated_function = function
     return f
 
 

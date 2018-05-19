@@ -27,7 +27,7 @@ from modelmanager.utils import propertyplugin
 
 from swimpy import utils, plot
 
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt  # after plot
 
 RESDIR = 'output/Res'
 GISDIR = 'output/GIS'
