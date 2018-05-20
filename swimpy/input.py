@@ -6,6 +6,9 @@ import os.path as osp
 import pandas as pd
 from modelmanager.utils import propertyplugin as _propertyplugin
 from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
+from modelmanager.plugins.pandas import (
+    ReadWriteDataFrame as _ReadWriteDataFrame)
+
 
 from swimpy import utils, plot
 import matplotlib.pyplot as plt  # after plot
@@ -28,7 +31,7 @@ class config_parameters(_TemplatesDict):
 
 
 @_propertyplugin
-class subcatch_parameters(utils.ReadWriteDataFrame):
+class subcatch_parameters(_ReadWriteDataFrame):
     """
     Read or write parameters in the subcatch.prm file.
     """
@@ -58,7 +61,7 @@ class climate(object):
         return
 
     @_propertyplugin
-    class inputdata(utils.ReadWriteDataFrame):
+    class inputdata(_ReadWriteDataFrame):
         """A lazy DataFrame representation of the two 'clim'-files.
 
         Rather than being read on instantiation, .read() and .write() need to
@@ -75,7 +78,7 @@ class climate(object):
             pd.DataFrame.__init__(self)
             self.project = project
             self.path = project.config_parameters['climatedir']
-            utils.ReadWriteDataFrame.__init__(self, project)
+            _ReadWriteDataFrame.__init__(self, project)
             return
 
         def read(self, climdir=None, **kw):

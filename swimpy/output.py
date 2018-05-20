@@ -23,17 +23,19 @@ import datetime as dt
 
 import pandas as pd
 from modelmanager.utils import propertyplugin
+from modelmanager.plugins.pandas import ProjectOrRunData
 
 from swimpy import utils, plot
 
 from matplotlib import pyplot as plt  # after plot
+
 
 RESDIR = 'output/Res'
 GISDIR = 'output/GIS'
 
 
 @propertyplugin
-class station_daily_discharge(utils.ProjectOrRunData):
+class station_daily_discharge(ProjectOrRunData):
     """
     Daily discharge of selected stations.
     """
@@ -105,7 +107,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
 
 
 @propertyplugin
-class subbasin_daily_waterbalance(utils.ProjectOrRunData):
+class subbasin_daily_waterbalance(ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'subd.prn')
     plugin = []
 
@@ -127,7 +129,7 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
 
 
 @propertyplugin
-class catchment_daily_waterbalance(utils.ProjectOrRunData):
+class catchment_daily_waterbalance(ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bad.prn')
 
     @staticmethod
@@ -146,7 +148,7 @@ class catchment_daily_waterbalance(utils.ProjectOrRunData):
 
 
 @propertyplugin
-class catchment_monthly_waterbalance(utils.ProjectOrRunData):
+class catchment_monthly_waterbalance(ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bam.prn')
 
     @staticmethod
@@ -170,7 +172,7 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
 
 
 @propertyplugin
-class catchment_annual_waterbalance(utils.ProjectOrRunData):
+class catchment_annual_waterbalance(ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bay.prn')
     plugin = ['plot_mean', 'print_mean']
 
