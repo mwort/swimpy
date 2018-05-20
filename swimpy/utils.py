@@ -205,7 +205,7 @@ class ReadWriteDataFrame(pd.DataFrame):
             self.write()
         else:
             self.read()
-        return
+        return self
 
     def __repr__(self):
         rpr = '<%s: %s >\n' % (self.name, osp.relpath(self.path))
