@@ -19,3 +19,11 @@ swim = './swim'
 
 # Cluster SLURM arguments
 slurmargs = {'qos': 'short', 'account': 'swim'}
+
+# defaults when saving a figure used in plot.plot_function
+save_figure_defaults = dict(
+    bbox_inches='tight',
+    pad_inches=0.03,
+    dpi=200,
+    size=(180, 120),  # mm
+)

@@ -13,18 +13,10 @@ from functools import wraps
 
 from modelmanager.settings import FunctionInfo
 import matplotlib as mpl
+# needed to use matplotlib in django browser
 if len(sys.argv) > 1 and sys.argv[1] == 'browser':
     mpl.use('Agg')
 import matplotlib.pyplot as plt
-
-
-SAVEFIG_DEFAULTS = dict(
-    bbox_inches='tight',
-    pad_inches=0.03,
-    orientation='portrait',
-    dpi=200,
-    size=(180, 120),  # mm
-)
 
 
 def save(output, figure=None, **savekwargs):
@@ -45,12 +37,11 @@ def save(output, figure=None, **savekwargs):
     """
     figure = figure or plt.gcf()
     assert type(output) == str, 'output %r must be string path.'
-    for d, v in SAVEFIG_DEFAULTS.items():
-        savekwargs.setdefault(d, v)
-    size = savekwargs.pop('size')
-    assert len(size) == 2, 'size must be (width, height) not %r' % size
-    mmpi = 25.4
-    figure.set_size_inches(size[0]/mmpi, size[1]/mmpi)  # (width, hight)
+    size = savekwargs.pop('size', None)
+    if size:
+        assert len(size) == 2, 'size must be (width, height) not %r' % size
+        mmpi = 25.4
+        figure.set_size_inches(size[0]/mmpi, size[1]/mmpi)  # (width, hight)
     figure.savefig(output, **savekwargs)
     return
 
@@ -60,6 +51,9 @@ def plot_function(function):
 
     - enforces name starting with 'plot'.
     - enforces output=None and ax=None arugments.
+    - enforces the method instance (first function argement) to either be a
+      project or have a project attribute
+    - reads savefig_defaults from project
     - allows saving figure to file with output argument that may either be
       string path or a dict with kwargs to save.
     - displays interactive plot if executed from commandline.
@@ -75,16 +69,28 @@ def plot_function(function):
 
     @wraps(function)
     def f(*args, **kwargs):
+        from .project import Project
+        self = args[0]
+        if isinstance(self, Project):
+            project = self
+        elif hasattr(self, 'project'):
+            project = self.project
+        else:
+            em = self+' is not a Project instance or has a project attribute.'
+            raise AttributeError(em)
+        # actually call the function
         result = function(*args, **kwargs)
         # unpack savekwargs
         savekwargs = {}
+        savekwargs.update(project.save_figure_defaults)
         output = kwargs.get('output', None)
-        ax = kwargs.get('ax', None)
-        figure = ax.get_figure() if ax else plt.gcf()
         if type(output) is dict:
             op = output.pop('output', None)
             savekwargs.update(output)
             output = op
+        # get figure
+        ax = kwargs.get('ax', None)
+        figure = ax.get_figure() if ax else plt.gcf()
         # save to file
         if output:
             save(output, figure, **savekwargs)
