@@ -26,11 +26,12 @@ class Processing:
 
 class Run:
     def test_project_run_data(self):
-        resultproperties = self.project.output.interfaces.keys()
+        file_interfaces = self.project.browser.models['run'].file_interfaces
+        resultproperties = file_interfaces['resultfiles'].keys()
         self.assertGreater(len(resultproperties), 0)
         for r in sorted(resultproperties):
-            df_project = getattr(self.project.output, r)
-            self.project.settings(resultfile_functions=['output.'+r])
+            df_project = getattr(self.project, r)
+            self.project.settings(resultfile_functions=[r])
             run = self.project.save_run(notes='test saved ' + r)
             df_run = getattr(run, r)
             self.assertTrue(all(df_project.index == df_run.index))

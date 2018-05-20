@@ -11,8 +11,8 @@ from modelmanager.utils import propertyplugin as _propertyplugin
 from modelmanager.plugins import Browser, Clone, Templates
 from swimpy.grass import Subbasins, Hydrotopes, Routing, Substats
 from swimpy.input import *
+from swimpy.output import *
 from swimpy.tests import Tests
-from swimpy.output import output
 
 # SWIM executable
 swim = './swim'

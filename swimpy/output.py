@@ -19,7 +19,6 @@ Conventions:
 - all read from_* methods should parse **readkwargs to the pandas.read call
 """
 import os.path as osp
-import inspect
 import datetime as dt
 
 import pandas as pd
@@ -33,6 +32,7 @@ RESDIR = 'output/Res'
 GISDIR = 'output/GIS'
 
 
+@propertyplugin
 class station_daily_discharge(utils.ProjectOrRunData):
     """
     Daily discharge of selected stations.
@@ -104,6 +104,7 @@ class station_daily_discharge(utils.ProjectOrRunData):
         return line
 
 
+@propertyplugin
 class subbasin_daily_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'subd.prn')
     plugin = []
@@ -125,6 +126,7 @@ class subbasin_daily_waterbalance(utils.ProjectOrRunData):
         return df
 
 
+@propertyplugin
 class catchment_daily_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bad.prn')
 
@@ -143,6 +145,7 @@ class catchment_daily_waterbalance(utils.ProjectOrRunData):
         return df
 
 
+@propertyplugin
 class catchment_monthly_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bam.prn')
 
@@ -166,6 +169,7 @@ class catchment_monthly_waterbalance(utils.ProjectOrRunData):
         return df
 
 
+@propertyplugin
 class catchment_annual_waterbalance(utils.ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'bay.prn')
     plugin = ['plot_mean', 'print_mean']
@@ -194,13 +198,5 @@ class catchment_annual_waterbalance(utils.ProjectOrRunData):
         return mean
 
 
-class output(object):
-    """Collection of output file interfaces."""
-    def __init__(self, project):
-        self.project = project
-        self.interfaces = {}
-        for n, c in globals().items():
-            if inspect.isclass(c) and utils.ProjectOrRunData in c.__bases__:
-                prop = propertyplugin(c)
-                setattr(self.__class__, n, prop)
-                self.interfaces[n] = prop
+# only import the property plugins on from output import *
+__all__ = [n for n, p in globals().items() if isinstance(p, propertyplugin)]
