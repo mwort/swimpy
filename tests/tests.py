@@ -17,6 +17,7 @@ import cProfile, pstats
 
 import pandas as pd
 import pylab as pl
+from modelmanager.plugins import grass as mmgrass
 
 import swimpy
 from swimpy.tests import test_project
@@ -196,15 +197,14 @@ class TestGrass(ProjectTestCase):
                      'Sub/groundwater.tab', 'Sub/routing.tab',
                      'Sub/subbasin.tab']
 
-    class TestGrassTbl(swimpy.grass.GrassAttributeTable):
+    class TestGrassTbl(mmgrass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
         key = 'NAME'
         add_attributes = {'obs': {'HOF': pd.Series([12, 2, 2, 4])}}
 
     def test_session(self):
-        from swimpy.grass import ProjectGrassSession
         self.project.settings(**self.grass_settings)
-        with ProjectGrassSession(self.project, mapset='PERMANENT') as grass:
+        with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:
             rasts = grass.list_strings('rast')
             vects = grass.list_strings('vect')
             for m in ['elevation', 'landuse', 'soil']:
