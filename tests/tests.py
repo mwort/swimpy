@@ -256,6 +256,21 @@ class TestPlotting(ProjectTestCase):
             self.assertTrue(osp.exists(ppath))
         return
 
+    def test_runs(self):
+        file_interfaces = self.project.browser.models['run'].file_interfaces
+        resfile_interfaces = file_interfaces['resultfiles'].keys()
+        self.project.settings(resultfile_functions=resfile_interfaces)
+        run = self.project.save_run(notes='TestPlotting.test_runs')
+        resfile_plotf = [n for n in self.plot_functions.keys()
+                         if '.'.join(n.split('.')[:-1]) in resfile_interfaces]
+        fig = pl.figure()
+        for a in resfile_plotf:
+            print(a)
+            ppath = osp.join(self.project.projectdir, a+'.png')
+            res = self.project.settings[a](runs=(run.pk,))
+            self.assertEqual(len(res), 2)
+            fig.clear()
+        return
 
 if __name__ == '__main__':
     cProfile.run('unittest.main()', 'pstats')

@@ -192,8 +192,8 @@ class catchment_annual_waterbalance(ProjectOrRunData):
         return df
 
     @plot.plot_function
-    def plot_mean(self, ax=None, runs=None, output=None):
-        bars = plot.plot_waterbalance(self.mean(), ax=ax)
+    def plot_mean(self, ax=None, runs=None, output=None, **barkw):
+        bars = plot.plot_waterbalance(self.mean(), ax=ax, **barkw)
         return bars
 
     def print_mean(self):
