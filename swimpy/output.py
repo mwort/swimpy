@@ -57,14 +57,12 @@ class station_daily_discharge(ProjectOrRunData):
         return df
 
     @plot.plot_function
-    def plot(self, ax=None, stations=None, regime=False,
-             minmax=False, freq='d', runs=None, output=None, **linekw):
+    def plot(self, stations=None, regime=False, freq='d', minmax=False,
+             ax=None, runs=None, output=None, **linekw):
         """Line plot of daily discharge of selected stations.
 
         Arguments
         ---------
-        ax : <matplotlib.Axes>, optional
-            Axes to plot to. Default is the current axes.
         stations: None | str | iterable
             Only show single (str) or subset (iterable) of stations. If None,
             show all found in file.
@@ -75,10 +73,6 @@ class station_daily_discharge(ProjectOrRunData):
         minmax : bool | dict
             Show min-max range if regime=True. Maybe a dictionary kwargs parsed
             to ax.fill_between.
-        output : str path | dict
-            Path to writeout or dict of keywords to parse to save_or_show.
-        runs : iterable | QuerySet
-            Add plot of other runs if they have the same method/plugin.method.
         **linekw :
             Parse any keyword to the line plot function.
         """

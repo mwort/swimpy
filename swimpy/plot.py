@@ -124,11 +124,14 @@ def plot_function(function):
     @functools.wraps(function)
     def f(*args, **kwargs):
         return pf(*args, **kwargs)
-    f.decorated_function = function
     # add signiture to beginning of docstrign if PY2
     if sys.version_info < (3, 0):
         sig = '%s(%s)\n' % (pf.finfo.name, pf.finfo.signiture)
         f.__doc__ = sig + pf.finfo.doc
+    # add generic docs
+    function.__doc__ = (pf.finfo.doc or '') + PlotFunction.additional_docs
+    # attach original function
+    f.decorated_function = function
     return f
 
 
@@ -148,6 +151,18 @@ class PlotFunction(object):
     - displays interactive plot if executed from commandline.
     - saves current figure to a temp path when executed in browser API.
     """
+    additional_docs = """
+
+Plot function arguments:
+------------------------
+ax : <matplotlib.Axes>, optional
+    Axes to plot to. Default is the current axes.
+output : str path | dict
+    Path to writeout or dict of keywords to parse to save_or_show.
+runs : iterable | QuerySet
+    Add plot of other runs if they have the same method/plugin.method.
+    """
+
     def __init__(self, function):
         self.decorated_function = function
         # enforce arugments

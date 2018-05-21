@@ -147,25 +147,18 @@ class climate(object):
             return aggregated
 
         @plot.plot_function
-        def plot_temperature(self, ax=None, regime=False, freq='d',
-                             minmax=True, runs=None, output=None, **linekw):
+        def plot_temperature(self, regime=False, freq='d', minmax=True,
+                             ax=None, runs=None, output=None, **linekw):
             """Line plot of mean catchment temperature.
 
             Arguments
             ---------
-            ax : <matplotlib.Axes>, optional
-                Axes to plot to. Default is the current axes.
             regime : bool
                 Plot regime. freq must be 'd' or 'm'.
             freq : <pandas frequency>
                 Any pandas frequency to aggregate to.
             minmax : bool
                 Show min-max range.
-            runs : iterable | QuerySet
-                Add plot of other runs if they have the same method or
-                plugin.method.
-            output : str path | dict
-                Path to writeout or dict of keywords to parse to save_or_show.
             **kw :
                 Parse any keyword to the tmean line plot function.
             """
@@ -181,23 +174,16 @@ class climate(object):
             return line
 
         @plot.plot_function
-        def plot_precipitation(self, ax=None, regime=False, freq='d',
-                               runs=None, output=None, **barkwargs):
+        def plot_precipitation(self, regime=False, freq='d',
+                               ax=None, runs=None, output=None, **barkwargs):
             """Bar plot of mean catchment precipitation.
 
             Arguments
             ---------
-            ax : <matplotlib.Axes>, optional
-                Axes to plot to. Default is the current axes.
             regime : bool
                 Plot regime. freq must be 'd' or 'm'.
             freq : <pandas frequency>
                 Any pandas frequency to aggregate to.
-            runs : iterable | QuerySet
-                Add plot of other runs if they have the same method or
-                plugin.method.
-            output : str path | dict
-                Path to writeout or dict of keywords to parse to save_or_show.
             **barkwargs :
                 Parse any keyword to the bar plot function.
             """
