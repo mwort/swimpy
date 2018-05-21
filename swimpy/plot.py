@@ -7,6 +7,7 @@ throught the SWIMpy package but collected here to enable reuse.
 All functions should accept an optional ax=None argument to plot to, i.e.
 defaulting to the current axes (ax = ax or plt.gca()).
 """
+from __future__ import print_function, absolute_import
 import sys
 import tempfile
 from functools import wraps
@@ -50,7 +51,7 @@ def plot_function(function):
     """A decorator to enforce and handle generic plot function tasks.
 
     - enforces name starting with 'plot'.
-    - enforces output=None and ax=None arugments.
+    - enforces output=None, runs=None, ax=None arugments.
     - enforces the method instance (first function argement) to either be a
       project or have a project attribute
     - reads savefig_defaults from project
@@ -62,8 +63,8 @@ def plot_function(function):
     finfo = FunctionInfo(function)
     oargs = dict(zip(finfo.optional_arguments, finfo.defaults))
     errmsg = finfo.name + ' has no optional argument "%s=None".'
-    assert 'output' in oargs and oargs['output'] is None, errmsg % 'output'
-    assert 'ax' in oargs and oargs['ax'] is None, errmsg % 'ax'
+    for a in ['output', 'ax', 'runs']:
+        assert a in oargs and oargs[a] is None, errmsg % a
     errmsg = finfo.name + ' should start with "plot".'
     assert finfo.name.startswith('plot'), errmsg
 
@@ -76,10 +77,35 @@ def plot_function(function):
         elif hasattr(self, 'project'):
             project = self.project
         else:
-            em = self+' is not a Project instance or has a project attribute.'
-            raise AttributeError(em)
+            em = '%s is not a Project instance or has a project attribute.'
+            raise AttributeError(em % self)
+        ax = kwargs.get('ax', plt.gca())
+        figure = ax.get_figure() if ax else plt.gcf()
         # actually call the function
         result = function(*args, **kwargs)
+        # try to plot runs
+        runs = kwargs.get('runs', None)
+        if runs:
+            runobjs = project.browser.runs.filter(pk__in=runs)
+            ispi = self.__class__ != project.__class__
+            piname = self.__class__.__name__  # project if not plugin
+            result = [result]
+            for r in runobjs:
+                try:
+                    piinstance = r
+                    if ispi:  # if project.plugin
+                        piinstance = getattr(r, piname)
+                    pmeth = getattr(piinstance, finfo.name)
+                except AttributeError:
+                    m = finfo.name if ispi else piname+'.'+finfo.name
+                    print('%s doesnt have a %s method.' % (r, m))
+                    continue
+                # call method with different instance as first argument
+                kwargs['label'] = str(r)
+                rre = pmeth.decorated_function(piinstance, *args[1:], **kwargs)
+                result.append(rre)
+            ax.legend()
+
         # unpack savekwargs
         savekwargs = {}
         savekwargs.update(project.save_figure_defaults)
@@ -88,9 +114,6 @@ def plot_function(function):
             op = output.pop('output', None)
             savekwargs.update(output)
             output = op
-        # get figure
-        ax = kwargs.get('ax', None)
-        figure = ax.get_figure() if ax else plt.gcf()
         # save to file
         if output:
             save(output, figure, **savekwargs)

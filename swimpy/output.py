@@ -58,7 +58,7 @@ class station_daily_discharge(ProjectOrRunData):
 
     @plot.plot_function
     def plot(self, ax=None, stations=None, regime=False,
-             minmax=False, freq='d', output=None, **linekw):
+             minmax=False, freq='d', runs=None, output=None, **linekw):
         """Line plot of daily discharge of selected stations.
 
         Arguments
@@ -77,6 +77,8 @@ class station_daily_discharge(ProjectOrRunData):
             to ax.fill_between.
         output : str path | dict
             Path to writeout or dict of keywords to parse to save_or_show.
+        runs : iterable | QuerySet
+            Add plot of other runs if they have the same method/plugin.method.
         **linekw :
             Parse any keyword to the line plot function.
         """
@@ -190,7 +192,7 @@ class catchment_annual_waterbalance(ProjectOrRunData):
         return df
 
     @plot.plot_function
-    def plot_mean(self, ax=None, output=None):
+    def plot_mean(self, ax=None, runs=None, output=None):
         bars = plot.plot_waterbalance(self.mean(), ax=ax)
         return bars
 

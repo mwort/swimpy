@@ -148,7 +148,7 @@ class climate(object):
 
         @plot.plot_function
         def plot_temperature(self, ax=None, regime=False, freq='d',
-                             minmax=True, output=None, **linekw):
+                             minmax=True, runs=None, output=None, **linekw):
             """Line plot of mean catchment temperature.
 
             Arguments
@@ -161,6 +161,9 @@ class climate(object):
                 Any pandas frequency to aggregate to.
             minmax : bool
                 Show min-max range.
+            runs : iterable | QuerySet
+                Add plot of other runs if they have the same method or
+                plugin.method.
             output : str path | dict
                 Path to writeout or dict of keywords to parse to save_or_show.
             **kw :
@@ -179,7 +182,7 @@ class climate(object):
 
         @plot.plot_function
         def plot_precipitation(self, ax=None, regime=False, freq='d',
-                               output=None, **barkwargs):
+                               runs=None, output=None, **barkwargs):
             """Bar plot of mean catchment precipitation.
 
             Arguments
@@ -190,6 +193,9 @@ class climate(object):
                 Plot regime. freq must be 'd' or 'm'.
             freq : <pandas frequency>
                 Any pandas frequency to aggregate to.
+            runs : iterable | QuerySet
+                Add plot of other runs if they have the same method or
+                plugin.method.
             output : str path | dict
                 Path to writeout or dict of keywords to parse to save_or_show.
             **barkwargs :
