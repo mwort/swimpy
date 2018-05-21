@@ -1,16 +1,19 @@
 """
-SWIM related plotting functions.
+SWIM related plotting functions and the generic plot_function decorator.
 
 Standalone functions to create plots for SWIM input/output. They are used
 throught the SWIMpy package but collected here to enable reuse.
 
 All functions should accept an optional ax=None argument to plot to, i.e.
-defaulting to the current axes (ax = ax or plt.gca()).
+defaulting to the current axes (``ax = ax or plt.gca()``).
+
+Project.method or Project.plugin.methods that implement plots should use the
+``plot_function`` decorator to allow generic functionality.
 """
 from __future__ import print_function, absolute_import
 import sys
 import tempfile
-from functools import wraps
+import functools
 
 from modelmanager.settings import FunctionInfo
 import matplotlib as mpl
@@ -45,95 +48,6 @@ def save(output, figure=None, **savekwargs):
         figure.set_size_inches(size[0]/mmpi, size[1]/mmpi)  # (width, hight)
     figure.savefig(output, **savekwargs)
     return
-
-
-def plot_function(function):
-    """A decorator to enforce and handle generic plot function tasks.
-
-    - enforces name starting with 'plot'.
-    - enforces output=None, runs=None, ax=None arugments.
-    - enforces the method instance (first function argement) to either be a
-      project or have a project attribute
-    - reads savefig_defaults from project
-    - allows saving figure to file with output argument that may either be
-      string path or a dict with kwargs to save.
-    - displays interactive plot if executed from commandline.
-    - saves current figure to a temp path when executed in browser API.
-    """
-    finfo = FunctionInfo(function)
-    oargs = dict(zip(finfo.optional_arguments, finfo.defaults))
-    errmsg = finfo.name + ' has no optional argument "%s=None".'
-    for a in ['output', 'ax', 'runs']:
-        assert a in oargs and oargs[a] is None, errmsg % a
-    errmsg = finfo.name + ' should start with "plot".'
-    assert finfo.name.startswith('plot'), errmsg
-
-    @wraps(function)
-    def f(*args, **kwargs):
-        from .project import Project
-        self = args[0]
-        if isinstance(self, Project):
-            project = self
-        elif hasattr(self, 'project'):
-            project = self.project
-        else:
-            em = '%s is not a Project instance or has a project attribute.'
-            raise AttributeError(em % self)
-        ax = kwargs.get('ax', plt.gca())
-        figure = ax.get_figure() if ax else plt.gcf()
-        # actually call the function
-        result = function(*args, **kwargs)
-        # try to plot runs
-        runs = kwargs.get('runs', None)
-        if runs:
-            runobjs = project.browser.runs.filter(pk__in=runs)
-            ispi = self.__class__ != project.__class__
-            piname = self.__class__.__name__  # project if not plugin
-            result = [result]
-            for r in runobjs:
-                try:
-                    piinstance = r
-                    if ispi:  # if project.plugin
-                        piinstance = getattr(r, piname)
-                    pmeth = getattr(piinstance, finfo.name)
-                except AttributeError:
-                    m = finfo.name if ispi else piname+'.'+finfo.name
-                    print('%s doesnt have a %s method.' % (r, m))
-                    continue
-                # call method with different instance as first argument
-                kwargs['label'] = str(r)
-                rre = pmeth.decorated_function(piinstance, *args[1:], **kwargs)
-                result.append(rre)
-            ax.legend()
-
-        # unpack savekwargs
-        savekwargs = {}
-        savekwargs.update(project.save_figure_defaults)
-        output = kwargs.get('output', None)
-        if type(output) is dict:
-            op = output.pop('output', None)
-            savekwargs.update(output)
-            output = op
-        # save to file
-        if output:
-            save(output, figure, **savekwargs)
-        # display if from commandline or browser api
-        elif sys.argv[0].endswith('swimpy'):
-            # in Django API
-            if len(sys.argv) > 1 and sys.argv[1] == 'browser':
-                imgpath = tempfile.mkstemp()[1] + '.png'
-                save(imgpath, figure, **savekwargs)
-                figure.clear()
-                return imgpath
-            # in CLI
-            plt.show(block=True)
-        return result
-
-    f.decorated_function = function
-    # add signiture if PY2
-    if sys.version_info < (3, 0):
-        f.__doc__ = '%s(%s)\n' % (finfo.name, finfo.signiture) + finfo.doc
-    return f
 
 
 def plot_waterbalance(series, ax=None, **barkwargs):
@@ -197,3 +111,136 @@ def _index_to_timestamp(index):
     """Convert a pandas index to timestamps if needed.
     Needed to parse pandas PeriodIndex to pyplot plotting functions."""
     return index.to_timestamp() if hasattr(index, 'to_timestamp') else index
+
+
+def plot_function(function):
+    """Decorator for the PlotFunction class.
+
+    This factory function is required to return a function rather than an
+    object if PlotFunction was used as a decorator alone.
+    """
+    pf = PlotFunction(function)
+
+    @functools.wraps(function)
+    def f(*args, **kwargs):
+        return pf(*args, **kwargs)
+    f.decorated_function = function
+    # add signiture to beginning of docstrign if PY2
+    if sys.version_info < (3, 0):
+        sig = '%s(%s)\n' % (pf.finfo.name, pf.finfo.signiture)
+        f.__doc__ = sig + pf.finfo.doc
+    return f
+
+
+class PlotFunction(object):
+    """A a class that enforces and handles generic plot function tasks.
+
+    To be used in plot_function decorator.
+
+    - enforces name starting with 'plot'.
+    - enforces output=None, runs=None, ax=None arugments.
+    - enforces to accept **kwargs.
+    - enforces the method instance (first function argement) to either be a
+      project or have a project attribute
+    - reads savefig_defaults from project
+    - allows saving figure to file with output argument that may either be
+      string path or a dict with kwargs to save.
+    - displays interactive plot if executed from commandline.
+    - saves current figure to a temp path when executed in browser API.
+    """
+    def __init__(self, function):
+        self.decorated_function = function
+        # enforce arugments
+        self.finfo = FunctionInfo(function)
+        oargs = dict(zip(self.finfo.optional_arguments, self.finfo.defaults))
+        errmsg = self.finfo.name + ' has no optional argument "%s=None".'
+        for a in ['output', 'ax', 'runs']:
+            assert a in oargs and oargs[a] is None, errmsg % a
+        errmsg = self.finfo.name + ' should start with "plot".'
+        assert self.finfo.name.startswith('plot'), errmsg
+        assert self.finfo.kwargs, self.finfo.name+' must accept **kwargs.'
+        # attributes assigned during call
+        callattr = ('project instance args kwargs ax figure result savekwargs '
+                    'output runs')
+        for a in callattr.split():
+            setattr(self, a, None)
+        return
+
+    def _infer_project(self):
+        from .project import Project
+        self.instance = self.args[0]  # assumes method
+        if isinstance(self.instance, Project):
+            self.project = self.instance
+        elif hasattr(self.instance, 'project'):
+            self.project = self.instance.project
+        else:
+            em = '%s is not a Project instance or has a project attribute.'
+            raise AttributeError(em % self.instance)
+        return
+
+    def __call__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        self.runs = kwargs.get('runs')
+        self.output = kwargs.get('output')
+        self.ax = kwargs.get('ax', plt.gca())
+        self.figure = self.ax.get_figure() if self.ax else plt.gcf()
+        self._infer_project()
+
+        # call the function on project
+        self.result = self.decorated_function(*args, **kwargs)
+        # call fuction on runs (if set)
+        if self.runs:
+            self._plot_runs()
+
+        self._get_savekwargs()
+        if self.output:
+            save(self.output, self.figure, **self.savekwargs)
+        # display if from commandline or browser api
+        if sys.argv[0].endswith('swimpy'):
+            self._display_figure()
+        return self.result
+
+    def _plot_runs(self):
+        runobjs = self.project.browser.runs.filter(pk__in=self.runs)
+        ispi = self.instance.__class__ != self.project.__class__
+        piname = self.instance.__class__.__name__  # project if not plugin
+        self.result = [self.result]
+        for r in runobjs:
+            try:
+                piinstance = r
+                if ispi:  # if project.plugin
+                    piinstance = getattr(r, piname)
+                pmeth = getattr(piinstance, self.finfo.name)
+            except AttributeError:
+                m = self.finfo.name if ispi else piname+'.'+self.finfo.name
+                print('%s doesnt have a %s method.' % (r, m))
+                continue
+            # call method with different instance as first argument
+            self.kwargs['label'] = str(r)
+            rre = pmeth.decorated_function(piinstance, *self.args[1:],
+                                           **self.kwargs)
+            self.result.append(rre)
+        self.ax.legend()
+        return
+
+    def _get_savekwargs(self):
+        # unpack savekwargs
+        self.savekwargs = {}
+        self.savekwargs.update(self.project.save_figure_defaults)
+        if type(self.output) is dict:
+            op = self.output.pop('output', None)
+            self.savekwargs.update(self.output)
+            self.output = op
+        return
+
+    def _display_figure(self):
+        # in Django API
+        if len(sys.argv) > 1 and sys.argv[1] == 'browser':
+            imgpath = tempfile.mkstemp()[1] + '.png'
+            save(imgpath, self.figure, **self.savekwargs)
+            self.figure.clear()
+            self.result = imgpath
+        else:  # in CLI
+            plt.show(block=True)
+        return
