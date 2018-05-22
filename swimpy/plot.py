@@ -141,7 +141,7 @@ class PlotFunction(object):
     To be used in plot_function decorator.
 
     - enforces name starting with 'plot'.
-    - enforces output=None, runs=None, ax=None arugments.
+    - enforces output=None and ax=None arugments.
     - enforces to accept **kwargs.
     - enforces the method instance (first function argement) to either be a
       project or have a project attribute
@@ -156,11 +156,12 @@ class PlotFunction(object):
 Plot function arguments:
 ------------------------
 ax : <matplotlib.Axes>, optional
-    Axes to plot to. Default is the current axes.
+    Axes to plot to. Default is the current axes if None.
 output : str path | dict
     Path to writeout or dict of keywords to parse to save_or_show.
-runs : iterable | QuerySet
-    Add plot of other runs if they have the same method/plugin.method.
+runs : Run | runID | iterable of Run/runID | QuerySet, optional
+    Show plot for runs if they have the same method or plugin.method. The runs
+    input is transformed to (run QuerySet, index) to enable per run styling.
     """
 
     def __init__(self, function):
@@ -169,7 +170,7 @@ runs : iterable | QuerySet
         self.finfo = FunctionInfo(function)
         oargs = dict(zip(self.finfo.optional_arguments, self.finfo.defaults))
         errmsg = self.finfo.name + ' has no optional argument "%s=None".'
-        for a in ['output', 'ax', 'runs']:
+        for a in ['output', 'ax']:
             assert a in oargs and oargs[a] is None, errmsg % a
         errmsg = self.finfo.name + ' should start with "plot".'
         assert self.finfo.name.startswith('plot'), errmsg
