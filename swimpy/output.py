@@ -94,6 +94,11 @@ class station_daily_discharge(ProjectOrRunData):
                 fbkw.setdefault("alpha", 0.5)
                 ax.fill_between(data['min'][s].index, data['max'][s], **fbkw)
         for s in stations:
+            # add label if multiple runs
+            if runs and len(runs[0]) > 1:
+                qs, i = runs
+                lab = '%s ' % qs[i] + ('' if len(stations) == 1 else str(s))
+                linekw['label'] = lab
             line = plot.plot_discharge(data['mean'][s], ax, **linekw)
 
         if regime:

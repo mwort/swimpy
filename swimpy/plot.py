@@ -199,15 +199,16 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         self.kwargs = kwargs
         self.runs = kwargs.get('runs')
         self.output = kwargs.get('output')
-        self.ax = kwargs.get('ax', plt.gca())
+        self.ax = kwargs.get('ax', plt.gca()) or plt.gca()
         self.figure = self.ax.get_figure() if self.ax else plt.gcf()
         self._infer_project()
 
-        # call the function on project
-        self.result = self.decorated_function(*args, **kwargs)
-        # call fuction on runs (if set)
         if self.runs:
+            # transform runs to QuerySet
+            self.runs = self.project.browser.runs.get_runs(self.runs)
             self._plot_runs()
+        else:
+            self.result = self.decorated_function(*args, **kwargs)
 
         self._get_savekwargs()
         if self.output:
@@ -218,11 +219,10 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         return self.result
 
     def _plot_runs(self):
-        runobjs = self.project.browser.runs.filter(pk__in=self.runs)
         ispi = self.instance.__class__ != self.project.__class__
         piname = self.instance.__class__.__name__  # project if not plugin
         self.result = [self.result]
-        for r in runobjs:
+        for i, r in enumerate(self.runs):
             try:
                 piinstance = r
                 if ispi:  # if project.plugin
@@ -232,12 +232,16 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
                 m = self.finfo.name if ispi else piname+'.'+self.finfo.name
                 print('%s doesnt have a %s method.' % (r, m))
                 continue
-            # call method with different instance as first argument
-            self.kwargs['label'] = str(r)
-            rre = pmeth.decorated_function(piinstance, *self.args[1:],
-                                           **self.kwargs)
+            rkw = self.kwargs.copy()
+            rkw['runs'] = (self.runs, i)
+            rkw.setdefault('label', str(r))
+            # call method with different instance as first argument as
+            # decorated_function is unbound
+            rre = pmeth.decorated_function(piinstance, *self.args[1:], **rkw)
             self.result.append(rre)
-        self.ax.legend()
+        # make sure a legend is shown if not already
+        if self.ax.get_legend() is None:
+            self.ax.legend()
         return
 
     def _get_savekwargs(self):
