@@ -214,7 +214,7 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         if self.output:
             save(self.output, self.figure, **self.savekwargs)
         # display if from commandline or browser api
-        if sys.argv[0].endswith('swimpy'):
+        elif sys.argv[0].endswith('swimpy'):
             self._display_figure()
         return self.result
 
