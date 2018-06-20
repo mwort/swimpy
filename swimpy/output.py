@@ -26,6 +26,7 @@ from modelmanager.utils import propertyplugin
 from modelmanager.plugins.pandas import ProjectOrRunData
 
 from swimpy import utils, plot
+from swimpy.plot import plot_function as _plot_function
 
 from matplotlib import pyplot as plt  # after plot
 
@@ -40,7 +41,7 @@ class station_daily_discharge(ProjectOrRunData):
     Daily discharge of selected stations.
     """
     swim_path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
-    plugin = ['plot']
+    plugin = ['plot', 'plot_flow_duration_polar']
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -56,14 +57,14 @@ class station_daily_discharge(ProjectOrRunData):
         df.index = df.index.to_period(freq='d')
         return df
 
-    @plot.plot_function
+    @_plot_function
     def plot(self, stations=None, regime=False, freq='d', minmax=False,
              ax=None, runs=None, output=None, **linekw):
         """Line plot of daily discharge of selected stations.
 
         Arguments
         ---------
-        stations: None | str | iterable
+        stations : None | str | iterable
             Only show single (str) or subset (iterable) of stations. If None,
             show all found in file.
         regime : bool
@@ -105,6 +106,30 @@ class station_daily_discharge(ProjectOrRunData):
             xlabs = {'d': 'Day of year', 'm': 'Month'}
             ax.set_xlabel(xlabs[freq])
         return line
+
+    @_plot_function
+    def plot_flow_duration_polar(self, station, percentilestep=10, freq='m',
+                                 colormap='jet_r', ax=None, runs=None,
+                                 output=None, **barkw):
+        """Plot flow duration on a wheel of month or days of year.
+
+        Arguments
+        ---------
+        station : str
+            A single station label (not possible for multiple stations).
+        percentilestep : % <= 50
+            Intervals of flow duration of 100%.
+        freq : 'm' | 'd'
+            Duration per month or day of year.
+        colormap : str
+            Matplotlib to use for the colour shading.
+        """
+        if runs:
+            assert len(runs[0]) == 1
+        ax = plot.plot_flow_duration_polar(self[station], freq=freq, ax=ax,
+                                           percentilestep=percentilestep,
+                                           colormap=colormap, **barkw)
+        return ax
 
 
 @propertyplugin

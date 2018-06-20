@@ -14,7 +14,10 @@ from __future__ import print_function, absolute_import
 import sys
 import tempfile
 import functools
+import datetime as dt
 
+import numpy as np
+import pandas as pd
 from modelmanager.settings import FunctionInfo
 import matplotlib as mpl
 # needed to use matplotlib in django browser
@@ -107,6 +110,60 @@ def plot_discharge(series, ax=None, **linekwargs):
     return lines
 
 
+def plot_flow_duration_polar(series, axes=None, percentilestep=10,
+                             freq='m', colormap='jet_r', **barkw):
+    """Bins the values in series into 100/percentilestep steps and displays the
+    relative frequency per month or day-of-year (freq= m|f) on a polar bar
+    chart of the year. See in action and more docs in:
+    `output.station_daily_discharge.plot_flow_duration_polar`
+    """
+    assert percentilestep <= 50
+    axes = axes or plt.gca()
+    # exchange axes for polar axes
+    apo = axes.get_position()
+    axes.set_axis_off()
+    axes = plt.gcf().add_axes(apo, projection='polar')
+
+    ssorted = series.dropna().sort_values()
+    n = len(ssorted)
+    dom = 'dayofyear' if freq.lower() == 'd' else 'month'
+    ib = 0
+    count = {}
+    for b in range(percentilestep, 100+1, percentilestep):
+        # get percentile bin
+        iib = min(int(round(n*b/100.)), n)
+        bin = ssorted.iloc[ib:iib]
+        # count values in percentile bin
+        count[b] = bin.groupby(getattr(bin.index, dom)).count()/float(n)
+        ib = iib
+
+    ntb = 365 if freq.lower() == 'd' else 12
+    theta = np.arange(ntb) * 2 * np.pi / ntb
+    cm = plt.get_cmap(colormap)
+    countdf = pd.DataFrame(count).loc[:ntb]
+    countdf /= countdf.max().max()
+    countdf.fillna(0, inplace=True)
+    for b, col in countdf.items():
+        bars = axes.bar(x=theta, height=[percentilestep]*len(theta),
+                        width=2*np.pi/ntb, bottom=b-percentilestep,
+                        color=cm(col), edgecolor='none')
+    axes.set_theta_zero_location('N')
+    axes.set_theta_direction(-1)
+    axes.set_rmin(0)
+    axes.set_rmax(100)
+    axes.grid(False)
+    month_names = [dt.date(2000, i, 1).strftime('%B') for i in range(1, 13)]
+    tcks, tcklbls = plt.xticks(np.arange(12)*2*np.pi/12, month_names)
+    rots = (list(range(0, -91, -30)) + list(range(60, -61, -30)) +
+            list(range(90, 30-1, -30)))
+    for l, r in zip(tcklbls, rots):
+        l.set_rotation(r)
+    axes.set_yticks([50])
+    axes.set_yticklabels(['50%'])
+    axes.grid(True, axis='y')
+    return axes
+
+
 def _index_to_timestamp(index):
     """Convert a pandas index to timestamps if needed.
     Needed to parse pandas PeriodIndex to pyplot plotting functions."""
@@ -150,6 +207,8 @@ class PlotFunction(object):
       string path or a dict with kwargs to save.
     - displays interactive plot if executed from commandline.
     - saves current figure to a temp path when executed in browser API.
+    - allows running function with a run instance if the function has a run
+      argument. The argument input is normalised (see additional_docs).
     """
     additional_docs = """
 
@@ -210,8 +269,8 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         else:
             self.result = self.decorated_function(*args, **kwargs)
 
-        self._get_savekwargs()
         if self.output:
+            self._get_savekwargs()
             save(self.output, self.figure, **self.savekwargs)
         # display if from commandline or browser api
         elif sys.argv[0].endswith('swimpy'):

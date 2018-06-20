@@ -237,6 +237,9 @@ class TestGrass(ProjectTestCase):
 
 class TestPlotting(ProjectTestCase):
     plot_prefix = 'plot'
+    default_positional_arguments = {
+        'station': 'HOF'
+    }
 
     @property
     def plot_functions(self):
@@ -245,6 +248,11 @@ class TestPlotting(ProjectTestCase):
               if n.split('.')[-1].startswith(self.plot_prefix)}
         return fd
 
+    def run_with_defaults(self, fname, **kwargs):
+        panames = self.project.settings.functions[fname].positional_arguments
+        pargs = [self.default_positional_arguments[a] for a in panames]
+        return self.project.settings[fname](*pargs, **kwargs)
+
     def test_output(self):
         print('Testing plot functions...')
         fig = pl.figure()
@@ -252,7 +260,7 @@ class TestPlotting(ProjectTestCase):
             fig.clear()
             print(a)
             ppath = osp.join(self.project.projectdir, a+'.png')
-            self.assertIsNotNone(self.project.settings[a](output=ppath))
+            self.assertIsNotNone(self.run_with_defaults(a, output=ppath))
             self.assertTrue(osp.exists(ppath))
         return
 
@@ -267,7 +275,7 @@ class TestPlotting(ProjectTestCase):
         for a in resfile_plotf:
             print(a)
             ppath = osp.join(self.project.projectdir, a+'.png')
-            res = self.project.settings[a](runs=(run.pk,))
+            res = self.run_with_defaults(a, runs=(run.pk,))
             self.assertEqual(len(res), 2)
             fig.clear()
         return
