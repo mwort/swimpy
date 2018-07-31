@@ -97,6 +97,18 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
         nsbc = self.project.subcatch_parameters
         self.assertTrue((nsbc == sbc).all().all())
 
+    def test_subcatch_definition(self):
+        self.project.settings(**TestGrass.grass_settings)
+        scdef = self.project.subcatch_definition
+        self.assertEqual(list(scdef.index), range(1, 10+1))
+        scdef.update(catchments=[1])
+        scdef.read()
+        self.assertEqual(list(scdef.index), range(5, 10+1))
+        scdef.update(subbasins=[1, 2])
+        scdef.read()
+        self.assertEqual(list(scdef.index), [1, 2])
+        scdef.update()  # reset to original
+
     def test_changed_parameters(self):
         verbose = False
         from random import random

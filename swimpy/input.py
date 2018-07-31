@@ -8,6 +8,7 @@ from modelmanager.utils import propertyplugin as _propertyplugin
 from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
 from modelmanager.plugins.pandas import (
     ReadWriteDataFrame as _ReadWriteDataFrame)
+from modelmanager.plugins import grass as mmgrass
 
 
 from swimpy import utils, plot
@@ -50,6 +51,56 @@ class subcatch_parameters(_ReadWriteDataFrame):
         strtbl = bsn.to_string(index=False, index_names=False)
         with open(self.path, 'w') as f:
             f.write(strtbl)
+        return
+
+
+@_propertyplugin
+class subcatch_definition(_ReadWriteDataFrame):
+    """
+    Interface to the subcatchment definition file from DataFrame or grass.
+    """
+    path = 'input/subcatch.def'
+    plugin = ['__call__']
+
+    def read(self, **kwargs):
+        scdef = pd.read_table(self.path, delim_whitespace=True, index_col=0)
+        pd.DataFrame.__init__(self, scdef)
+        return
+
+    def write(self, **kwargs):
+        tbl = self.copy()
+        tbl.insert(0, 'subbasinID', tbl.index)
+        tblstr = tbl.to_string(index=False, index_names=False)
+        with open(self.path, 'w') as f:
+            f.write(tblstr)
+        return
+
+    def update(self, catchments=None, subbasins=None):
+        """Write the definition file from the subbasins grass table.
+
+        Arguments
+        ---------
+        catchments : list-like
+            Catchment ids to subset the table to. Takes precedence over
+            subbasins argument.
+        subbasins : list-like
+            Subbasin ids to subset the table to.
+        """
+        cols = ['subbasinID', 'catchmentID']
+        tbl = mmgrass.GrassAttributeTable(self.project,
+                                          vector=self.project.subbasins.vector,
+                                          subset_columns=cols)
+        # optionally filter
+        if catchments:
+            tbl = tbl[[i in catchments for i in tbl.catchmentID]]
+        elif subbasins:
+            tbl = tbl.filter(items=subbasins, axis=0)
+        # add stationID
+        scp = {v: k for k, v in
+               self.project.subcatch_parameters['catchmentID'].items()}
+        tbl['stationID'] = [scp[i] for i in tbl['catchmentID']]
+        # save and write
+        self.__call__(tbl)
         return
 
 
