@@ -25,15 +25,18 @@ class Subbasins(mmgrass.GrassModulePlugin):
     setting would overwrite the plugin which has the same name.
     """
     module = 'm.swim.subbasins'
-
-    # default module arguments
-    subbasins = 'subbasins'
+    vector = 'subbasins'
+    subbasins = property(lambda self: self.vector)
 
     def postprocess(self, **moduleargs):
         self.project.routing(**moduleargs)
         self.project.substats(**moduleargs)
         self.project.hydrotopes(**moduleargs)
         return
+
+    @mmutils.propertyplugin
+    class attributes(mmgrass.GrassAttributeTable):
+        vector = property(lambda self: self.project.subbasins.vector)
 
 
 class Routing(mmgrass.GrassModulePlugin):
@@ -57,8 +60,9 @@ class Routing(mmgrass.GrassModulePlugin):
     """
     module = 'm.swim.routing'
     # default module arguments
-    subbasins = 'subbasins'
     accumulation = 'accumulation'
+    # get subbasins raster name from Subbasins instance
+    subbasins = property(lambda self: self.project.subbasins.vector)
 
     def __init__(self, project):
         self.project = project
@@ -91,8 +95,8 @@ class Substats(mmgrass.GrassModulePlugin):
     """
     module = 'm.swim.substats'
     # default module arguments
-    subbasins = 'subbasins'
     inputpath = 'input'  # will be expanded
+    subbasins = property(lambda self: self.project.subbasins.vector)
 
     def __init__(self, project):
         self.project = project
@@ -122,16 +126,11 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
         Path to str file. Will be inferred if not given.
     <any other m.swim.hydrotope argument>, optional
         Any other argument for m.swim.substats will be parsed.
-
-    Note
-    ----
-    The `subbasins` argument must be given as attribute as giving it as project
-    setting would overwrite the subbasins plugin.
     """
     module = 'm.swim.hydrotopes'
-    # default module arguments
-    subbasins = 'subbasins'
-    hydrotopes = 'hydrotopes'
+    raster = 'hydrotopes'
+    subbasins = property(lambda self: self.project.subbasins.vector)
+    hydrotopes = property(lambda self: self.raster)
 
     def __init__(self, project):
         self.project = project
