@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 from modelmanager import project, settings, commandline
 from swimpy.project import Project, setup
 
