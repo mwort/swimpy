@@ -1,5 +1,5 @@
-Welcome to SWIMpy's documentation!
-======================================
+SWIMpy's documentation
+======================
 
 .. toctree::
    :maxdepth: 2

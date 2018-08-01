@@ -5,6 +5,7 @@ watchdog
 flake8
 coverage
 Sphinx
+recommonmark
 twine
 ipython
 ipdb
