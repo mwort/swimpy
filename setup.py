@@ -3,7 +3,16 @@
 
 """The setup script."""
 
+import os
 from setuptools import setup, find_packages
+
+requirements = [
+    "pandas>=0.20, <0.30.0",
+    "django>=1.11, <2.0",
+    "parse>=1.8, <2.0",
+    "matplotlib>=2.0, <3.0",
+    "model-manager>=0.3",
+]
 
 
 with open('README.md') as readme_file:
@@ -12,15 +21,12 @@ with open('README.md') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-# get the dependencies and installs
-with open('requirements.txt') as f:
-    all_reqs = f.read().split('\n')
-
-requirements = [x.strip() for x in all_reqs if 'git+' not in x]
-dependency_links = [x.strip().replace('git+', '') for x in all_reqs if x.startswith('git+')]
-
-with open('requirements_dev.txt') as reqd_file:
+with open('requirements.txt') as reqd_file:
     requirements_dev = reqd_file.read().split()
+
+
+def package_files(dir):
+    return [os.path.join(p, f) for (p, d, n) in os.walk(dir) for f in n]
 
 
 setup(
@@ -31,9 +37,10 @@ setup(
     author="Michel Wortmann",
     author_email='wortmann@pik-potsdam.de',
     url='https://github.com/mwort/swimpy',
-    packages=find_packages(include=['swimpy']),
+    packages=find_packages(),
     include_package_data=True,
     install_requires=requirements,
+    data_files=package_files('swimpy/resources'),
     license="MIT license",
     zip_safe=False,
     keywords='swimpy',
@@ -51,5 +58,4 @@ setup(
     test_suite='tests',
     tests_require=requirements_dev,
     setup_requires=requirements,
-    dependency_links=dependency_links,
 )
