@@ -34,6 +34,12 @@ if not os.path.exists(TEST_GRASSDB):
     shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB)
 
 
+def skip_if_py3(f):
+    """Unittest skip test if PY3 decorator."""
+    PY2 = sys.version_info < (3, 0)
+    return f if PY2 else lambda self: print('not run in PY3.')
+
+
 class TestSetup(unittest.TestCase):
 
     resourcedir = osp.join(SWIM_TEST_PROJECT, 'swimpy')
@@ -97,13 +103,14 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
         nsbc = self.project.subcatch_parameters
         self.assertTrue((nsbc == sbc).all().all())
 
+    @skip_if_py3
     def test_subcatch_definition(self):
         self.project.settings(**TestGrass.grass_settings)
         scdef = self.project.subcatch_definition
-        self.assertEqual(list(scdef.index), range(1, 10+1))
+        self.assertEqual(list(scdef.index), list(range(1, 10+1)))
         scdef.update(catchments=[1])
         scdef.read()
-        self.assertEqual(list(scdef.index), range(5, 10+1))
+        self.assertEqual(list(scdef.index), list(range(5, 10+1)))
         scdef.update(subbasins=[1, 2])
         scdef.read()
         self.assertEqual(list(scdef.index), [1, 2])
@@ -185,12 +192,6 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
 
 class TestRun(ProjectTestCase, test_project.Run):
     pass
-
-
-def skip_if_py3(f):
-    """Unittest skip test if PY3 decorator."""
-    PY2 = sys.version_info < (3, 0)
-    return f if PY2 else lambda self: print('not run in PY3.')
 
 
 class TestGrass(ProjectTestCase):
