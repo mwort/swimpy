@@ -57,8 +57,10 @@ class TestSetup(unittest.TestCase):
         subprocess.call(['swimpy', 'setup',
                          '--projectdir=%s' % SWIM_TEST_PROJECT])
         self.assertTrue(osp.exists(self.resourcedir))
+        self.project = swimpy.Project(SWIM_TEST_PROJECT)
 
     def tearDown(self):
+        self.project.browser.settings.unset()
         shutil.rmtree(self.resourcedir)
 
 

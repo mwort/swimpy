@@ -10,7 +10,7 @@ import types
 from modelmanager.utils import load_module_path
 
 
-class Tests:
+class Tests(object):
     """The swimpy test project plugin.
 
     The plugin makes project-unspecifc tests available to the project instance
