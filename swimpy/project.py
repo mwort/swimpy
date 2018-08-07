@@ -11,6 +11,7 @@ from numbers import Number
 from decimal import Decimal
 
 import modelmanager as mm
+from modelmanager.settings import parse_settings
 
 from swimpy import utils
 from swimpy import defaultsettings
@@ -199,35 +200,31 @@ class Project(mm.Project):
             raise IOError(errmsg)
         return f
 
+    @parse_settings
     def save_run(self, indicators={}, files={}, **kw):
         """
         Save the current SWIM input/output as a run in the browser database.
 
         Arguments
         ---------
-        indicators : dict
-            Dictionary of indicator values passed to self.save_resultindicator.
-        files : dict
-            Dictionary of file values passed to self.save_resultfile.
+        indicators : dict | list
+            Dictionary of indicator values passed to self.save_resultindicator
+            or list of method or attribute names that return an indicator
+            (float) or dictionary of those.
+        files : dict | list
+            Dictionary of file values passed to self.save_resultfile or list of
+            method or attribute names that return any of file instance, a file
+            path or a pandas.DataFrame/Series (will be converted to file via
+            to_csv) or a dictionary of any of those.
         **kw : optional
-            Set fields of the run browser table. Default fields: notes, tags
-
-        Optional settings
-        -----------------
-        resultindicator_functions : list | dict
-            List or dictionary of method or attribute names that return an
-            indicator (float) or dictionary of those.
-        resultfile_functions : list | dict
-            List or dictionary of method or attribute names that return any of
-            file instance, a file path or a pandas.DataFrame/Series (will be
-            converted to file via to_csv) or a dictionary of any of those.
+            Set fields of the run browser table. Default fields: notes, tags.
 
         Returns
         -------
         Run object (Django model object).
         """
-        assert type(indicators) is dict, 'indicators must be a dictionary.'
-        assert type(files) is dict, 'files must be a dictionary.'
+        assert type(indicators) in [list, dict]
+        assert type(files) in [list, dict]
         # config
         sty, nbyr = self.config_parameters('iyr', 'nbyr')
         run_kwargs = {'start': dt.date(sty, 1, 1),
@@ -240,18 +237,11 @@ class Project(mm.Project):
         # add files and indicators
         for tbl, a in [('resultindicator', indicators), ('resultfile', files)]:
             save_function = getattr(self, 'save_' + tbl)
-            # insert passed ones
-            for k, v in a.items():
-                save_function(run, k, v)
-            # handle settings variable
-            set_var = getattr(self, tbl + '_functions', False)
-            if set_var:
-                # ensure dictionary items
-                items = (set_var.items() if type(set_var) == dict
-                         else zip(set_var, set_var))
-                for n, m in items:
-                    value = self._attribute_or_function_result(m)
-                    save_function(run, n, value)
+            # unpack references
+            if type(a) == list:
+                a = {k: self._attribute_or_function_result(k) for k in a}
+            for n, m in a.items():
+                save_function(run, n, m)
         return run
 
     def _attribute_or_function_result(self, m):

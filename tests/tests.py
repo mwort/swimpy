@@ -185,8 +185,8 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
         # pass as settings variables
         self.project.settings(**dict(zip(indicators, ri_functions)))
         self.project.settings(**dict(zip(files, rf_functions)))
-        self.project.settings(resultfile_functions=files,
-                              resultindicator_functions=indicators)
+        self.project.settings(save_run_files=files,
+                              save_run_indicators=indicators)
         run = self.project.save_run()
         check_indicators(run.resultindicators.all())
         check_files(run.resultfiles.all())
@@ -281,8 +281,8 @@ class TestPlotting(ProjectTestCase):
 
     def test_runs(self):
         file_interfaces = self.project.browser.models['run'].file_interfaces
-        resfile_interfaces = file_interfaces['resultfiles'].keys()
-        self.project.settings(resultfile_functions=resfile_interfaces)
+        resfile_interfaces = list(file_interfaces['resultfiles'].keys())
+        self.project.settings(save_run_files=resfile_interfaces)
         run = self.project.save_run(notes='TestPlotting.test_runs')
         resfile_plotf = [n for n in self.plot_functions.keys()
                          if '.'.join(n.split('.')[:-1]) in resfile_interfaces]
