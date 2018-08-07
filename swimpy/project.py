@@ -40,7 +40,7 @@ class Project(mm.Project):
         self.settings.defaults = defaults
         return
 
-    def run(self, save=True, cluster=False, **kw):
+    def run(self, save=True, cluster=False, quiet=False, **kw):
         """
         Execute SWIM.
 
@@ -48,8 +48,10 @@ class Project(mm.Project):
         ---------
         save : bool
             Run save_run after successful execution of SWIM.
-        cluster : bool
+        cluster : False | str
             False or a job name to submit this run to SLURM.
+        quiet : bool
+            Dont show SWIM output if True.
         **kw : optional
             Keyword arguments passed to save_run.
 
@@ -64,20 +66,24 @@ class Project(mm.Project):
         # if submitting to cluster
         if cluster:
             assert type(cluster) is str, "cluster must be a string."
+            kw['save'] = save
             self.submit_cluster(cluster, 'run', **kw)
             return
 
         swimcommand = [self.swim, self.projectdir+'/']
+        # silence output
+        stdout = open(os.devnull, 'w') if quiet else None
         # run
-        subprocess.check_call(swimcommand)
+        subprocess.check_call(swimcommand, stdout=stdout)
         # save
         if save:
             run = self.save_run(**kw)
         else:
             run = None
         # report runtime
-        delta = dt.datetime.now() - st
-        print('Execution took %s hh:mm:ss' % delta)
+        if not quiet:
+            delta = dt.datetime.now() - st
+            print('Execution took %s hh:mm:ss' % delta)
         return run
 
     def submit_cluster(self, jobname, functionname, dryrun=False, **funcargs):
