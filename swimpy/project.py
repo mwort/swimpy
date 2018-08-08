@@ -68,8 +68,7 @@ class Project(mm.Project):
         if cluster:
             assert type(cluster) is str, "cluster must be a string."
             kw['save'] = save
-            self.submit_cluster(cluster, 'run', **kw)
-            return
+            return self.submit_cluster(cluster, 'run', **kw)
 
         swimcommand = [self.swim, self.projectdir+'/']
         # silence output
@@ -87,32 +86,42 @@ class Project(mm.Project):
             print('Execution took %s hh:mm:ss' % delta)
         return run
 
-    def submit_cluster(self, jobname, functionname, dryrun=False, **funcargs):
+    def submit_cluster(self, jobname, functionname=None, script=None,
+                       dryrun=False, slurmargs={}, **funcargs):
         """
         Run a project function (method) by submitting it to SLURM.
 
         Arguments
         ---------
-        functionname : str
-            A name string of a project function.
         jobname : str
             SLURM job name.
+        functionname : str, optional
+            A name string of a project function.
+        script : str, optional
+            Valid python code to run.
         dryrun : bool
             If True, only write jobfile to cluster resourcedir.
+        slurmargs : dict
+            SLURM arguments to use for this run temporarily extending /
+            overwriting the project slurmargs attribute.
         **funcargs : optional
             Arguments parsed to function.
         """
-        assert callable(self.settings[functionname])
-        script = ("import swimpy; p=swimpy.Project(); p.%s(**%r)" %
-                  (functionname, funcargs))
+        assert type(functionname) == str or type(script) == str
+        if functionname:
+            assert callable(self.settings[functionname])
+            script = ("import swimpy; p=swimpy.Project(); p.%s(**%r)" %
+                      (functionname, funcargs))
         # dir for slurm job, output, error files
         outdir = osp.join(self.resourcedir, 'cluster')
         if not osp.exists(outdir):
             os.mkdir(outdir)
         # submit to slurm
-        utils.slurm_submit(jobname, script, outdir, dryrun=dryrun,
-                           workdir=self.projectdir, **self.slurmargs)
-        return
+        for k, v in self.slurmargs.items():
+            slurmargs.setdefault(k, v)
+        rid = utils.slurm_submit(jobname, script, outdir, dryrun=dryrun,
+                                 workdir=self.projectdir, **slurmargs)
+        return rid
 
     def __call__(self, *runargs, **runkwargs):
         """

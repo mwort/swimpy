@@ -1,6 +1,7 @@
 """
 Module for utility functionality unrelated to SWIM.
 """
+from __future__ import print_function
 import os
 import os.path as osp
 
@@ -59,10 +60,13 @@ def slurm_submit(jobname, scriptstr, outputdir='.', dryrun=False, **slurmargs):
     # submit
     submit = ['sbatch', jcfpath]
     if not dryrun:
-        subprocess.call(submit)
+        out = subprocess.call(submit)
+        print(out, end='')
+        rid = int(out.split()[-1])
     else:
+        rid = None
         print('Would execute: %s' % (' '.join(submit)))
-    return
+    return rid
 
 
 def aggregate_time(obj, freq='d', regime=False, resample_method='mean',
