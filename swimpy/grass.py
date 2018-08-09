@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import os.path as osp
 
-from modelmanager import utils as mmutils
+from modelmanager.utils import propertyplugin
 from modelmanager.plugins import grass as mmgrass
 
 
@@ -34,7 +34,7 @@ class Subbasins(mmgrass.GrassModulePlugin):
         self.project.hydrotopes(**moduleargs)
         return
 
-    @mmutils.propertyplugin
+    @propertyplugin
     class attributes(mmgrass.GrassAttributeTable):
         vector = property(lambda self: self.project.subbasins.vector)
 
@@ -67,10 +67,8 @@ class Routing(mmgrass.GrassModulePlugin):
     def __init__(self, project):
         self.project = project
         if not (hasattr(project, 'figpath') or hasattr(self, 'figpath')):
-            ppn = mmutils.get_paths_pattern('input/*.cod', project.projectdir)
-            assert len(ppn) == 1, 'figpath not set and cant be inferred.'
-            pname = osp.splitext(osp.basename(ppn[0]))[0]
-            self.figpath = osp.join(project.projectdir, 'input/%s.fig' % pname)
+            fp = 'input/%s.fig' % self.project.project_name
+            self.figpath = osp.join(project.projectdir, fp)
         return
 
 
@@ -103,9 +101,7 @@ class Substats(mmgrass.GrassModulePlugin):
         self.projectpath = osp.join(project.projectdir, self.inputpath)
         if not (hasattr(project, 'projectname') or
                 hasattr(self, 'projectname')):
-            ppn = mmutils.get_paths_pattern('input/*.cod', project.projectdir)
-            assert len(ppn) == 1, 'projectname not set and cant be inferred.'
-            self.projectname = osp.splitext(osp.basename(ppn[0]))[0]
+            self.projectname = self.project.project_name
         return
 
 
@@ -136,9 +132,6 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
         self.project = project
         if not (hasattr(project, 'strfilepath') or
                 hasattr(self, 'strfilepath')):
-            ppn = mmutils.get_paths_pattern('input/*.cod', project.projectdir)
-            assert len(ppn) == 1, 'strfilepath not set and cant be inferred.'
-            pname = osp.splitext(osp.basename(ppn[0]))[0]
-            strfilepath = 'input/%s.str' % pname
+            strfilepath = 'input/%s.str' % self.project.project_name
             self.strfilepath = osp.join(project.projectdir, strfilepath)
         return

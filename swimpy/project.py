@@ -5,6 +5,8 @@ The main project module.
 """
 import os
 import os.path as osp
+from glob import glob
+from warnings import warn
 import datetime as dt
 import subprocess
 from numbers import Number
@@ -34,12 +36,24 @@ class Project(mm.Project):
     """
 
     def __init__(self, projectdir='.', **settings):
+        # load default settings
         defaults = mm.settings.load_settings(defaultsettings)
         for k, v in defaults.items():
             settings.setdefault(k, v)
+        # check for project name
+        settings.setdefault('project_name', self._get_project_name(projectdir))
+        # load modelmanager Project
         super(Project, self).__init__(projectdir, **settings)
         self.settings.defaults = defaults
         return
+
+    def _get_project_name(self, projectdir=None):
+        """Infer the project name from the code file."""
+        ppn = glob(osp.join(projectdir or self.projectdir, 'input/*.cod'))
+        if len(ppn) == 1:
+            return osp.splitext(osp.basename(ppn[0]))[0]
+        else:
+            warn('No or multiple *.cod files present. Name cant be inferred.')
 
     def run(self, save=True, cluster=False, quiet=False, **kw):
         """
