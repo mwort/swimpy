@@ -269,8 +269,9 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         else:
             self.result = self.decorated_function(*args, **kwargs)
 
+        self._get_savekwargs()
+
         if self.output:
-            self._get_savekwargs()
             save(self.output, self.figure, **self.savekwargs)
         # display if from commandline or browser api
         elif sys.argv[0].endswith('swimpy'):
