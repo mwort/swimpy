@@ -37,6 +37,47 @@ class RunManager(models.Manager):
         cols = [f.name for f in self.model._meta.get_fields()]
         return frame[[c for c in cols if c in frame.columns]]
 
+    def wait(self, nruns, interval=5, timeout={'hours': 12}, **filters):
+        """Wait until nruns are found (with the filters) and return them.
+
+        Arguments
+        ---------
+        nruns : int
+            Number of runs to wait for.
+        interval : int seconds
+            Polling interval in seconds.
+        timeout : dict
+            Raise RuntimeError after timeout is elapsed. Parse any keyword
+            to datetime.timedelta, e.g. hours, days, minutes, seconds.
+        **filters :
+            Any run attribute filter to query the runs table with.
+
+        Returns
+        -------
+        QuerySet
+        """
+        from sys import stdout
+        from time import sleep
+        import datetime as dt
+        st = dt.datetime.now()
+        to = dt.timedelta(**timeout)
+        fltstr = ', '.join('%s=%r' % kv for kv in filters.items()) or 'all'
+        msg = "\rWaiting for %s runs (%s) for %s hh:mm:ss"
+        ndone = 0
+        while ndone < nruns:
+            runs = self.filter(**filters) if filters else self.all()
+            ndone = runs.count()
+            et = dt.datetime.now()-st
+            if ndone < nruns:
+                if et > to:
+                    em = '%s runs not found within %s hh:mm:ss' % (nruns, to)
+                    raise RuntimeError(em)
+                stdout.write(msg % (nruns-ndone, fltstr, et))
+                stdout.flush()
+                sleep(interval)
+        stdout.write("\n")
+        return runs
+
 
 class SwimRun(Run):
     class Meta:
