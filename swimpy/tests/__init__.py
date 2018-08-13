@@ -14,14 +14,14 @@ class Tests(object):
     """The swimpy test project plugin.
 
     The plugin makes project-unspecifc tests available to the project instance
-    through the following syntax:
-    ```
+    through the following syntax::
+
         project.tests.<testcaseclass>()
         project.tests.all()
         project.tests()  # same as all
-    ```
+
     Test case classes maybe defined in any submodule of the tests package and
-    should be named test_*.py.
+    should be named ``test_*.py``.
     """
     def __init__(self, project):
         self.project = project

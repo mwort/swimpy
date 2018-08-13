@@ -29,18 +29,16 @@ import matplotlib.pyplot as plt
 def save(output, figure=None, **savekwargs):
     """Convenience function to set figure size and save a matplotlib figure.
 
-    Arguements:
-    -----------
+    Arguments
+    ---------
     output : str
         Path to save figure to. Extension determines format.
     figure : matplotlib.Figure object, optional
         Defaults to current figure.
     **savekwargs :
-        Any keyword argument parsed to figure.savefig() method. Special keys:
-        ``size`` : len 2 tuple
-            Size in mm.
-
-    Returns: None
+        Any keyword argument parsed to ``figure.savefig()`` method.
+        Special keys:
+        ``size`` : len 2 tuple, size in mm.
     """
     figure = figure or plt.gcf()
     assert type(output) == str, 'output %r must be string path.'
@@ -56,8 +54,8 @@ def save(output, figure=None, **savekwargs):
 def plot_waterbalance(series, ax=None, **barkwargs):
     """Bar plot of water balance terms.
 
-    Arguments:
-    ----------
+    Arguments
+    ---------
     df : pd.Series
         Values to plot. Index will be used as x labels.
     ax : plt.Axes, optional
@@ -65,7 +63,9 @@ def plot_waterbalance(series, ax=None, **barkwargs):
     **barkwargs :
         plt.bar keyword arguments.
 
-    Returns: bars
+    Returns
+    -------
+    bars
     """
     ax = plt.gca()
     bars = series.plot.bar(ax=ax, **barkwargs)
@@ -115,7 +115,7 @@ def plot_flow_duration_polar(series, axes=None, percentilestep=10,
     """Bins the values in series into 100/percentilestep steps and displays the
     relative frequency per month or day-of-year (freq= m|f) on a polar bar
     chart of the year. See in action and more docs in:
-    `output.station_daily_discharge.plot_flow_duration_polar`
+    :meth:`swimpy.output.station_daily_discharge.plot_flow_duration_polar`
     """
     assert percentilestep <= 50
     axes = axes or plt.gca()
@@ -199,7 +199,7 @@ class PlotFunction(object):
 
     - enforces name starting with 'plot'.
     - enforces output=None and ax=None arugments.
-    - enforces to accept **kwargs.
+    - enforces to accept ``**kwargs``.
     - enforces the method instance (first function argement) to either be a
       project or have a project attribute
     - reads savefig_defaults from project

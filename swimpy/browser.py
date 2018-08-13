@@ -1,5 +1,5 @@
 """
-Functionality related to the modelmanager browser plugin.
+Extended functionality related to the modelmanager browser plugin.
 """
 from django.db import models
 from django.conf import settings
@@ -43,7 +43,8 @@ class SwimRun(Run):
         abstract = True
 
     objects = RunManager()
-
+    # class attribute to let the Run object know which plugins to associate
+    # with what file.
     file_interfaces = {
       'resultfiles': {
         n: p for n, p in settings.PROJECT.settings.properties.items()

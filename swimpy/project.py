@@ -23,14 +23,18 @@ class Project(mm.Project):
     """The project object with settings attached.
 
     All settings are available as attributes, methods, properties and plugin
-    instances (i.e. also attributes) from the project instance.
+    instances (i.e. also attributes) from the project instance. By default
+    projects have all attributes listed in :mod:`swimpy.defaultsettings` as
+    well as the following:
 
-    Attributes (those not defined in settings.py)
+    Attributes
     ----------
     projectdir : str path
         Absolute path to the project directory.
     resourcedir : str path
         Absoulte path to the swimpy resource directory.
+    project_name : str
+        Project name inferred from the ``input/*.cod`` file.
     settings : modelmanager.SettingsManager
         A manager object that is used to attach, record and check settings.
     """
@@ -54,6 +58,7 @@ class Project(mm.Project):
             return osp.splitext(osp.basename(ppn[0]))[0]
         else:
             warn('No or multiple *.cod files present. Name cant be inferred.')
+        return
 
     def run(self, save=True, cluster=False, quiet=False, **kw):
         """
@@ -70,11 +75,9 @@ class Project(mm.Project):
         **kw : optional
             Keyword arguments passed to save_run.
 
-        Retrurns
+        Returns
         --------
-        Run instance (Django model object) | None
-            A run instance with all attributes and methods attached.
-            If save=False, None is returned.
+        Run instance (Django model object) or  None if save=False.
         """
         # starting clock
         st = dt.datetime.now()
@@ -120,6 +123,11 @@ class Project(mm.Project):
             overwriting the project slurmargs attribute.
         **funcargs : optional
             Arguments parsed to function.
+
+        Returns
+        -------
+        int
+            The job ID.
         """
         assert type(functionname) == str or type(script) == str
         if functionname:
@@ -289,7 +297,8 @@ class Project(mm.Project):
 
         Returns
         -------
-        List of dictionaries with parameter browser attributes.
+        list
+            List of dictionaries with parameter browser attributes.
         """
         changed = []
         # create dicts with (pnam, stationID): value

@@ -1,3 +1,27 @@
+"""A module to interface SWIM and GRASS.
+
+The main classes/plugins are interfaces to the *m.swim* GRASS modules and can
+execute them without ever starting GRASS if the following projects are given:
+
+grass_db : str path
+    The path to the GRASS database directory.
+grass_location : str
+    The location name.
+grass_mapset : str
+    The mapset name to execute the module in, i.e. new maps are created here.
+
+The modules can either be execute as is by:
+
+>>> subbasins.create()
+
+Or with the `GRASS_OVERWRITE` environment variable set and followed by the
+``postprocess`` method like this:
+
+>>> subbasins.update()
+
+Input arguments to the module can either be given as project settings, as
+class/plugin attributes or when calling the ``create`` or ``update`` methods.
+"""
 from __future__ import absolute_import
 import os.path as osp
 
@@ -8,8 +32,11 @@ from modelmanager.plugins import grass as mmgrass
 class Subbasins(mmgrass.GrassModulePlugin):
     """Plugin to deal with subbasin-related input creation.
 
-    Settings
-    --------
+    The following attributes are either needed as project settings,
+    class/instance attributes or may be parsed to the create and update method:
+
+    Attributes
+    ----------
     elevation : str
         Elevation raster name.
     stations : str
@@ -36,6 +63,7 @@ class Subbasins(mmgrass.GrassModulePlugin):
 
     @propertyplugin
     class attributes(mmgrass.GrassAttributeTable):
+        """The subbasins attribute table as a ``pandas.DataFrame`` object."""
         vector = property(lambda self: self.project.subbasins.vector)
 
 
@@ -44,19 +72,17 @@ class Routing(mmgrass.GrassModulePlugin):
 
     Subbasins vector and accumulation raster must exist.
 
-    Settings
-    --------
+    The following attributes are either needed as project settings,
+    class/instance attributes or may be parsed to the create and update method:
+
+    Attributes
+    ----------
     <settings required for mmgrass.GrassSession>
         grass_db, grass_location, grass_mapset are needed.
     figpath : str, optional
         Path to fig file. Will be inferred if not given.
     <any other m.swim.routing argument>, optional
         Any other argument for m.swim.routing will be parsed.
-
-    Note
-    ----
-    The `subbasins` argument must be given as attribute as giving it as project
-    setting would overwrite the subbasins plugin.
     """
     module = 'm.swim.routing'
     # default module arguments
@@ -77,19 +103,17 @@ class Substats(mmgrass.GrassModulePlugin):
 
     Subbasins vector, mainstreams, drainage and accumulation raster must exist.
 
-    Settings
-    --------
+    The following attributes are either needed as project settings,
+    class/instance attributes or may be parsed to the create and update method:
+
+    Attributes
+    ----------
     <settings required for mmgrass.GrassSession>
         grass_db, grass_location, grass_mapset are needed.
     projectname : str, optional
         Name of project. Will be inferred if not given.
     <any other m.swim.substats argument>, optional
         Any other argument for m.swim.substats will be parsed.
-
-    Note
-    ----
-    The `subbasins` argument must be given as attribute as giving it as project
-    setting would overwrite the subbasins plugin.
     """
     module = 'm.swim.substats'
     # default module arguments
@@ -110,8 +134,11 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
 
     Subbasins raster must exist.
 
-    Settings
-    --------
+    The following attributes are either needed as project settings,
+    class/instance attributes or may be parsed to the create and update method:
+
+    Attributes
+    ----------
     landuse : str
         Name of landuse raster map.
     soil : str
@@ -121,7 +148,7 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
     strfilepath : str, optional
         Path to str file. Will be inferred if not given.
     <any other m.swim.hydrotope argument>, optional
-        Any other argument for m.swim.substats will be parsed.
+        Any other argument for m.swim.hydrotopes will be parsed.
     """
     module = 'm.swim.hydrotopes'
     raster = 'hydrotopes'

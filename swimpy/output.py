@@ -1,5 +1,5 @@
 """
-Result file interface.
+Output/model results file interfaces.
 
 All defined classes are attached to project and run instances as
 propertyplugin that return a pandas.DataFrame. For files to be read from the
@@ -8,15 +8,14 @@ a run instance, a method refering to the extension of a file saved as
 ResultFile needs to be defined (e.g. from_csv) or from_run to overwrite the
 file selection.
 
-Conventions:
-------------
+Conventions
+-----------
 - class and method names should be lowercase, words separated by _ and
-    descriptions should be singular (subbasin rather than subbasins)
+  descriptions should be singular (subbasin rather than subbasins)
 - name word order: spatial domain (catchment, subbasin, hydrotope, station
-    etc.), timestep adjective (daily, monthly, annually, average), variable
-    and/or other descriptions. Pattern:
-        domain_timestep_variable[_description...]
-- all read from_* methods should parse **readkwargs to the pandas.read call
+  etc.), timestep adjective (daily, monthly, annually, average), variable
+  and/or other descriptions. Pattern: domain_timestep_variable[_description...]
+- all read ``from_*`` methods should parse any keyword to the pandas.read call
 """
 import os.path as osp
 import datetime as dt
