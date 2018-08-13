@@ -60,6 +60,7 @@ class Project(mm.Project):
             warn('No or multiple *.cod files present. Name cant be inferred.')
         return
 
+    @parse_settings
     def run(self, save=True, cluster=False, quiet=False, **kw):
         """
         Execute SWIM.
@@ -103,6 +104,7 @@ class Project(mm.Project):
             print('Execution took %s hh:mm:ss' % delta)
         return run
 
+    @parse_settings
     def submit_cluster(self, jobname, functionname=None, script=None,
                        dryrun=False, slurmargs={}, **funcargs):
         """
