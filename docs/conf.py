@@ -34,7 +34,9 @@ import swimpy
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
-              'sphinx.ext.napoleon']
+              'sphinx.ext.autosectionlabel',
+              'sphinx.ext.napoleon',
+              'nbsphinx']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -73,14 +75,31 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
+autodoc_mock_imports = ['django']
+autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance',
+                         'inherited-members']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+autosectionlabel_prefix_document = True
+
+nbsphinx_epilog = """
+
+.. nbinfo::
+
+    .. raw:: html
+
+        <a href="../_sources/{{ env.doc2path(env.docname, base=None) }}" download>
+        Download as Notebook
+        </a>
+
+"""
+html_sourcelink_suffix = ''
 
 # -- Options for HTML output -------------------------------------------
 

@@ -2,10 +2,5 @@
 Credits
 =======
 
-Development Lead
-----------------
-
-* Michel Wortmann <wortmann@pik-potsdam.de>
-
-Contributors
-------------
+* Michel Wortmann <wortmann@pik-potsdam.de> (development Lead),
+  Potsdam Institute of Climate Impact Research, Germany

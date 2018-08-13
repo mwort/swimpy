@@ -11,13 +11,14 @@ Setup the SWIMpy resource in your SWIM project directory:
 
     $ cd change/to/your/swimproject
     $ swimpy setup
+    $ swimpy -h
 
 Now you can use this project through the `commandline interface`_, the
 `python API`_ or the `browser interface`_. The SWIMpy resources and settings
 are located in the `swimpy` directory of your project. Most importantly, the
 `settings.py` file controls the configuration of your project. By default, this
 is empty, but you are encouraged to add variables and functions relevant for
-your project (see `Settings`_).
+your project (see `Project settings`_).
 
 
 Commandline interface
@@ -55,19 +56,20 @@ current directory or with a path to the project directory:
     project = swimpy.Project()
     project = swimpy.Project('path/to/project')
 
-    # set parameters
-    project.basin_parameters['ecal'] = 1.12
+    # get and set parameters like dictionaries
+    ecal = project.basin_parameters['ecal']
     project.config_parameters['nbyr'] = 20
 
     # run and save
-    project.settings(resultfile_functions=['station_daily_discharge'])
-    run = project.run(notes='test run')
+    run = project.run(notes='test run', files=['station_daily_discharge'])
 
     # plot results from project
     project.station_daily_discharge.plot()
 
     # or plot saved result
     run.station_daily_discharge.plot()
+
+Check out the :ref:`examples:Examples`.
 
 
 Browser interface
@@ -81,9 +83,21 @@ Start the browser interface from the commandline:
 
 Now navigate with your browser of choice to: ``http://localhost:8000``
 
+.. image:: _static/img/browser_home_screenshot.png
 
-Settings
---------
+*API and runs database tables on home page*
+
+.. image:: _static/img/browser_runs_list.png
+
+*List of runs*
+
+.. image:: _static/img/browser_api_function.png
+
+*An executed function with a figure output*
+
+
+Project settings
+----------------
 The `settings.py` file in the SWIMpy resource directory is the place to
 customise your project. Everything defined here will become available with the
 the `project` instance in python, while functions and plugins are also available

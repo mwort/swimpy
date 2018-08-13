@@ -9,11 +9,8 @@ helps, and credit will always be given.
 
 You can contribute in many ways:
 
-Types of Contributions
-----------------------
-
 Report Bugs
-~~~~~~~~~~~
+-----------
 
 Report bugs at https://gitlab.pik-potsdam.de/swim/swimpy/issues
 
@@ -25,20 +22,18 @@ If you are reporting a bug, please include:
 
 
 Submit a merge request
-------------
+----------------------
 
 Ready to contribute? Here's how to set up `swimpy` for local development.
 
-1. Fork the `swimpy` repo on Gitlab.
+1. Fork the `swimpy` repository on Gitlab.
 2. Clone your fork locally::
 
     $ git clone git@gitlab.pik-potsdam.de:your_name_here/swimpy.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
-
-    $ mkvirtualenv swimpy
-    $ cd swimpy/
-    $ python setup.py develop
+3. Install your local copy into a virtualenv as described in
+   :ref:`installation:Setup a Python environment` and
+   :ref:`installation:Install from source`.
 
 4. Create a branch for local development::
 
@@ -46,51 +41,36 @@ Ready to contribute? Here's how to set up `swimpy` for local development.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the
-   tests, including testing other Python versions with tox::
-
-    $ flake8 swimpy tests
-    $ python setup.py test
-    $ tox
-
-   To get flake8 and tox, just pip install them into your virtualenv.
-
-6. Commit your changes and push your branch to GitLab::
+5. Commit your changes and push your branch to GitLab::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitLab website.
+6. Submit a pull request through the GitLab website.
 
 Pull Request Guidelines
 -----------------------
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include tests.
+1. The tests in ``swimpy/tests`` should pass without error in Python 2.7 and
+   the latest stable Python 3 release. Consider adding tests for the additional
+   code as well.
 2. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
-   https://travis-ci.org/mwort/swimpy/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+   your new functionality into a function with a docstring. If a module is
+   added, a new file needs to be added to ``docs/modules`` and listed in
+   ``docs/modules.rst``.
 
-Tips
-----
-
-To run a subset of tests::
-
-
-    $ python -m unittest tests.test_swimpy
 
 Releasing
 ---------
 
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
+A reminder for the maintainers on how to deploy:
 
-$ bumpversion patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+1. Add entry to ``CHANGELOG.rst``.
+2. Change version in ``swimpy.__init__.py``.
+3. Commit changes.
+4. Tag commit with version number, e.g. `v1.2`
+5. Push commits and tags: ``git push ; git push --tags``
+6. Update docs: ``$ make docs``

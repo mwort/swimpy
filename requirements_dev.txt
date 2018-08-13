@@ -6,6 +6,7 @@ flake8
 coverage
 Sphinx
 recommonmark
+nbsphinx
 twine
 ipython
 ipdb

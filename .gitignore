@@ -47,7 +47,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-
+.ipynb_checkpoints
 
 # Sphinx documentation
 docs/_build/

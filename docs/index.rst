@@ -3,15 +3,16 @@ SWIMpy's documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-   readme
    installation
    usage
+   examples
    modules
-   contributing
-   authors
-   history
+   development
+
+
+.. include:: ../README.md
+.. include:: ../AUTHORS.rst
 
 Indices and tables
 ==================

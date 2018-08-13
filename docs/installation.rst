@@ -9,12 +9,11 @@ Quick install
 
 Before installing, it's recommended to setup a virtual python environment
 (see below). With the environment activated and in a directory of your choice,
-run the following to install (requires *git* and prompts for username/password):
+run the following to install (requires *git* and prompts twice for username/password):
 
 .. code-block:: console
 
-    $ git clone git+https://gitlab.pik-potsdam.de/wortmann/swimpy.git
-    $ pip install swimpy
+    $ pip install git+https://gitlab.pik-potsdam.de/wortmann/swimpy.git
 
 
 Setup a Python environment
@@ -45,7 +44,7 @@ Create a new conda environment and install the large dependencies like this:
 
 .. code-block:: console
 
-    $ conda create -y -n swimpyenv python=2.7 pip ipython matplotlib pandas
+    $ conda create -y -n swimpyenv python=2.7 pip matplotlib pandas
 
 Then and every time before using SWIMpy, activate the environment like this:
 
@@ -74,10 +73,12 @@ Once you have a copy of the source code, you can install it with:
 
 .. code-block:: console
 
-    $ pip install -e swimpy
+    $ pip install -e swimpy/
 
 
-`swimpy` in the above is the downloaded directory/repository.
+``swimpy`` in the above is the downloaded directory/repository. Leave the ``-e``
+out if you dont want to edit the code; you can then also remove the ``swimpy/``
+directory.
 
 .. _PIK GitLab repo: https://gitlab.pik-potsdam.de/wortmann/swimpy
 .. _zip/tar: https://gitlab.pik-potsdam.de/wortmann/swimpy/repository/archive.zip?ref=master
