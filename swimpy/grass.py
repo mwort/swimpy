@@ -56,9 +56,12 @@ class Subbasins(mmgrass.GrassModulePlugin):
     subbasins = property(lambda self: self.vector)
 
     def postprocess(self, **moduleargs):
+        self.project.config_parameters['mb'] = len(self.attributes)
         self.project.routing(**moduleargs)
         self.project.substats(**moduleargs)
+        self.project.subcatch_definition.update()
         self.project.hydrotopes(**moduleargs)
+        # TODO: write nc_climate files
         return
 
     @propertyplugin
