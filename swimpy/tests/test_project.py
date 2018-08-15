@@ -26,8 +26,7 @@ class Processing:
 
 class Run:
     def test_project_run_data(self):
-        file_interfaces = self.project.browser.models['run'].file_interfaces
-        resultproperties = file_interfaces['resultfiles'].keys()
+        resultproperties = self.project.resultfile_interfaces
         self.assertGreater(len(resultproperties), 0)
         for r in sorted(resultproperties):
             df_project = getattr(self.project, r)

@@ -84,13 +84,15 @@ class SwimRun(Run):
         abstract = True
 
     objects = RunManager()
-    # class attribute to let the Run object know which plugins to associate
-    # with what file.
-    file_interfaces = {
-      'resultfiles': {
-        n: p for n, p in settings.PROJECT.settings.properties.items()
-        if hasattr(p, 'plugin') and ProjectOrRunData in p.plugin.__bases__
-        }}
+
     # extra fields
     start = models.DateField('Start date', null=True)
     end = models.DateField('End date', null=True)
+
+    @property
+    def file_interfaces(self):
+        """Attribute to let the Run object map files to plugins.
+        """
+        p = settings.PROJECT
+        fi = {n: p.settings.properties[n] for n in p.resultfile_interfaces}
+        return dict(resultfiles=fi)

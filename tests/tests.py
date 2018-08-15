@@ -280,8 +280,7 @@ class TestPlotting(ProjectTestCase):
         return
 
     def test_runs(self):
-        file_interfaces = self.project.browser.models['run'].file_interfaces
-        resfile_interfaces = list(file_interfaces['resultfiles'].keys())
+        resfile_interfaces = self.project.resultfile_interfaces
         self.project.settings(save_run_files=resfile_interfaces)
         run = self.project.save_run(notes='TestPlotting.test_runs')
         resfile_plotf = [n for n in self.plot_functions.keys()

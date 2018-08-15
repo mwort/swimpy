@@ -233,6 +233,19 @@ class Project(mm.Project):
             raise IOError(errmsg)
         return f
 
+    @property
+    def resultfile_interfaces(self):
+        """List of output file project or run attributes.
+
+        Apart from interfacing between current SWIM output files, these
+        attributes may be parsed to the `files` argument to `save_run`. They
+        will then become an attribute of that run.
+        """
+        from modelmanager.plugins.pandas import ProjectOrRunData
+        fi = [n for n, p in self.settings.properties.items()
+              if hasattr(p, 'plugin') and ProjectOrRunData in p.plugin.__mro__]
+        return fi
+
     @parse_settings
     def save_run(self, indicators={}, files={}, **kw):
         """
