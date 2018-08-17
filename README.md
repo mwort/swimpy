@@ -47,8 +47,6 @@ TODO
 
 * Other components:
 
-  * climschange and climate tracking, django model?
   * check interface for Danube/oasis project
   * ``run.plot()`` function
-  * GIS files to raster
   * consistent doc strings: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt

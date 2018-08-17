@@ -23,7 +23,9 @@ Input arguments to the module can either be given as project settings, as
 class/plugin attributes or when calling the ``create`` or ``update`` methods.
 """
 from __future__ import absolute_import
+import os
 import os.path as osp
+import numpy as np
 
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins import grass as mmgrass
@@ -52,7 +54,10 @@ class Subbasins(mmgrass.GrassModulePlugin):
     setting would overwrite the plugin which has the same name.
     """
     module = 'm.swim.subbasins'
+    #: Subbasins vector (w/o mapset) to be created in `grass_mapset`
     vector = 'subbasins'
+    #: Subbasins raster (w/o mapset) to be created in `grass_mapset`
+    raster = 'subbasins'
     subbasins = property(lambda self: self.vector)
 
     def postprocess(self, **moduleargs):
@@ -68,6 +73,24 @@ class Subbasins(mmgrass.GrassModulePlugin):
     class attributes(mmgrass.GrassAttributeTable):
         """The subbasins attribute table as a ``pandas.DataFrame`` object."""
         vector = property(lambda self: self.project.subbasins.vector)
+
+    def reclass(self, values, outrast, mapset=None):
+        """Reclass subbasin raster to 'values'.
+
+        Arguments
+        ---------
+        outrast : str
+            Name of raster to be created.
+        values : list-like | <pandas.Series>
+            Values the raster is reclassed to. If a pandas.Series is parsed,
+            the index is used to create the mapping, otherwise the categories
+            are assumed to be ``range(1, len(values)+1)``.
+        mapset : str, optional
+            Different than the default `grass_mapset` mapset to write to.
+        """
+        sbname = self.raster + '@' + self.project.grass_mapset
+        reclass_raster(self.project, sbname, outrast, values, mapset=mapset)
+        return
 
 
 class Routing(mmgrass.GrassModulePlugin):
@@ -154,8 +177,10 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
         Any other argument for m.swim.hydrotopes will be parsed.
     """
     module = 'm.swim.hydrotopes'
+    #: Hydrotopes raster (w/o mapset) to be created in `grass_mapset`
     raster = 'hydrotopes'
-    subbasins = property(lambda self: self.project.subbasins.vector)
+    #: Subbasin raster taken from subbasins.raster
+    subbasins = property(lambda self: self.project.subbasins.raster)
     hydrotopes = property(lambda self: self.raster)
 
     def __init__(self, project):
@@ -165,3 +190,112 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
             strfilepath = 'input/%s.str' % self.project.project_name
             self.strfilepath = osp.join(project.projectdir, strfilepath)
         return
+
+    def reclass(self, values, outrast, mapset=None):
+        """Reclass hydrotopes raster to 'values'.
+
+        Arguments
+        ---------
+        outrast : str
+            Name of raster to be created.
+        values : list-like | <pandas.Series>
+            Values the raster is reclassed to. If a pandas.Series is parsed,
+            the index is used to create the mapping, otherwise the categories
+            are assumed to be ``range(1, len(values)+1)``.
+        mapset : str, optional
+            Different than the default `grass_mapset` mapset to write to.
+        """
+        hydname = self.raster + '@' + self.project.grass_mapset
+        reclass_raster(self.project, hydname, outrast, values, mapset=mapset)
+        return
+
+
+def reclass_raster(project, inrast, outrast, values, mapset=None):
+    """Reclass inrast with int/float 'values' to outrast.
+
+    Arguments
+    ---------
+    project : <swimpy.Project>
+        A project instance with GRASS setttings.
+    inrast : str
+        Name of input raster to be reclassed.
+    outrast : str
+        Name of raster to be created.
+    values : list-like | <pandas.Series>
+        Values the raster is reclassed to. If a pandas.Series is parsed, the
+        index is used to create the mapping, otherwise the categories are
+        assumed to be ``range(1, len(values)+1)``.
+    mapset : str, optional
+        Different than the default `grass_mapset` mapset to write to.
+    """
+    from pandas import Series
+    if isinstance(values, Series):
+        ix = values.index
+    else:
+        ix = range(1, len(values)+1)
+    columns = np.column_stack([ix, ix, values, values])
+    mapset = mapset or project.grass_mapset
+    with mmgrass.GrassSession(project, mapset=mapset) as grass:
+        tf = grass.tempfile()
+        np.savetxt(tf, columns, delimiter=':')
+        grass.run_command('r.recode', input=inrast, output=outrast, rules=tf)
+    os.remove(tf)
+    return 0
+
+
+# generic `to_raster` function to be used as method in output.py
+# values are the ProjectOrRunData instance and reclasser the subbasins or
+# hydroptes.reclass_raster methods (not in docstring as it's copied)
+def _subbasin_or_hydrotope_values_to_raster(
+        project, values, reclasser,
+        timestep=None, prefix=None, name=None, strds=True, mapset=None):
+    """Create GRASS raster from values for each timestep.
+
+    Arguments
+    ---------
+    timestep : str | list or str, optional
+        Select individual timestep (str) or several (list). Default is
+        all timesteps.
+    prefix : str, optional
+        Different prefix. Default is name of class (`hydrotope_*`). The
+        timestep is appended at the end.
+    name : str | list, optional
+        To set a name without timestep at the end.
+    strds : bool
+        Create a space-time raster dataset if len(timestep)>1 named after
+        `prefix` (trailing _ trimmed).
+    mapset : str, optional
+        Mapset to write to. Default: `prefix` (trailing _ trimmed)
+    """
+    # argument preparation
+    prefix = prefix or values.__class__.__name__
+    mapset = mapset or prefix.strip('_')
+    if timestep:
+        assert type(timestep) in [str, list, slice]
+        d = values.loc[[timestep] if type(timestep) == str else timestep]
+    else:
+        d = values.copy()
+    if name:
+        assert type(name) in [str, list]
+        names = [name] if type(name) == str else name
+        assert len(names) == len(d), 'Wrong number of names parsed.'
+    else:
+        names = [prefix+'_'+str(i) for i in d.index]
+    # do the reclassing
+    for i, n in enumerate(names):
+        reclasser(d.iloc[i, :], n, mapset=mapset)
+        if int(os.environ.get('GRASS_VERBOSE', 1)):
+            print('Created raster %s' % (n+'@'+mapset))
+    # create spacetime ds
+    if strds and len(d.index) > 1 and hasattr(d.index, 'freq'):
+        dsname = prefix.strip('_')
+        with mmgrass.GrassSession(project, mapset=mapset) as grass:
+            for n, ts in zip(names, d.index.to_timestamp().date):
+                date = ts.strftime('%d %b %Y')
+                grass.run_command('r.timestamp', map=n, date=date)
+            grass.run_command('t.create', output=dsname, title=dsname,
+                              description='created with swimpy')
+            grass.run_command('t.register', input=dsname, maps=','.join(names))
+        if int(os.environ.get('GRASS_VERBOSE', 1)):
+            print('Created space-time raster dataset %s' % (dsname+'@'+mapset))
+    return

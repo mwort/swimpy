@@ -217,6 +217,11 @@ class TestGrass(ProjectTestCase):
         key = 'NAME'
         add_attributes = {'obs': {'HOF': pd.Series([12, 2, 2, 4])}}
 
+    @classmethod
+    def setUpClass(self):
+        self.project = swimpy.project.setup(SWIM_TEST_PROJECT)
+        self.project.settings(**self.grass_settings)
+
     def test_session(self):
         self.project.settings(**self.grass_settings)
         with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:
@@ -248,6 +253,19 @@ class TestGrass(ProjectTestCase):
         self.project.testgrasstbl.write()
         self.project.testgrasstbl.read()
         self.assertEqual(self.project.testgrasstbl['new'].mean(), 1000)
+
+    @skip_if_py3
+    def test_to_raster(self):
+        hyd_file = 'hydrotope_annual_evaporation_actual'
+        sub_file = 'subbasin_daily_waterbalance'
+        with mmgrass.GrassOverwrite(verbose=False):
+            getattr(self.project, hyd_file).to_raster()
+            ts = slice('1991-01-01', '1991-01-10')
+            getattr(self.project, sub_file).to_raster('AET', timestep=ts)
+        for f in [hyd_file, sub_file+'_aet']:
+            with mmgrass.GrassSession(self.project, mapset=f) as grass:
+                rasters = grass.list_strings('raster', f+'*', mapset=f)
+                self.assertEqual(len(rasters), 10)
 
 
 class TestPlotting(ProjectTestCase):
@@ -281,10 +299,11 @@ class TestPlotting(ProjectTestCase):
 
     def test_runs(self):
         resfile_interfaces = self.project.resultfile_interfaces
-        self.project.settings(save_run_files=resfile_interfaces)
-        run = self.project.save_run(notes='TestPlotting.test_runs')
         resfile_plotf = [n for n in self.plot_functions.keys()
                          if '.'.join(n.split('.')[:-1]) in resfile_interfaces]
+        resfiles_w_plotf = ['.'.join(n.split('.')[:-1]) for n in resfile_plotf]
+        self.project.settings(save_run_files=resfiles_w_plotf)
+        run = self.project.save_run(notes='TestPlotting.test_runs')
         fig = pl.figure()
         for a in resfile_plotf:
             print(a)

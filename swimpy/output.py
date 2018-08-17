@@ -18,7 +18,9 @@ Conventions
 - all read ``from_*`` methods should parse any keyword to the pandas.read call
 """
 import os.path as osp
+from glob import glob
 import datetime as dt
+import warnings
 
 import pandas as pd
 from modelmanager.utils import propertyplugin
@@ -26,6 +28,7 @@ from modelmanager.plugins.pandas import ProjectOrRunData
 
 from swimpy import utils, plot
 from swimpy.plot import plot_function as _plot_function
+from swimpy.grass import _subbasin_or_hydrotope_values_to_raster
 
 from matplotlib import pyplot as plt  # after plot
 
@@ -134,7 +137,7 @@ class station_daily_discharge(ProjectOrRunData):
 @propertyplugin
 class subbasin_daily_waterbalance(ProjectOrRunData):
     swim_path = osp.join(RESDIR, 'subd.prn')
-    plugin = []
+    plugin = ['to_raster']
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -153,6 +156,20 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
         df.columns = pd.MultiIndex.from_tuples(colstrint)
         df.index = df.index.to_period(freq='d')
         return df
+
+    def to_raster(self, variable, timestep=None, prefix=None, name=None,
+                  strds=True, mapset=None):
+        # extra argument
+        """variable : str
+            Selected variable (will be appended to default prefix).
+        """
+        prefix = prefix or self.__class__.__name__ + '_' + variable.lower()
+        _subbasin_or_hydrotope_values_to_raster(
+            self.project, self[variable], self.project.subbasins.reclass,
+            timestep=timestep, name=name, prefix=prefix, strds=strds,
+            mapset=mapset)
+        return
+    to_raster.__doc__ = _subbasin_or_hydrotope_values_to_raster.__doc__
 
 
 @propertyplugin
@@ -227,5 +244,106 @@ class catchment_annual_waterbalance(ProjectOrRunData):
         return mean
 
 
+class gis_files(object):
+    """Management plugin to dynamically add GIS file propertyplugins."""
+
+    file_names = {'eva-gis': 'annual_evaporation_actual',
+                  'gwr-gis': 'annual_groundwater_recharge',
+                  'pre-gis': 'annual_precipitation',
+                  'run-gis': 'annual_runoff',
+                  }
+
+    class _gis_file(ProjectOrRunData):
+        """Generic file interface. swim_path will be assigned through dynamic
+        subclassing in gis_files._add_gis_file_propertyplugins.
+        """
+        plugin = ['to_raster']
+
+        def from_project(self, path, **readkwargs):
+            return self.project.gis_files.read(path, **readkwargs)
+
+        def from_csv(self, path, **readkwargs):
+            df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
+            if list(df.columns) == ['mean']:
+                df.index = df.index.astype(int)
+                df = df['mean']
+            else:
+                df.columns = df.columns.astype(int)
+                df.index = df.index.to_period()
+            return df
+
+        def to_raster(self, timestep=None, prefix=None, name=None, strds=True,
+                      mapset=None):
+            """Outsourced for reuse to grass.py."""
+            _subbasin_or_hydrotope_values_to_raster(
+                self.project, self, self.project.hydrotopes.reclass, name=name,
+                timestep=timestep, prefix=prefix, strds=strds, mapset=mapset)
+            return
+        to_raster.__doc__ = _subbasin_or_hydrotope_values_to_raster.__doc__
+
+        def area_weighted(self):
+            """Area weighted values.
+
+            Returns
+            -------
+            <pandas.DataFrame>
+            """
+            area = self.project.hydrotopes.structure['area']
+            return self.mult(area, axis=0)/area.sum()
+
+    def __init__(self, project):
+        self.project = project
+        self.gisdir = osp.join(project.projectdir, GISDIR)
+        self.interfaces = self._create_propertyplugins()
+        self.project.settings(**self.interfaces)
+        return
+
+    def read(self, pathorname, **readkwargs):
+        """Read a SWIM GIS file by full path or by the filename."""
+        namepath = osp.join(self.gisdir, pathorname)
+        path = namepath if osp.exists(namepath) else pathorname
+        df = pd.read_table(path, delim_whitespace=True, usecols=[0, 2],
+                           header=None, names=['id', 'value'], **readkwargs)
+        # make 2D array (timesteps, hydrotopes)
+        nhyd = df.id.max()
+        dfrs = df.value.T.values.reshape(-1, nhyd)
+        ids = list(range(1, nhyd+1))
+        nsteps = dfrs.shape[0]
+        if nsteps > 1:
+            ix = self._guess_gis_file_index(nsteps)
+            dat = pd.DataFrame(dfrs, columns=ids, index=ix)
+        else:
+            dat = pd.Series(dfrs[0], index=ids, name='mean')
+        return dat
+
+    def _guess_gis_file_index(self, nsteps):
+        nbyr, iyr = self.project.config_parameters('nbyr', 'iyr')
+        ixkw = dict(start=str(iyr), periods=nsteps, name='time')
+        if nsteps == nbyr:
+            ix = pd.PeriodIndex(freq='a', **ixkw)
+        elif nsteps == nbyr*12:
+            ix = pd.PeriodIndex(freq='m', **ixkw)
+        else:
+            ix = pd.PeriodIndex(freq='d', **ixkw)
+            if ix[-1] != pd.Period(str(iyr+nbyr-1)+'-12-31'):
+                msg = 'Last day is %s. Is this really daily?' % ix[-1]
+                warnings.warn(msg)
+        return ix
+
+    def _create_propertyplugins(self):
+        files = glob(osp.join(self.gisdir, '*'))
+        plugins = {}
+        for f in files:
+            class _gf(self._gis_file):
+                swim_path = f
+            fname = osp.splitext(osp.basename(f))[0]
+            altname = fname.replace('-', '_')
+            name = 'hydrotope_' + self.file_names.get(fname, altname)
+            _gf.__name__ = name
+            plugins[name] = propertyplugin(_gf)
+        return plugins
+
+
 # only import the property plugins on from output import *
 __all__ = [n for n, p in globals().items() if isinstance(p, propertyplugin)]
+__all__ += ['gis_files']
