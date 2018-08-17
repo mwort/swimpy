@@ -143,13 +143,15 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
                 for y, d in zip(df.pop('YR'), df.pop('DAY'))]
         dtmspi = pd.PeriodIndex(dtms, freq='d', name='time')
         df.index = pd.MultiIndex.from_arrays([dtmspi, df.pop('SUB')])
-        return df
+        return df.unstack()  # time alone as index
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
-        pix = df.index.to_period(freq='d')
-        df.index = pd.MultiIndex.from_arrays([pix, df.pop('SUB')])
+        df = pd.read_csv(path, index_col=0, header=[0, 1], parse_dates=[0],
+                         **readkwargs)
+        colstrint = [(v, int(i)) for v, i in df.columns]
+        df.columns = pd.MultiIndex.from_tuples(colstrint)
+        df.index = df.index.to_period(freq='d')
         return df
 
 
