@@ -6,7 +6,6 @@ The main project module.
 import os
 import os.path as osp
 from glob import glob
-from warnings import warn
 import datetime as dt
 import subprocess
 from numbers import Number
@@ -56,9 +55,7 @@ class Project(mm.Project):
         ppn = glob(osp.join(projectdir or self.projectdir, 'input/*.cod'))
         if len(ppn) == 1:
             return osp.splitext(osp.basename(ppn[0]))[0]
-        else:
-            warn('No or multiple *.cod files present. Name cant be inferred.')
-        return
+        return None
 
     @parse_settings
     def run(self, save=True, cluster=False, quiet=False, **kw):
