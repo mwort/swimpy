@@ -1,4 +1,4 @@
-swimpy
+SWIMpy
 ======
 
 

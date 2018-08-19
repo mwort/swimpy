@@ -1,9 +1,10 @@
-SWIMpy's documentation
-======================
+Overview
+========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   contents
    installation
    usage
    examples
