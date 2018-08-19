@@ -61,16 +61,3 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring. If a module is
    added, a new file needs to be added to ``docs/modules`` and listed in
    ``docs/modules.rst``.
-
-
-Releasing
----------
-
-A reminder for the maintainers on how to deploy:
-
-1. Add entry to ``CHANGELOG.rst``.
-2. Change version in ``swimpy.__init__.py``.
-3. Commit changes.
-4. Tag commit with version number, e.g. `v1.2`
-5. Push commits and tags: ``git push ; git push --tags``
-6. Update docs: ``$ make docs``

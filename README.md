@@ -49,4 +49,3 @@ TODO
 
   * check interface for Danube/oasis project
   * ``run.plot()`` function
-  * consistent doc strings: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
