@@ -42,7 +42,7 @@ class station_daily_discharge(ProjectOrRunData):
     """
     Daily discharge of selected stations.
     """
-    swim_path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
+    path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
     plugin = ['plot', 'plot_flow_duration_polar']
 
     @staticmethod
@@ -136,7 +136,7 @@ class station_daily_discharge(ProjectOrRunData):
 
 @propertyplugin
 class subbasin_daily_waterbalance(ProjectOrRunData):
-    swim_path = osp.join(RESDIR, 'subd.prn')
+    path = osp.join(RESDIR, 'subd.prn')
     plugin = ['to_raster']
 
     @staticmethod
@@ -174,7 +174,7 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
 
 @propertyplugin
 class catchment_daily_waterbalance(ProjectOrRunData):
-    swim_path = osp.join(RESDIR, 'bad.prn')
+    path = osp.join(RESDIR, 'bad.prn')
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -193,7 +193,7 @@ class catchment_daily_waterbalance(ProjectOrRunData):
 
 @propertyplugin
 class catchment_monthly_waterbalance(ProjectOrRunData):
-    swim_path = osp.join(RESDIR, 'bam.prn')
+    path = osp.join(RESDIR, 'bam.prn')
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -217,7 +217,7 @@ class catchment_monthly_waterbalance(ProjectOrRunData):
 
 @propertyplugin
 class catchment_annual_waterbalance(ProjectOrRunData):
-    swim_path = osp.join(RESDIR, 'bay.prn')
+    path = osp.join(RESDIR, 'bay.prn')
     plugin = ['plot_mean', 'print_mean']
 
     @staticmethod
@@ -254,7 +254,7 @@ class gis_files(object):
                   }
 
     class _gis_file(ProjectOrRunData):
-        """Generic file interface. swim_path will be assigned through dynamic
+        """Generic file interface. path will be assigned through dynamic
         subclassing in gis_files._add_gis_file_propertyplugins.
         """
         plugin = ['to_raster']
@@ -335,7 +335,7 @@ class gis_files(object):
         plugins = {}
         for f in files:
             class _gf(self._gis_file):
-                swim_path = f
+                path = f
             fname = osp.splitext(osp.basename(f))[0]
             altname = fname.replace('-', '_')
             name = 'hydrotope_' + self.file_names.get(fname, altname)
