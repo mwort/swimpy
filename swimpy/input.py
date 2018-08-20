@@ -4,10 +4,9 @@ SWIM input functionality.
 import os.path as osp
 
 import pandas as pd
-from modelmanager.utils import propertyplugin as _propertyplugin
-from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
-from modelmanager.plugins.pandas import (
-    ReadWriteDataFrame as _ReadWriteDataFrame)
+from modelmanager.utils import propertyplugin
+from modelmanager.plugins.templates import TemplatesDict
+from modelmanager.plugins.pandas import ReadWriteDataFrame
 from modelmanager.plugins import grass as mmgrass
 
 
@@ -15,24 +14,24 @@ from swimpy import utils, plot
 import matplotlib.pyplot as plt  # after plot
 
 
-@_propertyplugin
-class basin_parameters(_TemplatesDict):
+@propertyplugin
+class basin_parameters(TemplatesDict):
     """
     Set or get any values from the .bsn file by variable name.
     """
     template_patterns = ['input/*.bsn']
 
 
-@_propertyplugin
-class config_parameters(_TemplatesDict):
+@propertyplugin
+class config_parameters(TemplatesDict):
     """
     Set or get any values from the .cod or swim.conf file by variable name.
     """
     template_patterns = ['input/*.cod', 'swim.conf']
 
 
-@_propertyplugin
-class subcatch_parameters(_ReadWriteDataFrame):
+@propertyplugin
+class subcatch_parameters(ReadWriteDataFrame):
     """
     Read or write parameters in the subcatch.prm file.
     """
@@ -53,8 +52,8 @@ class subcatch_parameters(_ReadWriteDataFrame):
         return
 
 
-@_propertyplugin
-class subcatch_definition(_ReadWriteDataFrame):
+@propertyplugin
+class subcatch_definition(ReadWriteDataFrame):
     """
     Interface to the subcatchment definition file from DataFrame or grass.
     """
@@ -109,8 +108,8 @@ class climate(object):
         self.project = project
         return
 
-    @_propertyplugin
-    class inputdata(_ReadWriteDataFrame):
+    @propertyplugin
+    class inputdata(ReadWriteDataFrame):
         """A lazy DataFrame representation of the two 'clim'-files.
 
         Rather than being read on instantiation, .read() and .write() need to
@@ -127,7 +126,7 @@ class climate(object):
             pd.DataFrame.__init__(self)
             self.project = project
             self.path = project.config_parameters['climatedir']
-            _ReadWriteDataFrame.__init__(self, project)
+            ReadWriteDataFrame.__init__(self, project)
             return
 
         def read(self, climdir=None, **kw):
@@ -243,3 +242,8 @@ class climate(object):
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
             return bars
+
+
+# only import the property plugins on from output import *
+__all__ = [n for n, p in globals().items() if isinstance(p, propertyplugin)]
+__all__ += ['climate']
