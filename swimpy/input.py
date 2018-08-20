@@ -42,8 +42,7 @@ class subcatch_parameters(_ReadWriteDataFrame):
         bsn = pd.read_table(self.path, delim_whitespace=True)
         stn = 'stationID' if 'stationID' in bsn.columns else 'station'
         bsn.set_index(stn, inplace=True)
-        pd.DataFrame.__init__(self, bsn)
-        return
+        return bsn
 
     def write(self, **kwargs):
         bsn = self.copy()
@@ -64,8 +63,7 @@ class subcatch_definition(_ReadWriteDataFrame):
 
     def read(self, **kwargs):
         scdef = pd.read_table(self.path, delim_whitespace=True, index_col=0)
-        pd.DataFrame.__init__(self, scdef)
-        return
+        return scdef
 
     def write(self, **kwargs):
         tbl = self.copy()
@@ -138,8 +136,7 @@ class climate(object):
             dfs = pd.concat([self.read_clim(path % i, startyr, vs, **kw)
                              for i, vs in self.clim_variables.items()], axis=1)
             dfs.sort_index(axis=1, inplace=True)
-            pd.DataFrame.__init__(self, dfs)
-            return self
+            return dfs
 
         @classmethod
         def read_clim(cls, path, startyear, variables, **readkwargs):
