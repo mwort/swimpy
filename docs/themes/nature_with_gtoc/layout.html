@@ -18,8 +18,8 @@ by Andi Albrecht.
             <div class="sphinxsidebar">
                 {%- block sidebar1 %}
                 {%- block sidebartoc %}
-                <h3>{{ _('Table Of Contents') }}</h3>
-                {{ toctree() }}
+                <a href="{{ pathto('contents') }}"><h3>{{ _('Table Of Contents') }}</h3></a>
+                {{ toctree(maxdepth=2) }}
                 {%- endblock %}
                 {%- block sidebarsearch %}
                 <h3 style="margin-top: 1.5em;">{{ _('Search') }}</h3>

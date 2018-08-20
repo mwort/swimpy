@@ -4,7 +4,6 @@ Overview
 .. toctree::
    :maxdepth: 1
 
-   contents
    installation
    usage
    examples
