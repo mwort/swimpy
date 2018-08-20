@@ -281,16 +281,6 @@ class gis_files(object):
             return
         to_raster.__doc__ = _subbasin_or_hydrotope_values_to_raster.__doc__
 
-        def area_weighted(self):
-            """Area weighted values.
-
-            Returns
-            -------
-            <pandas.DataFrame>
-            """
-            area = self.project.hydrotopes.structure['area']
-            return self.mult(area, axis=0)/area.sum()
-
     def __init__(self, project):
         self.project = project
         self.gisdir = osp.join(project.projectdir, GISDIR)

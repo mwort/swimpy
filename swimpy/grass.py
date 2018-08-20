@@ -25,10 +25,12 @@ class/plugin attributes or when calling the ``create`` or ``update`` methods.
 from __future__ import absolute_import
 import os
 import os.path as osp
-import numpy as np
 
+import numpy as np
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins import grass as mmgrass
+
+from swimpy.input import StructureFile
 
 
 class Subbasins(mmgrass.GrassModulePlugin):
@@ -182,6 +184,10 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
     #: Subbasin raster taken from subbasins.raster
     subbasins = property(lambda self: self.project.subbasins.raster)
     hydrotopes = property(lambda self: self.raster)
+    #: The structure file as a pandas.DataFrame
+    attributes = propertyplugin(StructureFile)
+    #: The structure file as a pandas.DataFrame (alias of attributes)
+    structure = attributes
 
     def __init__(self, project):
         self.project = project

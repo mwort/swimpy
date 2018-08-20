@@ -17,6 +17,16 @@ class Parameters:
             self.assertEqual(self.project.config_parameters(k)[0], v)
 
 
+class Input:
+
+    def test_structure_file(self):
+        strf = self.project.hydrotopes.attributes
+        akm = strf.area.sum()*1e-6
+        self.assertAlmostEqual(akm, self.project.basin_parameters['da'], 1)
+        cod_mb = self.project.config_parameters['mb']
+        self.assertEqual(strf.subbasinID.max(), cod_mb)
+
+
 class Processing:
     def test_cluster_run(self):
         self.project.submit_cluster('testjob', 'run', dryrun=True, somearg=123)

@@ -143,6 +143,10 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
         self.assertEqual(nametags, expresult)
 
 
+class TestInput(ProjectTestCase, test_project.Input):
+    pass
+
+
 class TestProcessing(ProjectTestCase, test_project.Processing):
 
     def test_save_run(self):

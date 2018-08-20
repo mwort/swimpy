@@ -2,13 +2,13 @@
 SWIM input functionality.
 """
 import os.path as osp
+import warnings
 
 import pandas as pd
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.templates import TemplatesDict
 from modelmanager.plugins.pandas import ReadWriteDataFrame
 from modelmanager.plugins import grass as mmgrass
-
 
 from swimpy import utils, plot
 import matplotlib.pyplot as plt  # after plot
@@ -242,6 +242,52 @@ class climate(object):
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
             return bars
+
+
+class StructureFile(ReadWriteDataFrame):
+    """Read-Write plugin for the structure file.
+
+    This is accessible via the ``hydroptes.attributes`` propertyplugin and
+    placed here for consistency and reuse.
+    """
+    file_columns = ['subbasinID', 'landuseID', 'soilID', 'management',
+                    'wetland', 'elevation', 'glacier', 'area', 'cells']
+
+    @property
+    def path(self):
+        relpath = 'input/%s.str' % self.project.project_name
+        return self._path if hasattr(self, '_path') else relpath
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+        return
+
+    def read(self, **kwargs):
+        df = pd.read_table(self.path, delim_whitespace=True)
+        # pandas issues UserWarning if attribute is set with Series-like
+        warnings.simplefilter('ignore', UserWarning)
+        self.file_header = list(df.columns)
+        warnings.resetwarnings()
+
+        nstr, nexp = len(df.columns), len(self.file_columns)
+        if nexp == nstr:
+            df.columns = self.file_columns
+        else:
+            msg = ('Non-standard column names: Found different number of '
+                   'columns .str file, expecting %i, got %i: %s')
+            warnings.warn(msg % (nexp, nstr, ', '.join(df.columns)))
+        # get rid of last 0 line
+        if df.iloc[-1, :].sum() == 0:
+            df = df.iloc[:-1, :]
+        df.index = list(range(1, len(df)+1))
+        return df
+
+    def write(self, **kwargs):
+        with file(self.path, 'w') as f:
+            self.to_string(f, index=False, header=self.file_header)
+            f.write('\n'+' '.join(['0 ']*len(self.file_header)))
+        return
 
 
 # only import the property plugins on from output import *
