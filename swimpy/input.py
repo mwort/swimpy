@@ -3,6 +3,7 @@ SWIM input functionality.
 """
 import os.path as osp
 import warnings
+import datetime as dt
 
 import pandas as pd
 from modelmanager.utils import propertyplugin
@@ -28,6 +29,14 @@ class config_parameters(TemplatesDict):
     Set or get any values from the .cod or swim.conf file by variable name.
     """
     template_patterns = ['input/*.cod', 'swim.conf']
+
+    @property
+    def start_date(self):
+        return dt.date(self['iyr'], 1, 1)
+
+    @property
+    def end_date(self):
+        return dt.date(self['iyr']+self['nbyr']-1, 12, 31)
 
 
 @propertyplugin
@@ -290,6 +299,118 @@ class StructureFile(ReadWriteDataFrame):
         return
 
 
+@propertyplugin
+class station_daily_discharge_observed(ReadWriteDataFrame):
+    path = 'input/runoff.dat'
+    subbasins = []  #: Holds subbasinIDs if the file has them
+    outlet_station = []  #: Name of the first column which is always written
+    nread = 1  #: Default number of columns SWIM will read in
+
+    def read(self, path=None, **kwargs):
+        path = path or self.path
+        na_values = ['NA', 'NaN', -999, -999.9, -9999]
+        # first read header
+        with open(path, 'r') as fi:
+            colnames = fi.readline().strip().split()
+            subids = fi.readline().strip().split()
+        skiphead = 1
+        # subbasins are given if all are ints and they are all in the subbasins
+        try:
+            si = pd.Series(subids[3:], dtype=int, index=colnames[3:])
+            sbattr = self.project.subbasins.attributes
+            if all([i in sbattr.index for i in si]):
+                self.subbasins = si
+                self.nread = int(subids[0])
+                skiphead += 1
+        except ValueError:
+            pass
+        # read entire file
+        rodata = pd.read_table(path, skiprows=skiphead, header=None,
+                               delim_whitespace=True, index_col=0,
+                               parse_dates=[[0, 1, 2]], names=colnames,
+                               na_values=na_values)
+        rodata.index = rodata.index.to_period()
+        self.outlet_station = rodata.columns[0]
+        return rodata
+
+    def write(self, **kwargs):
+        head = 'YYYY  MM  DD  ' + '  '.join(self.columns.astype(str)) + '\n'
+        if len(self.subbasins) > 0:
+            sbids = '  '.join(map(str, self.subbasins))
+            head += '%s  0  0  ' % self.nread + sbids + '\n'
+        # write out
+        out = [self.index.year, self.index.month, self.index.day]
+        out += [self[s] for s in self.columns]
+        out = pd.DataFrame(zip(*out))
+        with open(self.path, 'w') as fo:
+            fo.write(head)
+            out.to_string(fo, na_rep='-9999', header=False, index=False)
+        return
+
+    def __call__(self, stations=[], start=None, end=None, read=None):
+        """Write daily_discharge_observed from stations with their subbasinIDs.
+
+        Arguments
+        ---------
+        stations : list-like, optional
+            Stations to write to file. self.outlet_station will always be
+            written as the first column.
+        start, end : datetime-like, optional
+            Start and end to write to. Defaults to
+            project.config_parameters.start_date/end_date.
+        read : int | list, optional
+            Columns SWIM should read in. May be either a list or int. If > 1,
+            these columns are fed in and replace simulated values in the routed
+            discharge. The outlet_station will always be read. Defaults to
+            previous.
+        """
+        df = self._get_observed_discharge(stations=stations, start=start,
+                                          end=end)
+        if read:
+            assert type(read) in [int, list]
+            if type(read) == list:
+                if self.outlet_station in read:
+                    read.remove(self.outlet_station)
+                read = [self.outlet_station] + read
+                self.nread = len(read)
+                df = df[read + list(set(df.columns)-set(read))]
+            else:
+                self.nread = max(min(read, len(df.columns)), 1)
+        else:
+            self.nread = max(min(self.nread, len(df.columns)), 1)
+        # assign to self
+        pd.DataFrame.__init__(self, df)
+        self.write()
+        return self
+
+    def _get_observed_discharge(self, stations=[], start=None, end=None):
+        """Get daily_discharge_observed from stations and their subbasinIDs.
+
+        Arguments
+        ---------
+        stations : list-like, optional
+            Stations to write to file. self.outlet_station will always be
+            written as the first column.
+        start, end : datetime-like, optional
+            Start and end to write to. Defaults to
+            project.config_parameters.start_date/end_date.
+        """
+        stat = [self.outlet_station]
+        stat += [s for s in stations if s != self.outlet_station]
+        # unpack series from dataframe, in right order!
+        pstations = self.project.stations
+        si = [s for s in stat if s not in pstations.index]
+        assert not si, '%s not found station table: %s' % (si, pstations.index)
+        satt = pstations.loc[stat]
+        q = pd.DataFrame({s: satt.loc[s, 'daily_discharge_observed']
+                          for s in stat})
+        # change start/end
+        conf = self.project.config_parameters
+        q = q.truncate(before=start or conf.start_date,
+                       after=end or conf.end_date)
+        return q
+
+
 # only import the property plugins on from output import *
-__all__ = [n for n, p in globals().items() if isinstance(p, propertyplugin)]
+__all__ = [n for n, p in globals().items() if property in p.__class__.__mro__]
 __all__ += ['climate']

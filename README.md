@@ -40,12 +40,5 @@ Features
 TODO
 ----
 
-* Input interfaces:
-
-  * runoff.dat
-  * .str file
-
-* Other components:
-
   * check interface for Danube/oasis project
   * ``run.plot()`` function

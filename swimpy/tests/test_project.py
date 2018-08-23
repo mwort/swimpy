@@ -26,6 +26,15 @@ class Input:
         cod_mb = self.project.config_parameters['mb']
         self.assertEqual(strf.subbasinID.max(), cod_mb)
 
+    def test_station_daily_discharge_observed(self):
+        ro = self.project.station_daily_discharge_observed
+        if len(ro.subbasins):
+            sbattr = self.project.subbasins.attributes
+        for n in ro.columns:
+            self.assertIn(n, self.project.stations.index)
+            if len(ro.subbasins):
+                self.assertIn(ro.subbasins[n], sbattr.index)
+
 
 class Processing:
     def test_cluster_run(self):
