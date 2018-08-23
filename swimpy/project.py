@@ -12,7 +12,7 @@ from numbers import Number
 from decimal import Decimal
 
 import modelmanager as mm
-from modelmanager.settings import parse_settings
+from modelmanager.settings import SettingsManager, parse_settings
 
 from swimpy import utils
 from swimpy import defaultsettings
@@ -39,23 +39,13 @@ class Project(mm.Project):
     """
 
     def __init__(self, projectdir='.', **settings):
+        self.projectdir = osp.abspath(projectdir)
+        self.settings = SettingsManager(self)
         # load default settings
-        defaults = mm.settings.load_settings(defaultsettings)
-        for k, v in defaults.items():
-            settings.setdefault(k, v)
-        # check for project name
-        settings.setdefault('project_name', self._get_project_name(projectdir))
-        # load modelmanager Project
-        super(Project, self).__init__(projectdir, **settings)
-        self.settings.defaults = defaults
+        self.settings.defaults = mm.settings.load_settings(defaultsettings)
+        # load settings with overridden settings
+        self.settings.load(defaults=self.settings.defaults, **settings)
         return
-
-    def _get_project_name(self, projectdir=None):
-        """Infer the project name from the code file."""
-        ppn = glob(osp.join(projectdir or self.projectdir, 'input/*.cod'))
-        if len(ppn) == 1:
-            return osp.splitext(osp.basename(ppn[0]))[0]
-        return None
 
     @parse_settings
     def run(self, save=True, cluster=False, quiet=False, **kw):

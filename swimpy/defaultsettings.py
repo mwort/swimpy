@@ -25,3 +25,13 @@ save_figure_defaults = dict(
     dpi=200,
     size=(180, 120),  # mm
 )
+
+
+# put here to enable overriding
+@property
+def project_name(self):
+    """Short SWIM project name inferred from *.cod file."""
+    from glob import glob
+    from os import path
+    ppn = glob(path.join(self.projectdir, 'input/*.cod'))
+    return path.splitext(path.basename(ppn[0]))[0] if len(ppn) == 1 else None
