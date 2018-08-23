@@ -11,6 +11,7 @@ from swimpy.grass import Subbasins, Hydrotopes, Routing, Substats
 from swimpy.input import *
 from swimpy.output import *
 from swimpy.tests import Tests
+from swimpy.utils import StationsUnconfigured as stations
 
 # SWIM executable
 swim = './swim'
@@ -30,7 +31,7 @@ save_figure_defaults = dict(
 # put here to enable overriding
 @property
 def project_name(self):
-    """Short SWIM project name inferred from *.cod file."""
+    """Short SWIM project name inferred from .cod file."""
     from glob import glob
     from os import path
     ppn = glob(path.join(self.projectdir, 'input/*.cod'))

@@ -5,6 +5,8 @@ from __future__ import print_function
 import os
 import os.path as osp
 
+from modelmanager.utils import propertyplugin
+
 
 def slurm_submit(jobname, scriptstr, outputdir='.', dryrun=False, **slurmargs):
     '''
@@ -100,3 +102,30 @@ def aggregate_time(obj, freq='d', regime=False, resample_method='mean',
                             "regime=True.")
         obj = obj.groupby(igb).agg(regime_method)
     return obj
+
+
+class StationsUnconfigured(object):
+    """Dummy stations plugin. The stations setting needs to be configured.
+    It should be a pandas.DataFrame or subclass thereof, e.g.
+    modelmanager.plugins.grass.GrassAttributeTable to link it to a GRASS table.
+
+    Examples
+    --------
+    From a csv file with attributes and another one with Q data::
+
+        stations = pd.read_csv('stations_attribute.csv', index_col=0)
+        _q = pd.read_csv('stations_q_data.csv', parse_dates=[0], index_col=0)
+        stations['daily_discharge_observed'] = dict(_q.iteritems())
+
+    From a GRASS table and csv Q data (requires GRASS settings)::
+
+        import modelmanager.plugins.grass as mmgrass
+        _q = pd.read_csv('stations_q_data.csv', parse_dates=[0], index_col=0)
+        class stations(mmgrass.GrassAttributeTable):
+            vector = 'stations_snapped',
+            add_attributes = {'daily_discharge_observed': dict(_q.iteritems())}
+
+    """
+    def __init__(self, project):
+        url = "<doc-url>/modules/utils.html#swimpy.utils.StationsUnconfigured"
+        raise RuntimeError('stations unconfigured, see: '+url)
