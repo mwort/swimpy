@@ -60,6 +60,9 @@ class Subbasins(mmgrass.GrassModulePlugin):
     vector = 'subbasins'
     #: Subbasins raster (w/o mapset) to be created in `grass_mapset`
     raster = 'subbasins'
+    #: Project settings with arguments
+    argument_setting = 'grass_setup'
+
     subbasins = property(lambda self: self.vector)
 
     def postprocess(self, **moduleargs):
@@ -115,6 +118,8 @@ class Routing(mmgrass.GrassModulePlugin):
     module = 'm.swim.routing'
     # default module arguments
     accumulation = 'accumulation'
+    #: Project settings with arguments
+    argument_setting = 'grass_setup'
     # get subbasins raster name from Subbasins instance
     subbasins = property(lambda self: self.project.subbasins.vector)
 
@@ -146,6 +151,8 @@ class Substats(mmgrass.GrassModulePlugin):
     module = 'm.swim.substats'
     # default module arguments
     inputpath = 'input'  # will be expanded
+    #: Project settings with arguments
+    argument_setting = 'grass_setup'
     subbasins = property(lambda self: self.project.subbasins.vector)
 
     def __init__(self, project):
@@ -181,6 +188,8 @@ class Hydrotopes(mmgrass.GrassModulePlugin):
     module = 'm.swim.hydrotopes'
     #: Hydrotopes raster (w/o mapset) to be created in `grass_mapset`
     raster = 'hydrotopes'
+    #: Project settings with arguments
+    argument_setting = 'grass_setup'
     #: Subbasin raster taken from subbasins.raster
     subbasins = property(lambda self: self.project.subbasins.raster)
     hydrotopes = property(lambda self: self.raster)

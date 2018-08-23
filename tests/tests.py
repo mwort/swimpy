@@ -28,6 +28,8 @@ SWIM_REPO_PROJECT = '../dependencies/swim/project'
 TEST_GRASSDB = 'grassdb'
 MSWIM_GRASSDB = '../dependencies/m.swim/test/grassdb'
 
+TEST_SETTINGS = './test_settings.py'
+
 if not os.path.exists(SWIM_TEST_PROJECT):
     shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT)
 if not os.path.exists(TEST_GRASSDB):
@@ -68,7 +70,9 @@ class ProjectTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.project = swimpy.project.setup(SWIM_TEST_PROJECT)
+        p = swimpy.project.setup(SWIM_TEST_PROJECT)
+        shutil.copy(TEST_SETTINGS, p.settings.file)
+        self.project = swimpy.Project(SWIM_TEST_PROJECT)
 
     @classmethod
     def tearDownClass(self):
@@ -107,7 +111,6 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
 
     @skip_if_py3
     def test_subcatch_definition(self):
-        self.project.settings(**TestGrass.grass_settings)
         scdef = self.project.subcatch_definition
         self.assertEqual(list(scdef.index), list(range(1, 10+1)))
         scdef.update(catchments=[1])
@@ -201,17 +204,7 @@ class TestRun(ProjectTestCase, test_project.Run):
 
 
 class TestGrass(ProjectTestCase):
-    grass_settings = dict(
-        grass_db = TEST_GRASSDB,
-        grass_location = "utm32n",
-        grass_mapset =  "swim",
-        elevation = "elevation@PERMANENT",
-        stations = "stations@PERMANENT",
-        landuse = "landuse@PERMANENT",
-        soil = "soil@PERMANENT",
-        upthresh=40,
-        lothresh=11,
-    )
+
     files_created = ['file.cio', 'blank.str', 'file.cio',
                      'Sub/groundwater.tab', 'Sub/routing.tab',
                      'Sub/subbasin.tab']
@@ -221,19 +214,14 @@ class TestGrass(ProjectTestCase):
         key = 'NAME'
         add_attributes = {'obs': {'HOF': pd.Series([12, 2, 2, 4])}}
 
-    @classmethod
-    def setUpClass(self):
-        self.project = swimpy.project.setup(SWIM_TEST_PROJECT)
-        self.project.settings(**self.grass_settings)
-
     def test_session(self):
-        self.project.settings(**self.grass_settings)
         with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:
             rasts = grass.list_strings('rast')
             vects = grass.list_strings('vect')
-            for m in ['elevation', 'landuse', 'soil']:
-                self.assertIn(self.grass_settings[m].encode(), rasts)
-            self.assertIn(self.grass_settings['stations'].encode(), vects)
+        self.assertIn(self.project.grass_setup['landuse'].encode(), rasts)
+        self.assertIn(self.project.grass_setup['soil'].encode(), rasts)
+        self.assertIn(self.project.grass_setup['elevation'].encode(), rasts)
+        self.assertIn(self.project.grass_setup['stations'].encode(), vects)
         return
 
     @skip_if_py3
@@ -241,8 +229,6 @@ class TestGrass(ProjectTestCase):
         files_created = [osp.join(self.project.projectdir, 'input', p)
                          for p in self.files_created]
         [os.remove(p) for p in files_created if osp.exists(p)]
-        # needed settings
-        self.project.settings(**self.grass_settings)
         # update subbasins (runs all other modules in postprocess)
         self.project.subbasins(verbose=False)
         for p in files_created:
@@ -250,7 +236,7 @@ class TestGrass(ProjectTestCase):
 
     @skip_if_py3
     def test_attribute_table(self):
-        self.project.settings(self.TestGrassTbl, **self.grass_settings)
+        self.project.settings(self.TestGrassTbl)
         self.assertTrue(hasattr(self.project, 'testgrasstbl'))
         self.assertIsInstance(self.project.testgrasstbl.obs.HOF, pd.Series)
         self.project.testgrasstbl['new'] = 1000
