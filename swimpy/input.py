@@ -304,7 +304,6 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
     path = 'input/runoff.dat'
     subbasins = []  #: Holds subbasinIDs if the file has them
     outlet_station = []  #: Name of the first column which is always written
-    nread = 1  #: Default number of columns SWIM will read in
 
     def read(self, path=None, **kwargs):
         path = path or self.path
@@ -320,7 +319,6 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
             sbattr = self.project.subbasins.attributes
             if all([i in sbattr.index for i in si]):
                 self.subbasins = si
-                self.nread = int(subids[0])
                 skiphead += 1
         except ValueError:
             pass
@@ -336,8 +334,8 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
     def write(self, **kwargs):
         head = 'YYYY  MM  DD  ' + '  '.join(self.columns.astype(str)) + '\n'
         if len(self.subbasins) > 0:
-            sbids = '  '.join(map(str, self.subbasins))
-            head += '%s  0  0  ' % self.nread + sbids + '\n'
+            sbids = '  '.join(self.subbasins.astype(str))
+            head += '%s  0  0  ' % len(self.columns) + sbids + '\n'
         # write out
         out = [self.index.year, self.index.month, self.index.day]
         out += [self[s] for s in self.columns]
@@ -347,7 +345,7 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
             out.to_string(fo, na_rep='-9999', header=False, index=False)
         return
 
-    def __call__(self, stations=[], start=None, end=None, read=None):
+    def __call__(self, stations=[], start=None, end=None):
         """Write daily_discharge_observed from stations with their subbasinIDs.
 
         Arguments
@@ -358,26 +356,11 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         start, end : datetime-like, optional
             Start and end to write to. Defaults to
             project.config_parameters.start_date/end_date.
-        read : int | list, optional
-            Columns SWIM should read in. May be either a list or int. If > 1,
-            these columns are fed in and replace simulated values in the routed
-            discharge. The outlet_station will always be read. Defaults to
-            previous.
         """
         df = self._get_observed_discharge(stations=stations, start=start,
                                           end=end)
-        if read:
-            assert type(read) in [int, list]
-            if type(read) == list:
-                if self.outlet_station in read:
-                    read.remove(self.outlet_station)
-                read = [self.outlet_station] + read
-                self.nread = len(read)
-                df = df[read + list(set(df.columns)-set(read))]
-            else:
-                self.nread = max(min(read, len(df.columns)), 1)
-        else:
-            self.nread = max(min(self.nread, len(df.columns)), 1)
+        # update subbasins
+        self.subbasins = self.project.stations.loc[df.columns, 'subbasinID']
         # assign to self
         pd.DataFrame.__init__(self, df)
         self.write()

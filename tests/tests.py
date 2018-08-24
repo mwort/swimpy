@@ -154,12 +154,11 @@ class TestInput(ProjectTestCase, test_project.Input):
 
     @skip_if_py3
     def test_station_daily_discharge_observed_write(self):
-        self.project.station_daily_discharge_observed(stations=['HOF'], read=2)
+        self.project.station_daily_discharge_observed(stations=['HOF'])
         ro = self.project.station_daily_discharge_observed
         self.assertEqual(len(ro.columns), 2)
         self.assertIn('HOF', ro.columns)
         ro(stations=['BLANKENSTEIN'])
-        self.assertEqual(ro.nread, 1)
 
 
 class TestProcessing(ProjectTestCase, test_project.Processing):
