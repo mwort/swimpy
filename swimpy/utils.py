@@ -5,8 +5,6 @@ from __future__ import print_function
 import os
 import os.path as osp
 
-from modelmanager.utils import propertyplugin
-
 
 def slurm_submit(jobname, scriptstr, outputdir='.', dryrun=False, **slurmargs):
     '''
@@ -123,9 +121,21 @@ class StationsUnconfigured(object):
         _q = pd.read_csv('stations_q_data.csv', parse_dates=[0], index_col=0)
         class stations(mmgrass.GrassAttributeTable):
             vector = 'stations_snapped',
-            add_attributes = {'daily_discharge_observed': dict(_q.iteritems())}
+            add_attributes = {'daily_discharge_observed': q.to_dict()}
 
     """
     def __init__(self, project):
-        url = "<doc-url>/modules/utils.html#swimpy.utils.StationsUnconfigured"
-        raise RuntimeError('stations unconfigured, see: '+url)
+        u = (project.doc_url if hasattr(project, 'doc_url') else '<doc-url>' +
+             "/modules/utils.html#swimpy.utils.StationsUnconfigured")
+        self.error = RuntimeError('The Stations attribute is unconfigured, '
+                                  'for help see:\n' + u)
+        return
+
+    def __getattr__(self, a):
+        raise self.error
+
+    def __repr__(self):
+        raise self.error
+
+    def __getitem__(self, k):
+        raise self.error
