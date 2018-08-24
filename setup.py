@@ -18,8 +18,8 @@ requirements = [
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
+with open('CHANGELOG.rst') as changelog_file:
+    changelog = changelog_file.read()
 
 with open('requirements.txt') as reqd_file:
     requirements_dev = reqd_file.read().split()
@@ -33,7 +33,7 @@ setup(
     name='swimpy',
     version='0.1.0',
     description="A python package to interact and test the ecohydrological model SWIM.",
-    long_description=readme + '\n\n' + history,
+    long_description=readme + '\n\n' + changelog,
     author="Michel Wortmann",
     author_email='wortmann@pik-potsdam.de',
     url='https://github.com/mwort/swimpy',
