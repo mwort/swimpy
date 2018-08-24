@@ -121,7 +121,7 @@ class StationsUnconfigured(object):
         _q = pd.read_csv('stations_q_data.csv', parse_dates=[0], index_col=0)
         class stations(mmgrass.GrassAttributeTable):
             vector = 'stations_snapped',
-            add_attributes = {'daily_discharge_observed': q.to_dict()}
+            add_attributes = {'daily_discharge_observed': _q.to_dict('series')}
 
     """
     def __init__(self, project):

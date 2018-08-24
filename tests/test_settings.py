@@ -13,7 +13,7 @@ grass_setup = dict(elevation = "elevation@PERMANENT",
 def get_station_daily_qobs(project):
     ro = project.station_daily_discharge_observed
     ro['HOF'] = ro['BLANKENSTEIN']*0.5
-    return ro.to_dict()
+    return ro.to_dict('series')
 
 
 class stations(_GAT):
