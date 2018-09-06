@@ -239,3 +239,59 @@ class StationsUnconfigured(object):
 
     def __getitem__(self, k):
         raise self.error
+
+
+def NSE(obs, sim):
+    """Nash-Sutcliff-Efficiency.
+
+    Arguments
+    ---------
+    obs, sim : same-length 1D array or pandas.Series
+    """
+    # subset to valid so that nans arent incl in sum, list to enforce obs and
+    # sim are same length, throws error if not
+    valid = np.isfinite(obs).tolist()
+    # get sqared mean errors of obs-sim and obs-mean(obs)
+    simSME = (obs[valid] - sim[valid])**2
+    obsSME = (obs[valid] - obs[valid].mean())**2
+    # calculate efficiency
+    return 1 - (simSME.sum() / obsSME.sum())
+
+
+def logNSE(obs, sim):
+    '''Calculate log Nash-Sutcliffe-Efficiency through the NSE function
+
+    Arguments
+    ---------
+    obs, sim : same-length 1D array or pandas.Series
+    '''
+    obs, sim = np.log(obs), np.log(sim)
+    return NSE(obs, sim)
+
+
+def mNSE(obs, sim):
+    """Modified NSE weighted by Qobs to emphasise high/flood Q according to:
+    Y. Hundecha, A. Bardossy (2004)
+
+
+    Arguments
+    ---------
+    obs, sim : same-length 1D array or pandas.Series
+    """
+    valid = np.isfinite(obs).tolist()
+    # get sqared mean errors of obs-sim and obs-mean(obs)
+    simSME = obs[valid] * (obs[valid] - sim[valid])**2
+    obsSME = obs[valid] * (obs[valid] - obs[valid].mean())**2
+    # calculate efficiency
+    return 1 - (simSME.sum() / obsSME.sum())
+
+
+def pbias(obs, sim):
+    """Calculate water balance of obs and sim in percent.
+
+    Arguments
+    ---------
+    obs, sim : same-length 1D array or pandas.Series
+    """
+    valid = np.isfinite(obs).tolist()  # so that nans arent incl in sum
+    return (sim[valid].sum() / obs[valid].sum() - 1) * 100

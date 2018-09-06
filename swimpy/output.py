@@ -133,6 +133,37 @@ class station_daily_discharge(ProjectOrRunData):
                                            colormap=colormap, **barkw)
         return ax
 
+    def _obs_sim_overlap(self):
+        """Return overlapping obs and sim discharge series excluding warmup."""
+        qo = self.project.stations.daily_discharge_observed.dropna()
+        obs = pd.concat(list(qo), axis=1)
+        six = self[str(self.index[0].year+1):].index  # exclude first year
+        ix = list(set(obs.index) & set(six))
+        col = list(set(obs.columns) & set(self.columns))
+        return obs.loc[ix, col], self.loc[ix, col]
+
+    @property
+    def NSE(self):
+        """pandas.Series of Nash-Sutcliff efficiency excluding warmup year."""
+        obs, sim = self._obs_sim_overlap()
+        return pd.Series({s: utils.NSE(obs[s], sim[s]) for s in obs.columns})
+
+    @property
+    def rNSE(self):
+        """pandas.Series of reverse Nash-Sutcliff efficiency (best = 0)"""
+        return 1 - self.NSE
+
+    @property
+    def pbias(self):
+        """pandas.Series of percent bias excluding warmup year."""
+        obs, sim = self._obs_sim_overlap()
+        return pd.Series({s: utils.pbias(obs[s], sim[s]) for s in obs.columns})
+
+    @property
+    def pbias_abs(self):
+        """pandas.Series of absolute percent bias excluding warmup year."""
+        return self.pbias.abs()
+
 
 @propertyplugin
 class subbasin_daily_waterbalance(ProjectOrRunData):
@@ -169,7 +200,8 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
             timestep=timestep, name=name, prefix=prefix, strds=strds,
             mapset=mapset)
         return
-    to_raster.__doc__ = _subbasin_or_hydrotope_values_to_raster.__doc__
+    to_raster.__doc__ = (_subbasin_or_hydrotope_values_to_raster.__doc__ +
+                         to_raster.__doc__)
 
 
 @propertyplugin
