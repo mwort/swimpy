@@ -109,7 +109,6 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
         nsbc = self.project.subcatch_parameters
         self.assertTrue((nsbc == sbc).all().all())
 
-    @skip_if_py3
     def test_subcatch_definition(self):
         scdef = self.project.subcatch_definition
         self.assertEqual(list(scdef.index), list(range(1, 10+1)))
@@ -148,11 +147,9 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
 
 class TestInput(ProjectTestCase, test_project.Input):
 
-    @skip_if_py3
     def test_station_daily_discharge_observed(self):
         super(TestInput, self).test_station_daily_discharge_observed()
 
-    @skip_if_py3
     def test_station_daily_discharge_observed_write(self):
         self.project.station_daily_discharge_observed(stations=['HOF'])
         ro = self.project.station_daily_discharge_observed
@@ -245,7 +242,6 @@ class TestGrass(ProjectTestCase):
         for p in files_created:
             self.assertTrue(osp.exists(p))
 
-    @skip_if_py3
     def test_attribute_table(self):
         self.project.settings(self.TestGrassTbl)
         self.assertTrue(hasattr(self.project, 'testgrasstbl'))
