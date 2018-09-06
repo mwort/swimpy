@@ -12,12 +12,13 @@ from swimpy.input import *
 from swimpy.output import *
 from swimpy.tests import Tests
 from swimpy.utils import StationsUnconfigured as stations
+from swimpy.utils import cluster
 
 # SWIM executable
 swim = './swim'
 
 # Cluster SLURM arguments
-slurmargs = {'qos': 'short', 'account': 'swim'}
+cluster_slurmargs = {'qos': 'short', 'account': 'swim'}
 
 # defaults when saving a figure used in plot.plot_function
 save_figure_defaults = dict(

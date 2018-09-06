@@ -5,7 +5,6 @@ The main project module.
 """
 import os
 import os.path as osp
-from glob import glob
 import datetime as dt
 import subprocess
 from numbers import Number
@@ -14,7 +13,6 @@ from decimal import Decimal
 import modelmanager as mm
 from modelmanager.settings import SettingsManager, parse_settings
 
-from swimpy import utils
 from swimpy import defaultsettings
 
 
@@ -56,8 +54,9 @@ class Project(mm.Project):
         ---------
         save : bool
             Run save_run after successful execution of SWIM.
-        cluster : False | str
-            False or a job name to submit this run to SLURM.
+        cluster : False | str | dict
+            False or a job name to submit this run to SLURM. A dict will set
+            other cluster() arguments but must include a ``jobname``.
         quiet : bool
             Dont show SWIM output if True.
         **kw : optional
@@ -71,9 +70,8 @@ class Project(mm.Project):
         st = dt.datetime.now()
         # if submitting to cluster
         if cluster:
-            assert type(cluster) is str, "cluster must be a string."
-            kw['save'] = save
-            return self.submit_cluster(cluster, 'run', **kw)
+            kw.update({'functionname': 'run', 'save': save, 'quiet': quiet})
+            return self.cluster(cluster, **kw)
 
         swimcommand = [self.swim, self.projectdir+'/']
         # silence output
@@ -90,49 +88,6 @@ class Project(mm.Project):
             delta = dt.datetime.now() - st
             print('Execution took %s hh:mm:ss' % delta)
         return run
-
-    @parse_settings
-    def submit_cluster(self, jobname, functionname=None, script=None,
-                       dryrun=False, slurmargs={}, **funcargs):
-        """
-        Run a project function (method) by submitting it to SLURM.
-
-        Arguments
-        ---------
-        jobname : str
-            SLURM job name.
-        functionname : str, optional
-            A name string of a project function.
-        script : str, optional
-            Valid python code to run.
-        dryrun : bool
-            If True, only write jobfile to cluster resourcedir.
-        slurmargs : dict
-            SLURM arguments to use for this run temporarily extending /
-            overwriting the project slurmargs attribute.
-        **funcargs : optional
-            Arguments parsed to function.
-
-        Returns
-        -------
-        int
-            The job ID.
-        """
-        assert type(functionname) == str or type(script) == str
-        if functionname:
-            assert callable(self.settings[functionname])
-            script = ("import swimpy; p=swimpy.Project(); p.%s(**%r)" %
-                      (functionname, funcargs))
-        # dir for slurm job, output, error files
-        outdir = osp.join(self.resourcedir, 'cluster')
-        if not osp.exists(outdir):
-            os.mkdir(outdir)
-        # submit to slurm
-        for k, v in self.slurmargs.items():
-            slurmargs.setdefault(k, v)
-        rid = utils.slurm_submit(jobname, script, outdir, dryrun=dryrun,
-                                 workdir=self.projectdir, **slurmargs)
-        return rid
 
     def __call__(self, *runargs, **runkwargs):
         """

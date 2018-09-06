@@ -4,69 +4,169 @@ Module for utility functionality unrelated to SWIM.
 from __future__ import print_function
 import os
 import os.path as osp
+import subprocess
+
+import numpy as np
+from modelmanager.settings import parse_settings
 
 
-def slurm_submit(jobname, scriptstr, outputdir='.', dryrun=False, **slurmargs):
-    '''
-    Submit the script string as a python script to slurm.
+class cluster(object):
+    """Simple plugin to abstract interaction with SLURM or another job manager.
+    """
+    plugin = ['__call__']
 
-    Arguments
-    ---------
-    jobname : str
-        Job identifier without spaces.
-    scriptstr : str
-         Valid python code string (ensure correct indent and linebreaks).
-    outputdir : str path
-        Directory where the script, error and output files are written.
-    dryrun : bool
-        If true, dont submit job but just write jobfile.
-    **slurmkwargs
-        Any additional slurm header arguments, some useful ones:
-            * qos: job class (short, medium, long)
-            * workdir: working directory
-            * account: CPU accounting
+    class _job(object):
+        """A dict-like store of slurm job attributes provided through sacct."""
+        def __init__(self, id):
+            assert type(id) == int
+            self.id = id
+            self._keys = [v.lower() for v in self._sacct('-').split()]
+            return
 
-    Example
-    -------
-    >>> slurm_submit('testjob', 'import swimpy; swimpy.Project().run()',
-    ...              workdir='project/', dryrun=True)  # doctest: +ELLIPSIS
-    Would execute: sbatch .../testjob.py
-    '''
-    import ast
-    import subprocess
-    try:
-        ast.parse(scriptstr)
-    except SyntaxError:
-        raise SyntaxError('scriptstr is not valid python code. %s' % scriptstr)
-    # defaults
-    cdir = osp.abspath(outputdir)
-    header = {'job-name': jobname,
-              'error': os.path.join(cdir, '%s.err' % jobname),
-              'output': os.path.join(cdir, '%s.out' % jobname),
-              }
-    header.update(slurmargs)
+        def _sacct(self, *args):
+            return subprocess.check_output(["sacct", "-j", str(self.id)]+args)
 
-    # setup jobfile
-    jcfpath = os.path.join(cdir, jobname + '.py')
-    jcf = open(jcfpath, 'w')
-    jcf.write('#!/usr/bin/env python \n')
-    # SLURM lines
-    for c, v in header.items():
-        jcf.write('#SBATCH --%s=%s\n' % (c, v))
-    jcf.write(scriptstr)
-    jcf.close()
-    # make file executable
-    subprocess.call(['chmod', '+x', jcfpath])
-    # submit
-    submit = ['sbatch', jcfpath]
-    if not dryrun:
-        out = subprocess.call(submit)
-        print(out, end='')
-        rid = int(out.split()[-1])
-    else:
-        rid = None
-        print('Would execute: %s' % (' '.join(submit)))
-    return rid
+        def status(self, _print=True):
+            ks, vs = self._sacct("-lP").split('\n')
+            dict = {k.lower(): v for k, v in zip(ks.split('|'), vs.split('|'))}
+            if _print:
+                [print('%s: %s' % s) for s in dict.items()]
+            else:
+                return dict
+
+        def keys(self):
+            return self._keys
+
+        def __getattr__(self, key):
+            key = key.lower()
+            assert key in self.keys(), key + ' not a valid job attribute.'
+            return self._sacct('-Pn', '--format=%s' % key)
+
+        def __getitem__(self, key):
+            assert type(key) == str
+            return self.__getattr__(key)
+
+        def __repr__(self):
+            p = (self.id, self.state)
+            return "<swimpy.utils.cluster._job ID=%i %s>" % p
+
+    def __init__(self, project):
+        self.project = project
+        # dir for slurm job, output, error files
+        self.resourcedir = osp.join(project.resourcedir, 'cluster')
+        if not osp.exists(self.resourcedir):
+            os.mkdir(self.resourcedir)
+        return
+
+    @parse_settings
+    def __call__(self, jobname, functionname=None, script=None, dryrun=False,
+                 slurmargs={}, **funcargs):
+        """
+        Run a project function (method) by submitting it to SLURM.
+
+        Arguments
+        ---------
+        jobname : str | dict
+            SLURM job name. As a convenience argument, a dict may be parsed to
+            set the other arguments.
+        functionname : str, optional
+            A name string of a project function.
+        script : str, optional
+            Valid python code to run.
+        dryrun : bool
+            If True, only write jobfile to cluster resourcedir.
+        slurmargs : dict
+            SLURM arguments to use for this run temporarily extending /
+            overwriting the project slurmargs attribute.
+        **funcargs : optional
+            Arguments parsed to function.
+
+        Returns
+        -------
+        int
+            The job ID.
+        """
+        if type(jobname) == dict:
+            assert 'jobname' in jobname, 'No jobname given in %s' % jobname
+            functionname = jobname.get('functionname', functionname)
+            script = jobname.get('script', script)
+            dryrun = jobname.get('dryrun', dryrun)
+            slurmargs = jobname.get('slurmargs', slurmargs)
+            jobname = jobname['jobname']
+        assert type(functionname) == str or type(script) == str
+        if functionname:
+            assert callable(self.project.settings[functionname])
+            script = ("import swimpy\np=swimpy.Project()\np.%s(**%r)" %
+                      (functionname, funcargs))
+        # submit to slurm
+        rid = self.submit_job(jobname, script, self.resourcedir, dryrun=dryrun,
+                              workdir=self.project.projectdir, **slurmargs)
+        return rid
+
+    @staticmethod
+    def submit_job(jobname, scriptstr, outputdir='.', dryrun=False,
+                   **slurmargs):
+        '''
+        Submit the script string as a python script to slurm.
+
+        Arguments
+        ---------
+        jobname : str
+            Job identifier without spaces.
+        scriptstr : str
+             Valid python code string (ensure correct indent and linebreaks).
+        outputdir : str path
+            Directory where the script, error and output files are written.
+        dryrun : bool
+            If true, dont submit job but just write jobfile.
+        **slurmkwargs
+            Any additional slurm header arguments, some useful ones:
+                * qos: job class (short, medium, long)
+                * workdir: working directory
+                * account: CPU accounting
+
+        Example
+        -------
+        >>> submit_job('testjob', 'import swimpy; swimpy.Project().run()',
+        ...            workdir='project/', dryrun=True)  # doctest: +ELLIPSIS
+        Would execute: sbatch .../testjob.py
+        '''
+        import ast
+        import subprocess
+        try:
+            ast.parse(scriptstr)
+        except SyntaxError:
+            raise SyntaxError('scriptstr is not valid python code. %s'
+                              % scriptstr)
+        # defaults
+        cdir = osp.abspath(outputdir)
+        header = {'job-name': jobname,
+                  'error': os.path.join(cdir, '%s.err' % jobname),
+                  'output': os.path.join(cdir, '%s.out' % jobname),
+                  }
+        header.update(slurmargs)
+
+        # setup jobfile
+        jcfpath = os.path.join(cdir, jobname + '.py')
+        jcf = open(jcfpath, 'w')
+        jcf.write('#!/usr/bin/env python \n')
+        # SLURM lines
+        for c, v in header.items():
+            jcf.write('#SBATCH --%s=%s\n' % (c, v))
+        jcf.write(scriptstr)
+        jcf.close()
+        # make file executable
+        subprocess.call(['chmod', '+x', jcfpath])
+        # submit
+        submit = ['sbatch', jcfpath]
+        if not dryrun:
+            out = subprocess.check_output(submit)
+            print(out, end='')
+            rid = cluster._job(int(out.split()[-1]))
+        else:
+            rid = None
+            print('Would execute: %s' % (' '.join(submit)))
+        return rid
 
 
 def aggregate_time(obj, freq='d', regime=False, resample_method='mean',

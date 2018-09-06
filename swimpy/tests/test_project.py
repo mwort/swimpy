@@ -38,8 +38,11 @@ class Input:
 
 class Processing:
     def test_cluster_run(self):
-        self.project.submit_cluster('testjob', 'run', dryrun=True, somearg=123)
-        jfp = osp.join(self.project.resourcedir, 'cluster', 'testjob.py')
+        self.project.cluster('testjob', 'run', dryrun=True, somearg=123)
+        jfp = osp.join(self.project.cluster.resourcedir, 'testjob.py')
+        self.assertTrue(osp.exists(jfp))
+        self.project.run(cluster=dict(jobname='runtestjob', dryrun=True))
+        jfp = osp.join(self.project.cluster.resourcedir, 'runtestjob.py')
         self.assertTrue(osp.exists(jfp))
 
 
