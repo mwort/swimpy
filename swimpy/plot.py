@@ -164,6 +164,66 @@ def plot_flow_duration_polar(series, axes=None, percentilestep=10,
     return axes
 
 
+def plot_objectives_scatter(performances, selected=None, ax=None,
+                            **scatterkwargs):
+    '''Plot scatter against all objectives combinations in a stepped subplot.
+
+    Arguments
+    ---------
+    performances : pd.DataFrame
+        DataFrame with performance values.
+    selected : dict-like
+        Highlight one selected point.
+    '''
+    objectives = performances.columns
+    # calculate limits
+    nticks = 5
+    margin = 0.1  # fraction of median
+    stats = performances.describe()
+    rng = (stats.ix['max'] - stats.ix['min']) * margin
+    limits = {'max': stats.ix['max'] + rng,
+              'min': stats.ix['min'] - rng}
+
+    naxes = len(objectives) - 1
+    if ax:
+        f = ax.get_figure()
+        f.clear()
+    else:
+        f = plt.figure()
+    ax = f.subplots(naxes, naxes, squeeze=False)
+    plt.subplots_adjust(hspace=0, wspace=0)
+
+    for i, n in enumerate(objectives[1:]):  # row
+        for ii, nn in enumerate(objectives[:-1]):  # column
+            if ii <= i:
+                ax[i][ii].scatter(
+                    performances[nn], performances[n], **scatterkwargs)
+                if selected is not None:
+                    ax[i][ii].scatter(selected[nn], selected[n], c='r')
+                # axis adjustments
+                xticks = mpl.ticker.MaxNLocator(nbins=nticks, prune='upper')
+                ax[i][ii].xaxis.set_major_locator(xticks)
+                yticks = mpl.ticker.MaxNLocator(nbins=nticks, prune='upper')
+                ax[i][ii].yaxis.set_major_locator(yticks)
+                ax[i][ii].set_ylim(limits['min'][n], limits['max'][n])
+                ax[i][ii].set_xlim(limits['min'][nn], limits['max'][nn])
+            else:  # remove unused axes
+                ax[i][ii].set_frame_on(False)
+                ax[i][ii].set_xticks([])
+                ax[i][ii].set_yticks([])
+            # labels
+            if i == naxes - 1:
+                ax[i][ii].set_xlabel(nn)
+            else:
+                ax[i][ii].set_xticklabels([])
+
+            if ii == 0:
+                ax[i][0].set_ylabel(n)
+            else:
+                ax[i][ii].set_yticklabels([])
+    return ax
+
+
 def _index_to_timestamp(index):
     """Convert a pandas index to timestamps if needed.
     Needed to parse pandas PeriodIndex to pyplot plotting functions."""

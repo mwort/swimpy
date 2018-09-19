@@ -5,6 +5,11 @@ from __future__ import print_function
 import os
 import os.path as osp
 import subprocess
+import warnings
+import sys
+import time
+import pytz
+import datetime as dt
 
 import numpy as np
 from modelmanager.settings import parse_settings
@@ -17,14 +22,19 @@ class cluster(object):
 
     class _job(object):
         """A dict-like store of slurm job attributes provided through sacct."""
-        def __init__(self, id):
+        def __init__(self, id, **attributes):
             assert type(id) == int
             self.id = id
-            self._keys = [v.lower() for v in self._sacct('-').split()]
+            self._keys = [v.lower() for v in self._sacct('-e').split()]
+            self.__dict__.update(attributes)
             return
 
         def _sacct(self, *args):
-            return subprocess.check_output(["sacct", "-j", str(self.id)]+args)
+            cmds = ["sacct", "-j", str(self.id)]+list(args)
+            return subprocess.check_output(cmds).strip()
+
+        def cancel(self):
+            return subprocess.check_call(['scancel', self.id])
 
         def status(self, _print=True):
             ks, vs = self._sacct("-lP").split('\n')
@@ -40,7 +50,9 @@ class cluster(object):
         def __getattr__(self, key):
             key = key.lower()
             assert key in self.keys(), key + ' not a valid job attribute.'
-            return self._sacct('-Pn', '--format=%s' % key)
+            stdout = self._sacct('-Pn', '--format=%s' % key)
+            # only return the first line to avoid duplicates from jobsteps
+            return stdout.split("\n")[0].strip()
 
         def __getitem__(self, key):
             assert type(key) == str
@@ -132,7 +144,6 @@ class cluster(object):
         Would execute: sbatch .../testjob.py
         '''
         import ast
-        import subprocess
         try:
             ast.parse(scriptstr)
         except SyntaxError:
@@ -161,12 +172,207 @@ class cluster(object):
         submit = ['sbatch', jcfpath]
         if not dryrun:
             out = subprocess.check_output(submit)
-            print(out, end='')
-            rid = cluster._job(int(out.split()[-1]))
+            rid = cluster._job(int(out.split()[-1]), resourcedir=cdir,
+                               stderr=header['error'], stdout=header['output'],
+                               jobfile=jcfpath, jobname=jobname, **slurmargs)
         else:
             rid = None
             print('Would execute: %s' % (' '.join(submit)))
         return rid
+
+    def run_parallel(self, clones=None, args=None, timeout=None,
+                     preprocess='basin_parameters', prefix='run_parallel',
+                     **runkw):
+        """Run SWIM in parallel using cluster jobs or multiprocessing.
+
+        Arguments
+        ---------
+        clones : list | int
+            List of clones with unique project names or max. number of clones
+            to create if args is not None. If args is None, clones will
+            only be run.
+        args : list of dicts
+            Arguments to parse to the preprocess function.
+        timeout : dict | datetime.timedelta instance
+            Limit job time and raise RuntimeError after timeout is elapsed.
+            Parse any keyword as dict to datetime.timedelta, e.g. hours, days,
+            minutes, seconds. Default: {'hours': 24}
+        preprocess : str
+            Name or dotted address of the project function to call with each
+            entry of args.
+        prefix : str
+            A prefix for clone names (if they need to be created) and
+            identification run tags (<prefix>_<pid>).
+        runkw :
+            Keywords to parse to the project.run method.
+
+        Returns
+        -------
+        <django.db.QuerySet>
+            Interable set of run instances.
+        """
+        st = dt.datetime.now(tz=pytz.UTC)
+        # check input
+        lt = (list, tuple,)
+        assert (type(clones) in lt+(int,)) or (type(args) in lt)
+        if args:
+            if clones is None:
+                clones = len(args)
+            assert all([type(i) == dict for i in args])
+            assert type(preprocess) == str
+            try:
+                self.project.settings[preprocess]
+            except AttributeError:
+                raise AttributeError('%r is not a valid project function.'
+                                     % preprocess)
+        if type(clones) == int:
+            assert args and preprocess
+            clones = self.create_clones(clones, prefix=prefix)
+        timeout = timeout or {'hours': 24}
+        assert (type(timeout) == dict) or isinstance(timeout, dt.timedelta)
+        timeout = dt.timedelta(**timeout)if type(timeout) == dict else timeout
+
+        slurmargs = {'time': int(timeout.seconds/60.)+1} if timeout else {}
+        tag = prefix + '_' + str(os.getpid())
+        runkw.setdefault('cluster', {})
+        deftag = runkw.setdefault('tags', '')
+        queue = args or clones
+
+        while len(queue) > 0:
+            slurm_jobs = []
+            mp_jobs = []
+            n = min(len(queue), len(clones))
+            qclones = clones[:n]
+            # preprocess
+            if args:
+                for clone, a in zip(qclones, queue[:n]):
+                    try:
+                        clone.settings[preprocess](**a)
+                    except Exception as e:
+                        m = '\nAn exception occurred while running %s.%s(**%r)'
+                        raise RuntimeError(str(e) + m % (clone, preprocess, a))
+            # run
+            for clone in qclones:
+                runkw['cluster'].update(dict(jobname=clone.clonename,
+                                        slurmargs=slurmargs))
+                runkw['tags'] = ' '.join([deftag, tag, clone.clonename])
+                try:
+                    job = clone.run(**runkw)
+                    slurm_jobs.append(job)
+                except OSError:
+                    jf = osp.join(self.project.cluster.resourcedir,
+                                  clone.clonename+'.py')
+                    mp_jobs.append((jf, clone.projectdir))
+            # wait for runs to finish
+            if mp_jobs:
+                self.mp_process(mp_jobs)
+            else:
+                self.wait(slurm_jobs)
+            # remove run items from queue
+            queue = queue[n:]
+
+        runs = self.project.browser.runs.filter(
+                tags__contains=tag, time__gt=st)
+        return runs
+
+    def create_clones(self, n, prefix='clone', **clonekw):
+        """Create n clones named <prefix>_0-n.
+        """
+        cn = prefix + ('_%' + '0%0ii' % len(str(n - 1)))
+        clones = [self.project.clone(cn % i, **clonekw) for i in range(n)]
+        return clones
+
+    def wait(self, jobs, timeout=None, interval=5):
+        """Wait until all jobs are COMPLETED as per job.state.
+
+        Arguments
+        ---------
+        jobs : list
+            List of jobs to poll.
+        interval : int seconds
+            Polling interval in seconds.
+        timeout : dict or datetime.timedelta instance
+            Raise RuntimeError after timeout is elapsed. Parse any keyword as
+            dict to datetime.timedelta, e.g. hours, days, minutes, seconds.
+        """
+        st = dt.datetime.now()
+        ms = u"\r\033[K\u29D6 Waiting for %s runs (status: %s) for %s hh:mm:ss"
+        ndone = 0
+        njobs = len(jobs)
+        status = {}
+        while ndone < njobs:
+            et = dt.datetime.now()-st
+            if timeout and et > timeout:
+                em = '%s runs not found within %s hh:mm:ss'
+                raise RuntimeError(em % (njobs, timeout))
+            ss = ['%s %s' % (n, s) for s, n in sorted(status.items())]
+            sys.stdout.write(ms % (njobs-ndone, ', '.join(ss), et))
+            sys.stdout.flush()
+            time.sleep(interval)
+            status = self.aggregated_job_status(jobs)
+            if 'FAILED' in status or 'TIMEOUT' in status:
+                self._raise_failed(jobs)
+            ndone = status.get('COMPLETED', 0)
+        cmsg = u"\r\033[K\u2713 Completed %s runs in %s hh:mm:ss\n"
+        sys.stdout.write(cmsg % (njobs, et))
+        sys.stdout.flush()
+        return
+
+    def _raise_failed(self, jobs):
+        failed = []
+        for j in jobs:
+            st = j.state
+            if st == 'RUNNING':
+                j.cancel()
+            elif st == 'FAILED':
+                with open(j.stderr) as f:
+                    stderr = f.read()
+                failed.append((j, stderr))
+            elif st == 'TIMEOUT':
+                failed.append((j, 'timed out.'))
+        errors = '\n\n'.join([jn+':\n'+se for jn, se in failed])
+        nf = len(failed)
+        raise RuntimeError('%i SLURM jobs failed/timedout:\n' % nf + errors)
+
+    @staticmethod
+    def aggregated_job_status(jobs):
+        """Return the aggregated job status of a list of jobs in a dict."""
+        status = {}
+        for j in jobs:
+            s = j.state
+            status.setdefault(s, 0)
+            status[s] += 1
+        return status
+
+    def mp_process(self, jobfileprojectdir):
+        """Run the jobfiles in mp_jobs through multiprocessing.
+        """
+        import multiprocessing
+        ncpu = min(len(jobfileprojectdir), multiprocessing.cpu_count())
+        msg = 'Using multiprocessing on %s CPUs.' % ncpu
+        warnings.warn(msg)
+        pool = multiprocessing.Pool()
+        pool.map(mp_process_clone, jobfileprojectdir)
+        return
+
+
+def mp_process_clone(clonejobfclonedir):
+    """Execute a cluster jobfile with the same name as the clone in the clone's
+    projectdir. This function needs to be here so that it can be pickled by the
+    multiprocessing.Pool.
+    """
+    jf, cd = clonejobfclonedir
+    os.chdir(os.path.join(cd))
+    # create stderr, stdout files
+    jpre = os.path.splitext(jf)[0]
+    stderr, stdout = [open(jpre + '.%s' % s, 'w') for s in ('err', 'out')]
+    # start subprocess
+    try:
+        ret = subprocess.check_call(['python', jf], stdout=stdout,
+                                    stderr=stderr)
+    except subprocess.CalledProcessError as cpe:
+        raise Exception(str(cpe))
+    return ret
 
 
 def aggregate_time(obj, freq='d', regime=False, resample_method='mean',

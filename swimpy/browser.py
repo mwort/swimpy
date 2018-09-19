@@ -4,7 +4,6 @@ Extended functionality related to the modelmanager browser plugin.
 from django.db import models
 from django.conf import settings
 from modelmanager.plugins.browser.database.models import Run
-from modelmanager.plugins.pandas import ProjectOrRunData
 
 
 class RunManager(models.Manager):
@@ -37,46 +36,17 @@ class RunManager(models.Manager):
         cols = [f.name for f in self.model._meta.get_fields()]
         return frame[[c for c in cols if c in frame.columns]]
 
-    def wait(self, nruns, interval=5, timeout={'hours': 12}, **filters):
-        """Wait until nruns are found (with the filters) and return them.
+    def reset_ids(self):
+        """Reset the ID counting to the last ID found in the model.
 
-        Arguments
-        ---------
-        nruns : int
-            Number of runs to wait for.
-        interval : int seconds
-            Polling interval in seconds.
-        timeout : dict
-            Raise RuntimeError after timeout is elapsed. Parse any keyword
-            to datetime.timedelta, e.g. hours, days, minutes, seconds.
-        **filters :
-            Any run attribute filter to query the runs table with.
-
-        Returns
-        -------
-        QuerySet
+        Useful after many objects have been deleted.
         """
-        from sys import stdout
-        from time import sleep
-        import datetime as dt
-        st = dt.datetime.now()
-        to = dt.timedelta(**timeout)
-        fltstr = ', '.join('%s=%r' % kv for kv in filters.items()) or 'all'
-        msg = "\rWaiting for %s runs (%s) for %s hh:mm:ss"
-        ndone = 0
-        while ndone < nruns:
-            runs = self.filter(**filters) if filters else self.all()
-            ndone = runs.count()
-            et = dt.datetime.now()-st
-            if ndone < nruns:
-                if et > to:
-                    em = '%s runs not found within %s hh:mm:ss' % (nruns, to)
-                    raise RuntimeError(em)
-                stdout.write(msg % (nruns-ndone, fltstr, et))
-                stdout.flush()
-                sleep(interval)
-        stdout.write("\n")
-        return runs
+        from django.db import connection
+        sql = "UPDATE SQLITE_SEQUENCE SET SEQ=%s WHERE NAME='browser_run';"
+        maxid = self.latest('id').id if self.all().count() else 0
+        with connection.cursor() as c:
+            c.execute(sql, [maxid])
+        return
 
 
 class SwimRun(Run):

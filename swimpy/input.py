@@ -315,13 +315,12 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         skiphead = 1
         # subbasins are given if all are ints and they are all in the subbasins
         try:
-            si = pd.Series(subids[3:], dtype=int, index=colnames[3:])
-            sbattr = self.project.subbasins.attributes
-            if all([i in sbattr.index for i in si]):
-                self.subbasins = si
+            si = pd.Series(subids, dtype=int, index=colnames)
+            if list(si.iloc[1:3]) == [0, 0]:
+                self.subbasins = si.iloc[3:]
                 skiphead += 1
         except ValueError:
-            pass
+            warnings.warn('No subbasinIDs given in second row of %s' % path)
         # read entire file
         rodata = pd.read_table(path, skiprows=skiphead, header=None,
                                delim_whitespace=True, index_col=0,

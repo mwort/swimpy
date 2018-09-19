@@ -1,7 +1,9 @@
 """These are test settings of SWIMpy."""
+import os.path as osp
 from modelmanager.plugins.grass import GrassAttributeTable as _GAT
 
-grass_db = "../grassdb"
+# path outside project dir dynamic relative to resourcedir to work with clones
+grass_db = property(lambda p: osp.join(osp.realpath(p.resourcedir), '..', '..', 'grassdb'))
 grass_location = "utm32n"
 grass_mapset =  "swim"
 grass_setup = dict(elevation = "elevation@PERMANENT",
@@ -13,7 +15,7 @@ grass_setup = dict(elevation = "elevation@PERMANENT",
 def get_station_daily_qobs(project):
     ro = project.station_daily_discharge_observed
     ro['HOF'] = ro['BLANKENSTEIN']*0.5
-    return ro
+    return ro.to_dict('series')
 
 
 class stations(_GAT):

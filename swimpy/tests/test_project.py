@@ -45,6 +45,20 @@ class Processing:
         jfp = osp.join(self.project.cluster.resourcedir, 'runtestjob.py')
         self.assertTrue(osp.exists(jfp))
 
+    def test_run_parallel(self):
+        self.project.config_parameters(nbyr=2)
+        args = [dict(smrate=i) for i in [0.1, 0.3, 0.6]]
+        runs = self.project.cluster.run_parallel(
+                clones=2, args=args, prefix='test', timeout=dict(minutes=1))
+        self.assertEqual(runs.count(), 3)
+        clones = [self.project.clone[c] for c in self.project.clone.names()
+                  if c.startswith('test')]
+        self.assertEqual(len(clones), 2)
+        # just run clones again
+        runs2 = self.project.cluster.run_parallel(
+                    clones, prefix='test2', timeout={'minutes': 1})
+        self.assertEqual(runs2.count(), 2)
+
 
 class Run:
     def test_project_run_data(self):
