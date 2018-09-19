@@ -79,7 +79,6 @@ class station_daily_discharge(ProjectOrRunData):
         **linekw :
             Parse any keyword to the line plot function.
         """
-        ax = ax or plt.gca()
         if stations is None:
             stations = self.columns[1:]  # first column is observed
         else:

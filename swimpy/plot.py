@@ -4,8 +4,8 @@ SWIM related plotting functions and the generic plot_function decorator.
 Standalone functions to create plots for SWIM input/output. They are used
 throught the SWIMpy package but collected here to enable reuse.
 
-All functions should accept an optional ax=None argument to plot to, i.e.
-defaulting to the current axes (``ax = ax or plt.gca()``).
+All functions should accept an optional ax=None argument to plot to. This
+argument will always be converted to a valid axes (i.e. plt.gca() if None).
 
 Project.method or Project.plugin.methods that implement plots should use the
 ``plot_function`` decorator to allow generic functionality.
@@ -67,7 +67,7 @@ def plot_waterbalance(series, ax=None, **barkwargs):
     -------
     bars
     """
-    ax = plt.gca()
+    ax = ax or plt.gca()
     bars = series.plot.bar(ax=ax, **barkwargs)
     ax.set_ylabel('mm per year')
     ax.set_title('Catchment mean water balance')
@@ -198,13 +198,13 @@ class PlotFunction(object):
     To be used in plot_function decorator.
 
     - enforces name starting with 'plot'.
-    - enforces output=None and ax=None arugments.
+    - enforces ax=None arugment and ensures a valid axes is always parsed.
     - enforces to accept ``**kwargs``.
     - enforces the method instance (first function argement) to either be a
       project or have a project attribute
     - reads savefig_defaults from project
-    - allows saving figure to file with output argument that may either be
-      string path or a dict with kwargs to save.
+    - enforces output=None argument and allows saving of figure to file with
+      that may either be string path or a dict with kwargs to save.
     - displays interactive plot if executed from commandline.
     - saves current figure to a temp path when executed in browser API.
     - allows running function with a run instance if the function has a run
@@ -259,6 +259,7 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         self.runs = kwargs.get('runs')
         self.output = kwargs.get('output')
         self.ax = kwargs.get('ax', plt.gca()) or plt.gca()
+        self.kwargs['ax'] = self.ax
         self.figure = self.ax.get_figure() if self.ax else plt.gcf()
         self._infer_project()
 
