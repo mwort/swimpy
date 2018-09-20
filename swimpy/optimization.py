@@ -142,6 +142,8 @@ class _EvoalgosSwimProblem(Problem):
             return
         # initialise algorithm
         self.ea = getattr(algo, self.algorithm)(self, **kwargs)
+        # write initial population to file
+        self.observe_population(self.ea, initial=True)
         # attach observer function
         self.ea.attach(self.observe_population)
         # process
@@ -296,6 +298,7 @@ class _EvoalgosSwimProblem(Problem):
             parameters = [random.uniform(l, u) for l, u in zip(lo, up)]
             indiv = SBXIndividual(genome=parameters)
             indiv.min_bounds, indiv.max_bounds = lo, up
+            indiv.clonename = None
             population.append(indiv)
         return population
 
@@ -314,7 +317,7 @@ class _EvoalgosSwimProblem(Problem):
         clonedproject.basin_parameters(**parameters)
         return
 
-    def observe_population(self, ea):
+    def observe_population(self, ea, initial=False):
         """Evoalgos function to write the population to the output file.
 
         The function only takes the algorithm instance as first argument and
@@ -328,24 +331,25 @@ class _EvoalgosSwimProblem(Problem):
         # collect population info
         popinfolist = []
         for i in self.ea.population:
-            iline = [self.ea.generation, i.id_number,
+            iline = [self.ea.generation+(0 if initial else 1), i.id_number,
                      i.clonename, i.date_of_birth]
-            iline += list(i.objective_values)
+            iline += list(i.objective_values or [None]*len(self.objectives))
             iline += list(i.genome)
             popinfolist.append(iline)
         # make dataframe and write out
         popframe = pd.DataFrame(popinfolist, columns=cols)
-        popframe.to_csv(self.observerfile, header=self.ea.generation == 0,
-                        index=False)
+        popframe.to_csv(self.observerfile, header=initial, index=False)
         self.observerfile.flush()
-        obj_stats = popframe[objs].describe().T[['50%', 'min']]
-        mt = self.mean_generation_time()
-        mgt = mt*(self.max_generations-self.ea.generation)
-        msg = ('Generation %s completed in %s, mean generation time %s, ' +
-               'max_generations in ~%s hh:mm:ss\nObjectives (median, min):\n' +
-               '\n'.join(['%s: %3.6f %3.6f' % (o, i[0], i[1])
-                          for o, i in zip(self.objectives, obj_stats.values)]))
-        print(msg % (self.ea.generation, self.evaltimes[-1], mt, mgt))
+        if not initial:
+            obj_stats = popframe[objs].describe().T[['50%', 'min']]
+            mt = self.mean_generation_time()
+            mgt = mt*(self.max_generations-self.ea.generation)
+            ovstr = ['%s: %3.6f %3.6f' % (o, i[0], i[1])
+                     for o, i in zip(self.objectives, obj_stats.values)]
+            msg = ('Generation %s completed in %s, mean generation time %s, ' +
+                   'max_generations in ~%s hh:mm:ss\n' +
+                   'Objectives (median, min):\n' + '\n'.join(ovstr))
+            print(msg % (self.ea.generation+1, self.evaltimes[-1], mt, mgt))
         return
 
     def mean_generation_time(self):

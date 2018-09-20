@@ -56,7 +56,7 @@ class TestEvoalgos(ProjectTestCase):
         run_pops = self.populations
         self.assertEqual(list(output_pops.columns), list(run_pops.columns))
         for pops in [output_pops, run_pops]:
-            self.assertEqual(len(pops), 12)
+            self.assertEqual(len(pops), 16)
             self.assertEqual(pops.objectives, sorted(OBJECTIVES))
             self.assertEqual(pops.parameters, sorted(PARAMETERS.keys()))
 
