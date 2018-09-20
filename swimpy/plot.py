@@ -164,8 +164,7 @@ def plot_flow_duration_polar(series, axes=None, percentilestep=10,
     return axes
 
 
-def plot_objectives_scatter(performances, selected=None, ax=None,
-                            **scatterkwargs):
+def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
     '''Plot scatter against all objectives combinations in a stepped subplot.
 
     Arguments
@@ -203,7 +202,7 @@ def plot_objectives_scatter(performances, selected=None, ax=None,
         for ii, nn in enumerate(objectives[:-1]):  # column
             if ii <= i:
                 ax[i][ii].scatter(
-                    performances[nn], performances[n], **scatterkwargs)
+                    performances[nn], performances[n], **scatterkw)
                 if selected is not None:
                     ax[i][ii].scatter(selected[nn], selected[n], c='r')
                 # axis adjustments

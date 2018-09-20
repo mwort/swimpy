@@ -25,7 +25,7 @@ from modelmanager.settings import parse_settings
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.pandas import ProjectOrRunData
 
-from swimpy.plot import plot_objectives_scatter, plot_function, plt
+from swimpy.plot import plot_objective_scatter, plot_function, plt
 
 try:
     from evoalgos import algo
@@ -465,8 +465,8 @@ class optimization_populations(ProjectOrRunData):
         return axs
 
     @plot_function
-    def plot_objectives_scatter(self, generation=None, best=False, ax=None,
-                                runs=None, output=None, **scatterkwargs):
+    def plot_objective_scatter(self, generation=None, best=False, ax=None,
+                               runs=None, output=None, **scatterkwargs):
         """Plot all objectives against each other in a stepped subplot.
 
         Arguments
@@ -486,8 +486,8 @@ class optimization_populations(ProjectOrRunData):
         else:
             selected = None
 
-        ax = plot_objectives_scatter(gen[self.objectives], selected=selected,
-                                     ax=ax, **scatterkwargs)
+        ax = plot_objective_scatter(gen[self.objectives], selected=selected,
+                                    ax=ax, **scatterkwargs)
 
         return ax
 
