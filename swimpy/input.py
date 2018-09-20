@@ -338,7 +338,7 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         # write out
         out = [self.index.year, self.index.month, self.index.day]
         out += [self[s] for s in self.columns]
-        out = pd.DataFrame(zip(*out))
+        out = pd.DataFrame(list(zip(*out)))
         with open(self.path, 'w') as fo:
             fo.write(head)
             out.to_string(fo, na_rep='-9999', header=False, index=False)
