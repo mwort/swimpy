@@ -187,11 +187,17 @@ def plot_objectives_scatter(performances, selected=None, ax=None,
     naxes = len(objectives) - 1
     if ax:
         f = ax.get_figure()
-        f.clear()
+        axs = f.get_axes()
+        if len(axs) == naxes**2:
+            ax = np.array(axs).reshape(naxes, naxes)
+        else:
+            f.clear()
+            ax = None
     else:
         f = plt.figure()
-    ax = f.subplots(naxes, naxes, squeeze=False)
-    plt.subplots_adjust(hspace=0, wspace=0)
+    if ax is None:
+        ax = f.subplots(naxes, naxes, squeeze=False)
+    plt.subplots_adjust(hspace=0.1, wspace=0.1)
 
     for i, n in enumerate(objectives[1:]):  # row
         for ii, nn in enumerate(objectives[:-1]):  # column

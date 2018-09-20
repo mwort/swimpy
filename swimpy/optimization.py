@@ -465,21 +465,21 @@ class optimization_populations(ProjectOrRunData):
         return axs
 
     @plot_function
-    def plot_objectives_scatter(self, generation='last', best=False, ax=None,
-                                output=None, **scatterkwargs):
+    def plot_objectives_scatter(self, generation=None, best=False, ax=None,
+                                runs=None, output=None, **scatterkwargs):
         """Plot all objectives against each other in a stepped subplot.
 
         Arguments
         ---------
-        generation : int or 'last' (default)
-            The generation to plot objectives from.
+        generation : int, optional
+            The generation to plot objectives from. Default: last.
         best : bool | list of min. objectives
             Highlight the best tradeoff solution.
         scatterkwargs :
             Any keyword passed onto the scatter function.
         """
         # get objectives to plot
-        gen = self.lastgen if generation == 'last' else self.ix[generation]
+        gen = self.ix[generation] if generation else self.lastgen
 
         if best:
             selected = self.best_tradeoff(best if type(best) == list else None)
