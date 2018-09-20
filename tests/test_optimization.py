@@ -62,7 +62,8 @@ class TestEvoalgos(ProjectTestCase):
 
     def test_plots(self):
         pops = self.populations
-        functions = ['plot_generation_objectives', 'plot_objective_scatter']
+        functions = ['plot_generation_objectives', 'plot_objective_scatter',
+                     'plot_parameter_distribution']
         args = {'plot_objective_scatter': dict(best=True)}
         for pf in functions:
             opath = pf+'.png'

@@ -333,7 +333,7 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
             self.runs = self.project.browser.runs.get_runs(self.runs)
             self._plot_runs()
         else:
-            self.result = self.decorated_function(*args, **kwargs)
+            self.result = self.decorated_function(*args, **self.kwargs)
 
         self._get_savekwargs()
 

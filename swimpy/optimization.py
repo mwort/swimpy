@@ -491,6 +491,57 @@ class optimization_populations(ProjectOrRunData):
 
         return ax
 
+    @plot_function
+    def plot_parameter_distribution(self, parameters=None, generation=None,
+                                    runs=None, ax=None, output=None, **histkw):
+        '''Plot parameter distribution histograms of all parameters.
+
+        Arguments
+        ---------
+        parameters : list
+            Limit what parameters to show. Default: all
+        generation : int, optional
+            Generation to plot. Default: last
+        histkw :
+            Any keyword parsed to the plt.hist call (excpt for ``range``) and
+            the subsequent Patch. A useful keyword for multiple calls is
+            ``histtype='step'`` which is the default if runs are parsed.
+        '''
+        gen = self.loc[generation] if generation else self.lastgen
+        parameters = parameters or self.parameters
+        # setup nice plots
+        sq = np.sqrt(len(parameters))
+        ncols = int(sq)
+        nrows = ncols + (1 if sq-ncols else 0)
+        if ax:
+            f = ax.get_figure()
+            axs = f.get_axes()
+            if len(axs) == ncols*nrows:
+                ax = np.array(axs)
+            else:
+                f.clear()
+                ax = None
+        else:
+            f = plt.figure()
+        if ax is None:
+            ax = f.subplots(nrows, ncols, squeeze=False, sharey=True).flatten()
+        histkw.setdefault("bins", 10)
+        if runs:
+            histkw.setdefault('histtype', 'step')
+        hdls = []
+        for a, par in zip(ax, parameters):
+            bars = a.hist(gen[par], range=self.parameter_ranges[par],
+                          **histkw)
+            hdls.append(bars)
+            a.set_title(par)
+            a.set_xlim(*self.parameter_ranges[par])
+        ax[0].set_ylabel('N runs')
+        # remove not needed axes
+        for i in range(len(parameters), ncols*nrows):
+            ax[i].set_axis_off()
+        plt.tight_layout()
+        return hdls
+
     def best_tradeoff(self, minobjectives=None):
         '''Select from last generation the parameter with the shortest distance
         to the scaled Pareto front to the origin. The front is either scaled
