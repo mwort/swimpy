@@ -73,6 +73,8 @@ class ProjectTestCase(unittest.TestCase):
         p = swimpy.project.setup(SWIM_TEST_PROJECT)
         shutil.copy(TEST_SETTINGS, p.settings.file)
         self.project = swimpy.Project(SWIM_TEST_PROJECT)
+        # reload brower project instance
+        self.project.browser.project.settings.load()
 
     @classmethod
     def tearDownClass(self):
@@ -304,11 +306,10 @@ class TestPlotting(ProjectTestCase):
         fig = pl.figure()
         for a in resfile_plotf:
             print(a)
-            ppath = osp.join(self.project.projectdir, a+'.png')
-            res = self.run_with_defaults(a, runs=(run.pk,))
-            self.assertEqual(len(res), 2)
+            self.assertIsNotNone(self.run_with_defaults(a, runs=(run.pk,)))
             fig.clear()
         return
+
 
 if __name__ == '__main__':
     cProfile.run('unittest.main()', 'pstats')
