@@ -26,7 +26,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'browser':
 import matplotlib.pyplot as plt
 
 
-def save(output, figure=None, **savekwargs):
+def save(output, figure=None, tight_layout=True, **savekwargs):
     """Convenience function to set figure size and save a matplotlib figure.
 
     Arguments
@@ -35,6 +35,8 @@ def save(output, figure=None, **savekwargs):
         Path to save figure to. Extension determines format.
     figure : matplotlib.Figure object, optional
         Defaults to current figure.
+    tight_layout : bool
+        Apply ``pyplot.tight_layout`` to figure reducing figure whitespace.
     **savekwargs :
         Any keyword argument parsed to ``figure.savefig()`` method.
         Special keys:
@@ -47,6 +49,8 @@ def save(output, figure=None, **savekwargs):
         assert len(size) == 2, 'size must be (width, height) not %r' % size
         mmpi = 25.4
         figure.set_size_inches(size[0]/mmpi, size[1]/mmpi)  # (width, hight)
+    if tight_layout:
+        figure.tight_layout()
     figure.savefig(output, **savekwargs)
     return
 
