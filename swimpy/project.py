@@ -189,7 +189,7 @@ class Project(mm.Project):
         return fi
 
     @parse_settings
-    def save_run(self, indicators={}, files={}, parameters=None, **kw):
+    def save_run(self, indicators=None, files=None, parameters=None, **kw):
         """
         Save the current SWIM input/output as a run in the browser database.
 
@@ -213,6 +213,8 @@ class Project(mm.Project):
         -------
         Run object (Django model object).
         """
+        indicators = indicators or {}
+        files = files or {}
         assert type(indicators) in [list, dict]
         assert type(files) in [list, dict]
         # config
