@@ -255,7 +255,10 @@ def plot_function(function):
         sig = '%s(%s)\n' % (pf.finfo.name, pf.finfo.signiture)
         f.__doc__ = sig + pf.finfo.doc
     # add generic docs
-    function.__doc__ = (pf.finfo.doc or '') + PlotFunction.additional_docs
+    docs = (pf.finfo.doc or '') + PlotFunction.ax_output_docs
+    if 'runs' in pf.finfo.optional_arguments:
+        docs += PlotFunction.runs_docs
+    function.__doc__ = docs
     # attach original function
     f.decorated_function = function
     return f
@@ -279,17 +282,20 @@ class PlotFunction(object):
     - allows running function with a run instance if the function has a run
       argument. The argument input is normalised (see additional_docs).
     """
-    additional_docs = """
+    ax_output_docs = """
 
 Plot function arguments:
 ------------------------
 ax : <matplotlib.Axes>, optional
     Axes to plot to. Default is the current axes if None.
 output : str path | dict
-    Path to writeout or dict of keywords to parse to save_or_show.
-runs : Run | runID | iterable of Run/runID | QuerySet, optional
-    Show plot for runs if they have the same method or plugin.method. The runs
-    input is transformed to (run QuerySet, index) to enable per run styling.
+    Path to writeout or dict of keywords to parse to save_or_show."""
+    runs_docs = """
+runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
+    Show plot for runs if they have the same method or plugin.method. If a
+    string is parsed, the current project will also be plot with the string as
+    label. The runs argument is transformed to (run QuerySet, index) to
+    enable per run stylingy.
     """
 
     def __init__(self, function):
@@ -325,7 +331,7 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
     def __call__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
-        self.runs = kwargs.get('runs')
+        self.runs = kwargs.pop('runs', None)
         self.output = kwargs.get('output')
         self.ax = kwargs.get('ax', plt.gca()) or plt.gca()
         self.kwargs['ax'] = self.ax
@@ -333,11 +339,9 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
         self._infer_project()
 
         if self.runs:
-            # transform runs to QuerySet
-            self.runs = self.project.browser.runs.get_runs(self.runs)
             self._plot_runs()
         else:
-            self.result = self.decorated_function(*args, **self.kwargs)
+            self.result = self.decorated_function(*self.args, **self.kwargs)
 
         self._get_savekwargs()
 
@@ -351,8 +355,25 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
     def _plot_runs(self):
         ispi = self.instance.__class__ != self.project.__class__
         piname = self.instance.__class__.__name__  # project if not plugin
-        self.result = [self.result]
-        for i, r in enumerate(self.runs):
+        # extract stings as labels for current
+        current_label = None
+        if hasattr(self.runs, '__iter__'):
+            current_label = [r for r in self.runs if type(r) == str]
+            if current_label:
+                self.runs = [r for r in self.runs if r not in current_label]
+                current_label = current_label[0]
+        # transform runs to QuerySet
+        runs = self.project.browser.runs.get_runs(self.runs)
+
+        # plot current if current lable parsed
+        if current_label:
+            res = self.decorated_function(*self.args, label=current_label,
+                                          **self.kwargs)
+            self.result = [res]
+        else:
+            self.result = []
+
+        for i, r in enumerate(runs):
             try:
                 piinstance = r
                 if ispi:  # if project.plugin
@@ -363,7 +384,7 @@ runs : Run | runID | iterable of Run/runID | QuerySet, optional
                 print('%s doesnt have a %s method.' % (r, m))
                 continue
             rkw = self.kwargs.copy()
-            rkw['runs'] = (self.runs, i)
+            rkw['runs'] = (runs, i)
             rkw.setdefault('label', str(r))
             # call method with different instance as first argument as
             # decorated_function is unbound

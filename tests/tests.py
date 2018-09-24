@@ -268,6 +268,7 @@ class TestGrass(ProjectTestCase):
 
 
 class TestPlotting(ProjectTestCase):
+
     plot_prefix = 'plot'
     default_positional_arguments = {
         'station': 'HOF'
@@ -301,12 +302,12 @@ class TestPlotting(ProjectTestCase):
         resfile_plotf = [n for n in self.plot_functions.keys()
                          if '.'.join(n.split('.')[:-1]) in resfile_interfaces]
         resfiles_w_plotf = ['.'.join(n.split('.')[:-1]) for n in resfile_plotf]
-        self.project.settings(save_run_files=resfiles_w_plotf)
-        run = self.project.save_run(notes='TestPlotting.test_runs')
+        run = self.project.save_run(files=resfiles_w_plotf,
+                                    notes='TestPlotting.test_runs')
         fig = pl.figure()
         for a in resfile_plotf:
             print(a)
-            self.assertIsNotNone(self.run_with_defaults(a, runs=(run.pk,)))
+            self.assertIsNotNone(self.run_with_defaults(a, runs=('*', run.pk)))
             fig.clear()
         return
 

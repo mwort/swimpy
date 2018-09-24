@@ -20,7 +20,7 @@ class RunManager(models.Manager):
         elif hasattr(runs, '__iter__'):
             if all([type(i) is int for i in runs]):
                 return self.filter(pk__in=runs)
-            elif all([type(i) is Run for i in runs]):
+            elif all([isinstance(i, Run) for i in runs]):
                 return self.filter(pk__in=[i.pk for i in runs])
             else:
                 raise TypeError(ermsg)
