@@ -15,6 +15,7 @@ import sys
 import tempfile
 import functools
 import datetime as dt
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -50,7 +51,11 @@ def save(output, figure=None, tight_layout=True, **savekwargs):
         mmpi = 25.4
         figure.set_size_inches(size[0]/mmpi, size[1]/mmpi)  # (width, hight)
     if tight_layout:
-        figure.tight_layout()
+        # tight_layout doesnt work with irregular grid plots, lets try
+        try:
+            figure.tight_layout()
+        except RuntimeError:
+            warnings.warn('Figure doesnt allow tight layout.')
     figure.savefig(output, **savekwargs)
     return
 
@@ -406,6 +411,11 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
         return
 
     def _display_figure(self):
+        # tight_layout doesnt work with irregular grid plots, lets try
+        try:
+            self.figure.tight_layout()
+        except RuntimeError:
+            warnings.warn('Figure doesnt allow tight layout.')
         # in Django API
         if len(sys.argv) > 1 and sys.argv[1] == 'browser':
             imgpath = tempfile.mkstemp()[1] + '.png'
