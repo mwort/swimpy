@@ -380,12 +380,11 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         stat = [self.outlet_station]
         stat += [s for s in stations if s != self.outlet_station]
         # unpack series from dataframe, in right order!
-        pstations = self.project.stations
-        si = [s for s in stat if s not in pstations.index]
-        assert not si, '%s not found station table: %s' % (si, pstations.index)
-        satt = pstations.loc[stat]
-        q = pd.DataFrame({s: satt.loc[s, 'daily_discharge_observed']
-                          for s in stat})
+        stationsq = self.project.stations.daily_discharge_observed
+        si = [s for s in stat if s not in stationsq.columns]
+        assert not si, ('%s not found in stations.daily_discharge_observed: %s'
+                        % (si, stationsq.columns))
+        q = stationsq[stat]
         # change start/end
         conf = self.project.config_parameters
         q = q.truncate(before=start or conf.start_date,

@@ -132,8 +132,7 @@ class station_daily_discharge(ProjectOrRunData):
 
     def _obs_sim_overlap(self):
         """Return overlapping obs and sim discharge series excluding warmup."""
-        qo = self.project.stations.daily_discharge_observed.dropna()
-        obs = pd.concat(list(qo), axis=1)
+        obs = self.project.stations.daily_discharge_observed
         six = self[str(self.index[0].year+1):].index  # exclude first year
         ix = list(set(obs.index) & set(six))
         col = list(set(obs.columns) & set(self.columns))

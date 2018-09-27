@@ -222,7 +222,7 @@ class TestGrass(ProjectTestCase):
     class TestGrassTbl(mmgrass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
         key = 'NAME'
-        add_attributes = {'obs': {'HOF': pd.Series([12, 2, 2, 4])}}
+        obs = pd.DataFrame({'HOF': [12, 2, 2, 4]})
 
     def test_session(self):
         with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:

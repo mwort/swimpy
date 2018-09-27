@@ -416,19 +416,27 @@ class StationsUnconfigured(object):
 
     Examples
     --------
-    From a csv file with attributes and another one with Q data::
+    Path relative to settings.py file::
 
-        stations = pd.read_csv('stations_attribute.csv', index_col=0)
-        _q = pd.read_csv('stations_q_data.csv', parse_dates=[0], index_col=0)
-        stations['daily_discharge_observed'] = dict(_q.iteritems())
+        import os.path as osp
+        att_path = osp.join(osp.dirname(__file__), 'stations_attribute.csv')
+        q_path = osp.join(osp.dirname(__file__), 'stations_q_data.csv')
 
-    From a GRASS table and csv Q data (requires GRASS settings)::
+    Read discharge data from file::
+
+        _q = pd.read_csv(q_path, parse_dates=[0], index_col=0)
+
+    Now read attributes from a csv file and add discharge::
+
+        stations = pd.read_csv(att_path, index_col=0)
+        stations.daily_discharge_observed = _q
+
+    Or from a GRASS table and csv Q data (requires GRASS settings)::
 
         import modelmanager.plugins.grass as mmgrass
-        _q = pd.read_csv('stations_q_data.csv', parse_dates=[0], index_col=0)
         class stations(mmgrass.GrassAttributeTable):
             vector = 'stations_snapped',
-            add_attributes = {'daily_discharge_observed': _q.to_dict('series')}
+            daily_discharge_observed = _q
 
     """
     def __init__(self, project):
