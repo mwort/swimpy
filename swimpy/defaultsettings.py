@@ -13,6 +13,7 @@ from swimpy.output import *
 from swimpy.tests import Tests
 from swimpy.utils import StationsUnconfigured as stations
 from swimpy.utils import cluster
+from swimpy.plot import plot_summary
 
 # SWIM executable
 swim = './swim'
@@ -27,6 +28,12 @@ save_figure_defaults = dict(
     dpi=200,
     size=(180, 120),  # mm
 )
+
+plot_summary_functions = ['station_daily_discharge.plot',
+                          [('station_daily_discharge.plot', {'freq': 'a'}),
+                           ('station_daily_discharge.plot', {'regime': True})],
+                          'catchment_annual_waterbalance.plot_mean',
+                          ]
 
 
 # put here to enable overriding

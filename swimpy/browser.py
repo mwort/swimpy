@@ -4,6 +4,7 @@ Extended functionality related to the modelmanager browser plugin.
 from django.db import models
 from django.conf import settings
 from modelmanager.plugins.browser.database.models import Run
+from swimpy.plot import plot_summary
 
 
 class RunManager(models.Manager):
@@ -87,3 +88,9 @@ class SwimRun(Run):
         p = settings.PROJECT
         fi = {n: p.settings.properties[n] for n in p.resultfile_interfaces}
         return dict(resultfiles=fi)
+
+    @property
+    def plot_summary(self):
+        return plot_summary(settings.PROJECT, self)
+    # short alias
+    plot = plot_summary

@@ -30,8 +30,6 @@ from swimpy import utils, plot
 from swimpy.plot import plot_function as _plot_function
 from swimpy.grass import _subbasin_or_hydrotope_values_to_raster
 
-from matplotlib import pyplot as plt  # after plot
-
 
 RESDIR = 'output/Res'
 GISDIR = 'output/GIS'

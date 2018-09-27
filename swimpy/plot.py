@@ -19,7 +19,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from modelmanager.settings import FunctionInfo
+from modelmanager.settings import FunctionInfo, parse_settings
 import matplotlib as mpl
 # needed to use matplotlib in django browser
 if len(sys.argv) > 1 and sys.argv[1] == 'browser':
@@ -429,3 +429,142 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
         else:  # in CLI
             plt.show(block=True)
         return
+
+
+def plot_many(functions, **kwall):
+    """Plot mutiple plots in a grid.
+
+    Arguments
+    ---------
+    functions : list (of lists) of callables or tuple(callable, dict)
+        Plotting functions to call with either just defaults or with keyword
+        arguments if a tuple with the callable and a dict is parsed.
+        List in the list subdivides rows in the subplot grid. All functions
+        must accept the ax keyword.
+    kwall :
+        Keywords applied to all functions.
+
+    Returns
+    -------
+    axes
+    """
+    def norm_f(f):
+        if callable(f):
+            return (f, kwall)
+        elif type(f) == tuple:
+            assert len(f) == 2 and callable(f[0]) and type(f[1]) == dict
+            f[1].update(kwall)
+            return f
+        elif type(f) == list:
+            return [norm_f(i) for i in f]
+        else:
+            raise TypeError('functions entry %r is neither a ' % (f,) +
+                            'callable or a tuple (callable, dict).')
+
+    def call_f(f, ax, kw):
+        try:
+            f(ax=ax, **kw)
+        except Exception:
+            import traceback
+            etype, ex, tb = sys.exc_info()
+            raise etype('While calling %s, the below error occurred:\n\n' % f +
+                        str(ex) + ':\n' + ''.join(traceback.format_tb(tb)))
+
+    assert type(functions) == list
+    nrow = len(functions)
+    ncol = max([1]+[len(r) for r in functions if type(r) == list])
+    grid = (nrow, ncol)
+    axes = []
+    normf = norm_f(functions)
+    for irow, f in enumerate(normf):
+        if type(f) == list:
+            colspan = int(len(f)/float(ncol))
+            for icol, (fu, kw) in enumerate(f):
+                axes += [plt.subplot2grid(grid, (irow, icol), colspan=colspan)]
+                call_f(fu, axes[-1], kw)
+        else:
+            axes += [plt.subplot2grid(grid, (irow, 0), colspan=ncol)]
+            call_f(f[0], axes[-1], f[1])
+    return axes
+
+
+class plot_summary(object):
+    """A plugin to enable project.plot_summary and run.plot."""
+
+    plugin = ['__call__']
+
+    def __init__(self, project, host=None):
+        host = host or project
+        self.host = host
+        self.project = project
+        return
+
+    def _getattr(self, address):
+        """Deep getattr with a dotted address."""
+        a = self.host
+        try:
+            for i in address.split('.'):
+                a = getattr(a, i)
+        except AttributeError:
+            print('Cant find %s, will be ignored.')
+            return
+        return a
+
+    def _convert(self, l):
+        """Recursively convert functions entries into callables or skip."""
+        if type(l) == str:
+            try:
+                return self._getattr(l)
+            except (AttributeError, IOError):
+                return None
+        elif type(l) == tuple:
+            assert len(l) == 2 and type(l[0]) == str and type(l[1]) == dict
+            e = self._convert(l[0])
+            return (e, l[1]) if e else None
+        elif type(l) == list:
+            return [i for i in [self._convert(i) for i in l] if i]
+
+    @parse_settings
+    def __call__(self, functions=None, output=None, runs=None, ax=None, **kw):
+        """Summary plot.
+
+        Arguments
+        ---------
+        functions : list (of lists) of callables or tuple(callable, dict)
+            Plotting functions to call with either just defaults or with
+            keyword arguments if a tuple with the callable and a dict is
+            parsed. List in the list subdivides rows in the subplot grid. All
+            functions must accept the ax keyword. Mainly intended to be set in
+            settings with the ``plot_summary_functions`` variable.
+        kw :
+            Keywords to all subplots.
+
+        Returns
+        -------
+        list :
+            Flat list of axes that were created.
+        """
+        plot_function = PlotFunction(self.__call__)
+        pfkw = dict(ax=ax, output=output, runs=runs)
+        plot_function._interpret_args([self], pfkw)
+
+        normed_functions = self._convert(functions)
+        if normed_functions:
+            axes = plot_many(normed_functions, runs=runs, **kw)
+        else:
+            raise RuntimeError('No valid plots found in %s' % self.host)
+
+        # remove axes legends and add figure legend
+        legends = [l for l in [a.get_legend() for a in axes] if l is not None]
+        if legends:
+            plot_function.figure.legend(*axes[0].get_legend_handles_labels())
+            [l.remove() for l in legends]
+
+        # output/display
+        if plot_function.output:
+            save(plot_function.output, plot_function.figure,
+                 **plot_function.savekwargs)
+        # display if from commandline or browser api
+        elif sys.argv[0].endswith('swimpy'):
+            return plot_function._display_figure()
+        return axes
