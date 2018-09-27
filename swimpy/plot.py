@@ -304,19 +304,21 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
     """
 
     def __init__(self, function):
-        self.decorated_function = function
         # enforce arugments
         self.finfo = FunctionInfo(function)
+        fname = self.finfo.name
+        # takes care of decorated functions
+        self.decorated_function = self.finfo.function
         oargs = dict(zip(self.finfo.optional_arguments, self.finfo.defaults))
-        errmsg = self.finfo.name + ' has no optional argument "%s=None".'
+        errmsg = fname + ' has no optional argument "%s=None".'
         for a in ['output', 'ax']:
             assert a in oargs and oargs[a] is None, errmsg % a
-        errmsg = self.finfo.name + ' should start with "plot".'
-        assert self.finfo.name.startswith('plot'), errmsg
-        assert self.finfo.kwargs, self.finfo.name+' must accept **kwargs.'
+        errmsg = fname + ' should start with "plot".'
+        assert fname.startswith('plot') or fname == '__call__', errmsg
+        assert self.finfo.kwargs, fname+' must accept **kwargs.'
         # attributes assigned during call
-        callattr = ('project instance args kwargs ax figure result savekwargs '
-                    'output runs')
+        callattr = ('project instance args kwargs ax figure savekwargs '
+                    'output runs ax_parsed')
         for a in callattr.split():
             setattr(self, a, None)
         return
@@ -333,29 +335,40 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
             raise AttributeError(em % self.instance)
         return
 
-    def __call__(self, *args, **kwargs):
+    def _interpret_args(self, args, kwargs):
         self.args = args
         self.kwargs = kwargs
         self.runs = kwargs.pop('runs', None)
         self.output = kwargs.get('output')
-        self.ax = kwargs.get('ax', plt.gca()) or plt.gca()
+        pax = kwargs.get('ax', None)
+        self.ax_parsed = pax is not None
+        self.ax = pax or plt.gca()
         self.kwargs['ax'] = self.ax
-        self.figure = self.ax.get_figure() if self.ax else plt.gcf()
+        self.figure = self.ax.get_figure()
         self._infer_project()
 
-        if self.runs:
-            self._plot_runs()
-        else:
-            self.result = self.decorated_function(*self.args, **self.kwargs)
+        self.savekwargs = {}
+        self.savekwargs.update(self.project.save_figure_defaults)
+        if type(self.output) is dict:
+            op = self.output.pop('output', None)
+            self.savekwargs.update(self.output)
+            self.output = op
+        return
 
-        self._get_savekwargs()
+    def __call__(self, *args, **kwargs):
+        self._interpret_args(args, kwargs)
+
+        if self.runs:
+            result = self._plot_runs()
+        else:
+            result = self.decorated_function(*self.args, **self.kwargs)
 
         if self.output:
             save(self.output, self.figure, **self.savekwargs)
         # display if from commandline or browser api
         elif sys.argv[0].endswith('swimpy'):
-            self._display_figure()
-        return self.result
+            result = self._display_figure()
+        return result
 
     def _plot_runs(self):
         ispi = self.instance.__class__ != self.project.__class__
@@ -374,9 +387,9 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
         if current_label:
             res = self.decorated_function(*self.args, label=current_label,
                                           **self.kwargs)
-            self.result = [res]
+            result = [res]
         else:
-            self.result = []
+            result = []
 
         for i, r in enumerate(runs):
             try:
@@ -394,21 +407,11 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
             # call method with different instance as first argument as
             # decorated_function is unbound
             rre = pmeth.decorated_function(piinstance, *self.args[1:], **rkw)
-            self.result.append(rre)
+            result.append(rre)
         # make sure a legend is shown if not already
         if self.ax.get_legend() is None:
             self.ax.legend()
-        return
-
-    def _get_savekwargs(self):
-        # unpack savekwargs
-        self.savekwargs = {}
-        self.savekwargs.update(self.project.save_figure_defaults)
-        if type(self.output) is dict:
-            op = self.output.pop('output', None)
-            self.savekwargs.update(self.output)
-            self.output = op
-        return
+        return result
 
     def _display_figure(self):
         # tight_layout doesnt work with irregular grid plots, lets try
@@ -421,7 +424,7 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
             imgpath = tempfile.mkstemp()[1] + '.png'
             save(imgpath, self.figure, **self.savekwargs)
             self.figure.clear()
-            self.result = imgpath
-        else:  # in CLI
+            return imgpath
+        elif not self.ax_parsed:  # in CLI
             plt.show(block=True)
         return
