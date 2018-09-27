@@ -365,8 +365,9 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
 
         if self.output:
             save(self.output, self.figure, **self.savekwargs)
-        # display if from commandline or browser api
-        elif sys.argv[0].endswith('swimpy'):
+        # display if from commandline or browser api (if ax parsed it cant be
+        # from the commandline or browser so must be a subcall)
+        elif sys.argv[0].endswith('swimpy') and not self.ax_parsed:
             result = self._display_figure()
         return result
 
@@ -425,6 +426,6 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
             save(imgpath, self.figure, **self.savekwargs)
             self.figure.clear()
             return imgpath
-        elif not self.ax_parsed:  # in CLI
+        else:  # in CLI
             plt.show(block=True)
         return
