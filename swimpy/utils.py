@@ -371,6 +371,8 @@ def mp_process_clone(clonejobfclonedir):
                                     stderr=stderr)
     except subprocess.CalledProcessError as cpe:
         raise Exception(str(cpe))
+    stderr.close()
+    stdout.close()
     return ret
 
 
