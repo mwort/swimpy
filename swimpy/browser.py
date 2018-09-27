@@ -28,13 +28,34 @@ class RunManager(models.Manager):
             raise TypeError(ermsg)
         return
 
-    def as_frame(self, expand_indicators=False, **filters):
+    def to_frame(self, indicators=False, queryset=None, **filters):
+        """Return runs table as pandas.DataFrame.
+
+        Arguments
+        ---------
+        indicators : bool | list | str
+            Add indicators to the DataFrame. If True, all will be expanded,
+            otherwise just those in list or the one parsed as str.
+        queryset : django.QuerySet, optional
+            Convert specific queryset ignoring filters.
+        filters :
+            Apply any filter to the table.
+        """
         import pandas as pd
-        frame = pd.DataFrame.from_records(self.filter(**filters).values())
+        qs = queryset or self.filter(**filters)
+        frame = pd.DataFrame.from_records(qs.values())
         frame.set_index('id', inplace=True)
         # return in correct column order
         cols = [f.name for f in self.model._meta.get_fields()]
-        return frame[[c for c in cols if c in frame.columns]]
+        frame = frame[[c for c in cols if c in frame.columns]]
+
+        if indicators:
+            ind = [indicators] if type(indicators) == str else indicators
+            for r in qs:
+                for i in r.resultindicators.all():
+                    if indicators is True or i.name in ind:
+                        frame.loc[r.id, i.name] = i.value
+        return frame
 
     def reset_ids(self):
         """Reset the ID counting to the last ID found in the model.
