@@ -8,7 +8,6 @@ import subprocess
 import warnings
 import sys
 import time
-import pytz
 import datetime as dt
 
 import numpy as np
@@ -211,7 +210,7 @@ class cluster(object):
         <django.db.QuerySet>
             Interable set of run instances.
         """
-        st = dt.datetime.now(tz=pytz.UTC)
+        st = dt.datetime.now()
         # check input
         lt = (list, tuple,)
         assert (type(clones) in lt+(int,)) or (type(args) in lt)
