@@ -95,7 +95,7 @@ class Project(mm.Project):
         """
         return self.run(*runargs, **runkwargs)
 
-    def save_resultindicator(self, run, name, value, tags=''):
+    def save_indicator(self, run, name, value, tags=''):
         """
         Save a result indicator with a run.
 
@@ -113,10 +113,10 @@ class Project(mm.Project):
 
         Returns
         -------
-        ResultIndicator (Django model) instance or list of instances.
+        indicator (Django model) instance or list of instances.
         """
         def insert_ind(**kwargs):
-            return self.browser.insert('resultindicator', **kwargs)
+            return self.browser.insert('indicator', **kwargs)
         emsg = ('Indicator %s is not a number ' % name +
                 'or a dictionary of numbers. Instead: %r' % value)
         if isinstance(value, Number):
@@ -129,7 +129,7 @@ class Project(mm.Project):
             raise IOError(emsg)
         return i
 
-    def save_resultfile(self, run, tags, filelike):
+    def save_file(self, run, tags, filelike):
         """
         Save a result file with a run.
 
@@ -146,7 +146,7 @@ class Project(mm.Project):
 
         Returns
         -------
-        ResultFile (Django model) instance or list of instances.
+        browser.File (Django model) instance or list of instances.
         """
         errmsg = ('%s is not a file instance, existing path or ' % filelike +
                   'pandas DataFrame/Series or dictionary of those.')
@@ -156,7 +156,7 @@ class Project(mm.Project):
             return flik or (type(fu) is str and osp.exists(fu))
 
         def insert_file(**kwargs):
-            return self.browser.insert('resultfile', **kwargs)
+            return self.browser.insert('file', **kwargs)
 
         if hasattr(filelike, 'to_run'):
             f = filelike.to_run(run, tags=tags)
@@ -167,7 +167,7 @@ class Project(mm.Project):
             f = insert_file(run=run, tags=tags, file=tmpf)
         elif type(filelike) == dict:
             assert all([is_valid(v) for v in filelike.values()]), errmsg
-            f = [self.save_resultfile(run, tags+' '+str(k), v)
+            f = [self.save_file(run, tags+' '+str(k), v)
                  for k, v in filelike.items()]
         elif is_valid(filelike):
             f = insert_file(run=run, tags=tags, file=filelike)
@@ -176,7 +176,7 @@ class Project(mm.Project):
         return f
 
     @property
-    def resultfile_interfaces(self):
+    def runfile_interfaces(self):
         """List of output file project or run attributes.
 
         Apart from interfacing between current SWIM output files, these
@@ -196,11 +196,11 @@ class Project(mm.Project):
         Arguments
         ---------
         indicators : dict | list
-            Dictionary of indicator values passed to self.save_resultindicator
+            Dictionary of indicator values passed to self.save_indicator
             or list of method or attribute names that return an indicator
             (float) or dictionary of those.
         files : dict | list
-            Dictionary of file values passed to self.save_resultfile or list of
+            Dictionary of file values passed to self.save_file or list of
             method or attribute names that return any of file instance, a file
             path or a pandas.DataFrame/Series (will be converted to file via
             to_csv) or a dictionary of any of those.
@@ -227,7 +227,7 @@ class Project(mm.Project):
         run = self.browser.insert('run', **run_kwargs)
 
         # add files and indicators
-        for tbl, a in [('resultindicator', indicators), ('resultfile', files)]:
+        for tbl, a in [('indicator', indicators), ('file', files)]:
             save_function = getattr(self, 'save_' + tbl)
             # unpack references
             if type(a) == list:

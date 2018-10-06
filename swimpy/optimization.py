@@ -238,7 +238,7 @@ class _EvoalgosSwimProblem(Problem):
         obvals = {}
         for r in runs:
             t, clonename = r.tags.split()
-            ri = r.resultindicators.all()
+            ri = r.indicators.all()
             vals = []
             for i in self.indicators:
                 rv = ri.filter(name=i)
@@ -259,7 +259,7 @@ class _EvoalgosSwimProblem(Problem):
         - creates clone
         - calls self.set_parameters
         - runs clone
-        - checks if returned run contains the same number of resultindicators
+        - checks if returned run contains the same number of indicators
           as self.indicators
         - checks if retrived_objectives return some number of values as
           self.objectives
@@ -272,7 +272,7 @@ class _EvoalgosSwimProblem(Problem):
         self.set_parameters(clone, params0)
         run = clone.run(indicators=self.indicators, quiet=True,
                         tags='run_test '+clone.clonename)
-        assert run.resultindicators.all().count() == len(self.indicators)
+        assert run.indicators.all().count() == len(self.indicators)
         runqset = clone.browser.runs.filter(tags__contains=clone.clonename)
         assert runqset.count() == 1
         obj_vals = self.retrieve_objectives(runqset)[clone.clonename]
@@ -395,7 +395,7 @@ class optimization_populations(ProjectOrRunData):
     ``project.optimization_populations.from_path(path)`` to read an output file
     or subclass with the @propertyplugin decorator and set the ``path`` class
     attribute which enables using the class also as part of saved runs with
-    equally named resultfiles.
+    equally named files.
     """
 
     path = None
@@ -430,7 +430,7 @@ class optimization_populations(ProjectOrRunData):
     from_project = from_csv
 
     def to_run(self, run, tags=''):
-        """Put parameter ranges back into columns and save resultfile.
+        """Put parameter ranges back into columns and save file.
         """
         tags = (tags+' ' if tags else '')+'optimization_populations'
         df = self.copy()
@@ -446,7 +446,7 @@ class optimization_populations(ProjectOrRunData):
         tmpf = osp.join(self.project.browser.settings.tmpfilesdir, fn)
         df.to_csv(tmpf, compression='gzip')
         f = self.project.browser.insert(
-                'resultfile', run=run, tags=tags, file=tmpf)
+                'file', run=run, tags=tags, file=tmpf)
         return f
 
     @property

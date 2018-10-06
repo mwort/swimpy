@@ -5,7 +5,7 @@ All defined classes are attached to project and run instances as
 propertyplugin that return a pandas.DataFrame. For files to be read from the
 SWIM project, a from_project method needs to be defined. To read the data from
 a run instance, a method refering to the extension of a file saved as
-ResultFile needs to be defined (e.g. from_csv) or from_run to overwrite the
+run file needs to be defined (e.g. from_csv) or from_run to overwrite the
 file selection.
 
 Conventions

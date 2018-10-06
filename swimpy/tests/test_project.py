@@ -62,7 +62,7 @@ class Processing:
 
 class Run:
     def test_project_run_data(self):
-        resultproperties = self.project.resultfile_interfaces
+        resultproperties = self.project.runfile_interfaces
         self.assertGreater(len(resultproperties), 0)
         for r in sorted(resultproperties):
             df_project = getattr(self.project, r)

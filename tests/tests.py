@@ -197,16 +197,16 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
         self.assertIn('test', run.tags.split())
         # pass indicators + files to save_run
         run = self.project.save_run(indicators=ri_values, files=rf_values)
-        check_indicators(run.resultindicators.all())
-        check_files(run.resultfiles.all())
+        check_indicators(run.indicators.all())
+        check_files(run.files.all())
         # pass as settings variables
         self.project.settings(**dict(zip(indicators, ri_functions)))
         self.project.settings(**dict(zip(files, rf_functions)))
         self.project.settings(save_run_files=files,
                               save_run_indicators=indicators)
         run = self.project.save_run()
-        check_indicators(run.resultindicators.all())
-        check_files(run.resultfiles.all())
+        check_indicators(run.indicators.all())
+        check_files(run.files.all())
 
 
 class TestRun(ProjectTestCase, test_project.Run):
@@ -298,7 +298,7 @@ class TestPlotting(ProjectTestCase):
         return
 
     def test_runs(self):
-        resfile_interfaces = self.project.resultfile_interfaces
+        resfile_interfaces = self.project.runfile_interfaces
         resfile_plotf = [n for n in self.plot_functions.keys()
                          if '.'.join(n.split('.')[:-1]) in resfile_interfaces]
         resfiles_w_plotf = ['.'.join(n.split('.')[:-1]) for n in resfile_plotf]

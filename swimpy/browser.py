@@ -53,7 +53,7 @@ class RunManager(models.Manager):
         if indicators:
             ind = [indicators] if type(indicators) == str else indicators
             for r in qs:
-                for i in r.resultindicators.all():
+                for i in r.indicators.all():
                     if indicators is True or i.name in ind:
                         frame.loc[r.id, i.name] = i.value
         return frame
@@ -86,8 +86,8 @@ class SwimRun(Run):
         """Attribute to let the Run object map files to plugins.
         """
         p = settings.PROJECT
-        fi = {n: p.settings.properties[n] for n in p.resultfile_interfaces}
-        return dict(resultfiles=fi)
+        fi = {n: p.settings.properties[n] for n in p.runfile_interfaces}
+        return dict(files=fi)
 
     @property
     def plot_summary(self):

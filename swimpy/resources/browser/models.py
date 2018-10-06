@@ -41,9 +41,9 @@ class Parameter(mmmodels.TaggedValue):
     pass
 
 
-class ResultIndicator(mmmodels.TaggedValue):
+class Indicator(mmmodels.TaggedValue):
     pass
 
 
-class ResultFile(mmmodels.RunTagged, mmmodels.File):
+class File(mmmodels.RunTagged, mmmodels.File):
     pass
