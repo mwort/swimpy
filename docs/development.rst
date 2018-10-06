@@ -2,6 +2,8 @@
 Development
 ***********
 
+.. todoList::
+
 .. include:: ../AUTHORS.rst
 .. include:: ../CHANGELOG.rst
 .. include:: ../CONTRIBUTING.rst

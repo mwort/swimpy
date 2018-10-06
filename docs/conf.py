@@ -74,6 +74,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosectionlabel',
               'sphinx.ext.napoleon',
+              'sphinx.ext.todo',
               'nbsphinx']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -121,7 +122,7 @@ autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
 pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
 autosectionlabel_prefix_document = True
 
