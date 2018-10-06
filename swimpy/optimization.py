@@ -255,6 +255,7 @@ class _EvoalgosSwimProblem(Problem):
         """Execute a series of tests before running the algorithm.
 
         Tests:
+
         - creates clone
         - calls self.set_parameters
         - runs clone

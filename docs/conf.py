@@ -20,9 +20,47 @@
 #
 import os
 import sys
+from sphinx.ext.autodoc import ClassDocumenter
+from modelmanager.utils import propertyplugin
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import swimpy
+
+
+class PropertypluginDocumenter(ClassDocumenter):
+    objtype = 'propertyplugin'
+    directivetype = 'class'
+    priority = 20  # higher priority than ClassDocumenter
+
+    @classmethod
+    def can_document_member(cls, member, membername, isattr, parent):
+        return isinstance(member, propertyplugin)
+
+    def get_doc(self, encoding=None, ignore=1):
+        doc = super(PropertypluginDocumenter, self).get_doc(encoding, ignore)
+        ppdoc = [u'.. note::', u'',
+                 u'    This is a *propertyplugin*, i.e. it gets instantiated when it is accessed.',
+                 u'    The *class* may be accessed through the ``plugin`` attribute.',
+                 u'']
+        if ppdoc not in doc:
+            doc = [ppdoc]+doc
+        return doc
+
+    def import_object(self):
+        self.objpath += ['plugin']
+        ret = super(PropertypluginDocumenter, self).import_object()
+        self.doc_as_attr = False
+        return ret
+
+    # to correct the name but then members have full name with plugin
+    # def format_name(self):
+    #    return self.fullname
+
+
+def setup(app):
+    app.add_autodocumenter(PropertypluginDocumenter)
+
 
 # -- General configuration ---------------------------------------------
 
@@ -78,8 +116,7 @@ language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
 autodoc_mock_imports = ['django']
-autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance',
-                         'inherited-members']
+autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
