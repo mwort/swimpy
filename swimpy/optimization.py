@@ -264,26 +264,29 @@ class _EvoalgosSwimProblem(Problem):
         - checks if retrived_objectives return some number of values as
           self.objectives
         """
-        self.project.browser.settings.unset()
-
-        clone = self.project.clone(self.prefix+'__test', fresh=True)
-        params0 = dict(zip(self.parameters.keys(),
-                           self.start_population[0].genome))
-        self.set_parameters(clone, params0)
-        run = clone.run(indicators=self.indicators, quiet=True,
-                        tags='run_test '+clone.clonename)
-        assert run.indicators.all().count() == len(self.indicators)
-        runqset = clone.browser.runs.filter(tags__contains=clone.clonename)
-        assert runqset.count() == 1
-        obj_vals = self.retrieve_objectives(runqset)[clone.clonename]
-        assert len(obj_vals) == len(self.objectives)
-        obj_str = ['%s=%s' % (k, v) for k, v in zip(self.objectives, obj_vals)]
-        print('Test objective values:\n%s' % ('\n'.join(obj_str)))
-        # tidy up
-        run.delete()
-        clone.browser.settings.unset()
-        clone.remove()
-        self.project.browser.settings.setup()
+        try:
+            clone = self.project.clone(self.prefix+'__test', fresh=True)
+            params0 = dict(zip(self.parameters.keys(),
+                               self.start_population[0].genome))
+            self.set_parameters(clone, params0)
+            run = clone.run(indicators=self.indicators, quiet=True,
+                            tags='run_test '+clone.clonename)
+            assert run.indicators.all().count() == len(self.indicators)
+            runqset = clone.browser.runs.filter(tags__contains=clone.clonename)
+            assert runqset.count() == 1
+            obj_vals = self.retrieve_objectives(runqset)[clone.clonename]
+            assert len(obj_vals) == len(self.objectives)
+            obj_str = ['%s=%s' % (k, v)
+                       for k, v in zip(self.objectives, obj_vals)]
+            print('Test objective values:\n%s' % ('\n'.join(obj_str)))
+        except Exception:
+            raise
+        finally:
+            try:
+                clone.remove()
+                run.delete()
+            except NameError:
+                pass
         return
 
     def create_start_population(self):
