@@ -15,13 +15,13 @@ from swimpy.utils import StationsUnconfigured as stations
 from swimpy.utils import cluster
 from swimpy.plot import plot_summary
 
-# SWIM executable
+#: SWIM executable
 swim = './swim'
 
-# Cluster SLURM arguments
+#: Cluster SLURM arguments
 cluster_slurmargs = {'qos': 'short', 'account': 'swim'}
 
-# defaults when saving a figure used in plot.plot_function
+#: Defaults when saving a figure used in plot.plot_function
 save_figure_defaults = dict(
     bbox_inches='tight',
     pad_inches=0.03,
@@ -29,6 +29,8 @@ save_figure_defaults = dict(
     size=(180, 120),  # mm
 )
 
+#: Default plots to show on :meth:`swimpy.project.Project.plot_summary` and
+#: :meth:`browser.Run.plot_summary`
 plot_summary_functions = ['station_daily_discharge.plot',
                           [('station_daily_discharge.plot', {'freq': 'a'}),
                            ('station_daily_discharge.plot', {'regime': True})],
