@@ -6,7 +6,7 @@ A python package to interact and test the ecohydrological model SWIM.
 
 
 * Free software: MIT license
-* Documentation: https://swimpy.readthedocs.io.
+* Documentation: http://www.pik-potsdam.de/~wortmann/swimpy
 
 
 Quickstart
@@ -35,10 +35,6 @@ Features
 * Easy parameter reading/setting and output file reading
 * Result visualisation with reusable matplotlib plot functions
 * Interface to GRASS database
-
-
-TODO
-----
-
-  * check interface for Danube/oasis project
-  * ``run.plot()`` function
+* Linking to the 
+  [evoalgos](https://ls11-www.cs.tu-dortmund.de/people/swessing/evoalgos/doc/index.html)
+  multiobjective evolutionary optimization package
