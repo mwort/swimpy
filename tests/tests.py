@@ -219,7 +219,7 @@ class TestGrass(ProjectTestCase):
                      'Sub/groundwater.tab', 'Sub/routing.tab',
                      'Sub/subbasin.tab']
 
-    class TestGrassTbl(mmgrass.GrassAttributeTable):
+    class testgrasstbl(mmgrass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
         key = 'NAME'
         obs = pd.DataFrame({'HOF': [12, 2, 2, 4]})
@@ -245,7 +245,7 @@ class TestGrass(ProjectTestCase):
             self.assertTrue(osp.exists(p))
 
     def test_attribute_table(self):
-        self.project.settings(self.TestGrassTbl)
+        self.project.settings(self.testgrasstbl)
         self.assertTrue(hasattr(self.project, 'testgrasstbl'))
         self.assertIsInstance(self.project.testgrasstbl.obs.HOF, pd.Series)
         self.project.testgrasstbl['new'] = 1000

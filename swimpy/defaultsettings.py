@@ -6,11 +6,12 @@ instantiating a project using `p = Project(setting=value)`.
 """
 
 # plugins
-from modelmanager.plugins import Browser, Clone, Templates
-from swimpy.grass import Subbasins, Hydrotopes, Routing, Substats
+from modelmanager.plugins.browser import browser
+from modelmanager.plugins import clone, templates
+from swimpy.grass import subbasins, hydrotopes, routing, substats
 from swimpy.input import *
 from swimpy.output import *
-from swimpy.tests import Tests
+from swimpy.tests import tests
 from swimpy.utils import StationsUnconfigured as stations
 from swimpy.utils import cluster
 from swimpy.plot import plot_summary

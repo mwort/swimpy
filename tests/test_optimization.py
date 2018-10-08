@@ -42,17 +42,17 @@ class TestEvoalgos(ProjectTestCase):
         if not osp.exists(self.output):
             self.project.config_parameters(nbyr=2)
             self.project.basin_parameters(subcatch=0)
-            run = self.project.smsemoa(**self.algorithm_kwargs)
+            run = self.project.SMSEMOA(**self.algorithm_kwargs)
             self.populations = run.optimization_populations
         else:
-            self.populations = self.project.smsemoa.read_populations(
+            self.populations = self.project.SMSEMOA.read_populations(
                                 self.output)
 
     def test_output(self):
         """Only makes sense if algorithm was run!"""
         self.assertEqual(len(self.project.clone.names()), 0)
         self.assertTrue(osp.exists(self.output))
-        output_pops = self.project.smsemoa.read_populations(self.output)
+        output_pops = self.project.SMSEMOA.read_populations(self.output)
         run_pops = self.populations
         self.assertEqual(list(output_pops.columns), list(run_pops.columns))
         for pops in [output_pops, run_pops]:

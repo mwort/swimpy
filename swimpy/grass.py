@@ -33,7 +33,7 @@ from modelmanager.plugins import grass as mmgrass
 from swimpy.input import StructureFile
 
 
-class Subbasins(mmgrass.GrassModulePlugin):
+class subbasins(mmgrass.GrassModulePlugin):
     """Plugin to deal with subbasin-related input creation.
 
     The following attributes are either needed as project settings,
@@ -98,7 +98,7 @@ class Subbasins(mmgrass.GrassModulePlugin):
         return
 
 
-class Routing(mmgrass.GrassModulePlugin):
+class routing(mmgrass.GrassModulePlugin):
     """Plugin to deal with routing-related input.
 
     Subbasins vector and accumulation raster must exist.
@@ -131,7 +131,7 @@ class Routing(mmgrass.GrassModulePlugin):
         return
 
 
-class Substats(mmgrass.GrassModulePlugin):
+class substats(mmgrass.GrassModulePlugin):
     """Plugin to deal with the subbasin statistics SWIM input.
 
     Subbasins vector, mainstreams, drainage and accumulation raster must exist.
@@ -164,7 +164,7 @@ class Substats(mmgrass.GrassModulePlugin):
         return
 
 
-class Hydrotopes(mmgrass.GrassModulePlugin):
+class hydrotopes(mmgrass.GrassModulePlugin):
     """Plugin to deal with hydrotope-related input.
 
     Subbasins raster must exist.
