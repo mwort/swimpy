@@ -71,6 +71,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	#rm -f docs/modules.rst
 	#sphinx-apidoc -o docs/ swimpy
 	$(MAKE) -C docs clean
+	cd docs; python theproject.py
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 

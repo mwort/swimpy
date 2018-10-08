@@ -6,6 +6,7 @@ Overview
 
    installation
    usage
+   theproject
    examples
    modules
    development
