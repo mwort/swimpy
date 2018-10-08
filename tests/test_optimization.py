@@ -38,6 +38,9 @@ class TestEvoalgos(ProjectTestCase):
         super(TestEvoalgos, self).setUpClass()
         os.chdir(self.project.projectdir)
         self.project.settings(SMSEMOA)
+        # add to browser project instance too
+        from django.conf import settings
+        settings.PROJECT.settings(SMSEMOA)
         # only run algorithm if output doesnt exist to speed up output tests
         if not osp.exists(self.output):
             self.project.config_parameters(nbyr=2)
