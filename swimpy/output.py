@@ -135,6 +135,9 @@ class station_daily_discharge(ProjectOrRunData):
         obs = self.project.stations.daily_discharge_observed
         six = self[str(self.index[0].year+1):].index  # exclude first year
         ix = list(set(obs.index) & set(six))
+        if len(ix) == 0:
+            raise RuntimeError('No observed and simulated overlap:\n%s\n%s'
+                               % (obs, six))
         col = list(set(obs.columns) & set(self.columns))
         return obs.loc[ix, col], self.loc[ix, col]
 

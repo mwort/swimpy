@@ -13,12 +13,19 @@ grass_setup = dict(elevation = "elevation@PERMANENT",
                    landuse = "landuse@PERMANENT",
                    soil = "soil@PERMANENT")
 
+
+def _read_q():
+    cols = ['y', 'm', 'd', 'BLANKENSTEIN']
+    path = osp.join(osp.dirname(__file__), '../input/runoff.dat')
+    q = pd.read_table(path, skiprows=2, header=None, delim_whitespace=True,
+                      index_col=0, parse_dates=[[0, 1, 2]], names=cols,
+                      na_values=[-9999])
+    q.index = q.index.to_period()
+    q['HOF'] = q['BLANKENSTEIN']*0.5
+    return q
+
+
 class stations(_GAT):
     vector = 'stations_snapped@swim'
     key = 'NAME'
-    _cols = ['y', 'm', 'd', 'BLANKENSTEIN']
-    _path = osp.join(osp.dirname(__file__), '../input/runoff.dat')
-    daily_discharge_observed = pd.read_table(
-        _path, skiprows=2, header=None, delim_whitespace=True,
-        index_col=0, parse_dates=[[0, 1, 2]], names=_cols, na_values=[-9999])
-    daily_discharge_observed['HOF'] = daily_discharge_observed['BLANKENSTEIN']*0.5
+    daily_discharge_observed = _read_q()
