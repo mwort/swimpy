@@ -161,10 +161,15 @@ class Project(mm.Project):
         if hasattr(filelike, 'to_run'):
             f = filelike.to_run(run, tags=tags)
         elif hasattr(filelike, 'to_csv'):
-            fn = '_'.join(tags.split())+'.csv.gzip'
-            tmpf = osp.join(self.browser.settings.tmpfilesdir, fn)
+            tmpdir = osp.join(self.browser.settings.tmpfilesdir, 'runs',
+                              str(getattr(run, 'pk', run)))
+            try:
+                os.makedirs(tmpdir)
+            except OSError:
+                pass
+            tmpf = osp.join(tmpdir, '_'.join(tags.split())+'.csv.gzip')
             filelike.to_csv(tmpf, compression='gzip')
-            f = insert_file(run=run, tags=tags, file=tmpf)
+            f = insert_file(run=run, tags=tags, file=tmpf, copy=False)
         elif type(filelike) == dict:
             assert all([is_valid(v) for v in filelike.values()]), errmsg
             f = [self.save_file(run, tags+' '+str(k), v)
