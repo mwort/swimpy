@@ -13,6 +13,8 @@ import datetime as dt
 import numpy as np
 from modelmanager.settings import parse_settings
 
+import swimpy
+
 
 class cluster(object):
     """Simple plugin to abstract interaction with SLURM or another job manager.
@@ -440,7 +442,7 @@ class StationsUnconfigured(object):
 
     """
     def __init__(self, project):
-        u = (project.doc_url if hasattr(project, 'doc_url') else '<doc-url>' +
+        u = (swimpy.__docs__ +
              "/modules/utils.html#swimpy.utils.StationsUnconfigured")
         self.error = RuntimeError('The Stations attribute is unconfigured, '
                                   'for help see:\n' + u)
