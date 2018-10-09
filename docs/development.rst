@@ -48,7 +48,7 @@ files and Jupyter Notebooks in ``docs/`` as well as the
 *docstrings* should be formatted according to the
 `NumpyDoc standards <https://numpydoc.readthedocs.io/en/latest/>`_ and/or
 according to the `docutil reStructuredText <http://docutils.sourceforge.net/docs/>`_.
-There is an online quirck renderer `here <http://rst.ninjs.org/>`_.
+There is an online quick renderer `here <http://rst.ninjs.org/>`_.
 
 
 =========
@@ -57,9 +57,10 @@ Releasing
 
 A reminder for the maintainers on how to deploy:
 
-1. Add entry to ``CHANGELOG.rst``.
-2. Change version in ``swimpy.__init__.py``.
-3. Commit changes.
-4. Tag commit with version number, e.g. `v1.2`
-5. Push commits and tags: ``git push ; git push --tags``
-6. Update docs: ``$ make docs``
+1. Add entry to ``CHANGELOG.rst`` for major and minor.
+2. Change version in ``swimpy.__init__.py``
+   (`semanitc versioning <https://semver.org/>`_ major.minor.patch, no ``v``).
+3. Commit changes (e.g. ``$ git commit -m "Release 0.1.8"``).
+4. Tag commit with version number, e.g. `v1.2.0`
+5. Push commits and tags: ``$ git push ; git push --tags``
+6. Update docs: ``$ make servedocs``
