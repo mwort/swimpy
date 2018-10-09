@@ -3,6 +3,6 @@ Change log
 ==========
 
 
-v0.1 (2018-08-12)
+0.1 (2018-10-09)
 -----------------
-* kdf
+* First release with all features listed in README
