@@ -204,6 +204,32 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
 
 
 @propertyplugin
+class subbasin_daily_discharge(ProjectOrRunData):
+    path = osp.join(RESDIR, 'Q_gauges_all_sub_routed_m3s.csv')
+
+    @staticmethod
+    def from_project(path, **readkwargs):
+        df = pd.read_table(path, delim_whitespace=True, index_col=[0, 1],
+                           **readkwargs)
+        dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1) for y, d in df.index]
+        df.index = pd.PeriodIndex(dtms, freq='d', name='time')
+        df.columns = df.columns.astype(int)
+        return df
+
+    @staticmethod
+    def from_csv(path, **readkwargs):
+        df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
+        df.index = df.index.to_period(freq='d')
+        df.columns = df.columns.astype(int)
+        return df
+
+
+@propertyplugin
+class subbasin_daily_runoff(subbasin_daily_discharge.plugin):
+    path = osp.join(RESDIR, 'Q_gauges_all_sub_mm.csv')
+
+
+@propertyplugin
 class catchment_daily_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'bad.prn')
 
