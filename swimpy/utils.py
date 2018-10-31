@@ -428,7 +428,8 @@ class StationsUnconfigured(object):
 
         _q = pd.read_csv(q_path, parse_dates=[0], index_col=0)
 
-    Now read attributes from a csv file and add discharge::
+    Now read attributes from a csv file and add discharge. Make sure the index
+    refers to the same IDs as your gauges.output file::
 
         stations = pd.read_csv(att_path, index_col=0)
         stations.daily_discharge_observed = _q
@@ -437,7 +438,8 @@ class StationsUnconfigured(object):
 
         import modelmanager.plugins.grass as mmgrass
         class stations(mmgrass.GrassAttributeTable):
-            vector = 'stations_snapped',
+            vector = 'stations_snapped'
+            key = None  # specify here the column of your SWIM IDs
             daily_discharge_observed = _q
 
     """
