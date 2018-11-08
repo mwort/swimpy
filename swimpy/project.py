@@ -5,6 +5,9 @@ The main project module.
 """
 import os
 import os.path as osp
+import sys
+import glob
+import shutil
 import datetime as dt
 import subprocess
 from numbers import Number
@@ -283,14 +286,24 @@ class Project(mm.Project):
         return changed
 
 
-def setup(projectdir='.', resourcedir='swimpy'):
+def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
     """
     Setup a swimpy project.
+
+    If the SWIM input and output directories are not existing in projectdir,
+    they will be created and the SWIM repository's ``project`` is used to setup
+    new input files. In that case, name and repo will be prompted if they are
+    not parsed already.
 
     Arguments
     ---------
     projectdir : str path
         Project directory. Will be created if not existing.
+    name : str
+        Name of the new project, if input directory doesnt exists.
+    gitrepo : str
+        URL or path to the SWIM repository. If a URL is given, the repository
+        is cloned into the resourcedir. (Defaults to swimpy.swim_url)
     resourcedir : str
         Name of swimpy resource directory in projectdir.
 
@@ -298,16 +311,54 @@ def setup(projectdir='.', resourcedir='swimpy'):
     -------
     Project instance.
     """
+    # defaults
+    import swimpy
+    swim_url = swimpy.swim_url
+    dirs = ['input', 'output/Res', 'output/GIS', 'output/Flo']
+
     mmproject = mm.project.setup(projectdir, resourcedir)
     # swim specific customisation of resourcedir
     defaultsdir = osp.join(osp.dirname(__file__), 'resources')
     mm.utils.copy_resources(defaultsdir, mmproject.resourcedir, overwrite=True)
-    # FIXME rename templates with project name in filename
+
+    # gitrepo and name needed, define testinputpath
+    if not osp.exists(osp.join(projectdir, 'input')):
+        inp = input if sys.version_info.major > 2 else raw_input
+        name = name or inp('Enter project name: ').lower()
+        gitrepo = gitrepo or swim_url
+        if osp.exists(gitrepo):
+            repopath = gitrepo
+        else:
+            repopath = osp.join(mmproject.resourcedir, 'swim')
+            subprocess.check_call(['git', 'clone', '-q', gitrepo, repopath])
+    else:
+        repopath = None
+
+    # create empty directories as needed
+    for d in dirs:
+        dp = osp.join(projectdir, d)
+        if not osp.exists(dp):
+            os.makedirs(dp)
+
+    # copy test project files
+    if repopath:
+        testinputpath = osp.join(repopath, 'project', 'input')
+        print('Copying all SWIM default input files from: %s' % testinputpath)
+        mm.utils.copy_resources(testinputpath, osp.join(projectdir, 'input'))
+        for f in glob.glob(osp.join(projectdir, 'input', '*blank*')):
+            newf = osp.basename(f).replace('blank', name)
+            os.rename(f, osp.join(osp.dirname(f), newf))
+        # link swim exe and conf
+        os.symlink(osp.join(repopath, 'code', 'swim'),
+                   osp.join(projectdir, 'swim'))
+        shutil.copy(osp.join(repopath, 'project', 'swim.conf'), projectdir)
+
+    # rename templates with project name in filename
     for fp in ['cod', 'bsn']:
-        ppn = mm.utils.get_paths_pattern('input/*.' + fp, projectdir)
+        ppn = glob.glob(osp.join(projectdir, 'input', '*.'+fp))
         tp = osp.join(mmproject.resourcedir, 'templates')
         if len(ppn) > 0:
-            os.rename(osp.join(tp, 'input/%s.txt' % fp), osp.join(tp, ppn[0]))
+            os.rename(osp.join(tp, 'input/%s.txt' % fp), ppn[0])
     # load as a swim project
     project = Project(projectdir)
     return project

@@ -22,8 +22,10 @@ from modelmanager.plugins import grass as mmgrass
 import swimpy
 from swimpy.tests import test_project
 
+SWIM_REPO = '../dependencies/swim'
+
 SWIM_TEST_PROJECT = 'project/'
-SWIM_REPO_PROJECT = '../dependencies/swim/project'
+SWIM_REPO_PROJECT = SWIM_REPO+'/project'
 
 TEST_GRASSDB = 'grassdb'
 MSWIM_GRASSDB = '../dependencies/m.swim/test/grassdb'
@@ -60,6 +62,15 @@ class TestSetup(unittest.TestCase):
                          '--projectdir=%s' % SWIM_TEST_PROJECT])
         self.assertTrue(osp.exists(self.resourcedir))
         self.project = swimpy.Project(SWIM_TEST_PROJECT)
+
+    def test_empty(self):
+        pd = self.resourcedir
+        os.mkdir(pd)
+        self.project = swimpy.project.setup(projectdir=pd, name='empty',
+                                            gitrepo=SWIM_REPO)
+        self.assertTrue(osp.exists(osp.join(pd, 'input', 'empty.bsn')))
+        self.assertTrue(osp.exists(osp.join(pd, 'swim.conf')))
+        self.assertTrue(osp.islink(osp.join(pd, 'swim')))
 
     def tearDown(self):
         self.project.browser.settings.unset()
