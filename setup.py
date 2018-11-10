@@ -4,8 +4,9 @@
 """The setup script."""
 
 import os
+import re
+import codecs
 from setuptools import setup, find_packages
-import swimpy
 
 requirements = [
     "pandas>=0.23.4, <0.30.0",
@@ -30,9 +31,22 @@ def package_files(dir):
     return [os.path.join(p, f) for (p, d, n) in os.walk(dir) for f in n]
 
 
+def find_version(*file_paths):
+    """Recommended way of getting the version without importing swimpy from
+    https://packaging.python.org/guides/single-sourcing-package-version"""
+    fp = os.path.join(os.path.abspath(os.path.dirname(__file__)), *file_paths)
+    with codecs.open(fp, 'r') as fp:
+        version_file = fp.read()
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
+
 setup(
     name='swimpy',
-    version=swimpy.__version__,
+    version=find_version("swimpy", "__init__.py"),
     description="A python package to interact and test the ecohydrological model SWIM.",
     long_description=readme + '\n\n' + changelog,
     author="Michel Wortmann",
