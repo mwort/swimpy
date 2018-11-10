@@ -12,7 +12,7 @@ requirements = [
     "django>=1.11, <2.0",
     "parse>=1.8, <2.0",
     "matplotlib>=2.0, <3.0",
-    "model-manager>=0.3",
+    "model-manager>=0.4",
 ]
 
 
