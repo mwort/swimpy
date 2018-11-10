@@ -5,6 +5,7 @@
 
 import os
 from setuptools import setup, find_packages
+import swimpy
 
 requirements = [
     "pandas>=0.20, <0.30.0",
@@ -31,7 +32,7 @@ def package_files(dir):
 
 setup(
     name='swimpy',
-    version='0.1.0',
+    version=swimpy.__version__,
     description="A python package to interact and test the ecohydrological model SWIM.",
     long_description=readme + '\n\n' + changelog,
     author="Michel Wortmann",
