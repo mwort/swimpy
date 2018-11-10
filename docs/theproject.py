@@ -15,7 +15,8 @@ plugins are not shown here.
 
 """
 
-p = swimpy.project.setup('../tests/project')
+p = swimpy.project.setup('../tests/project', name='blank',
+                         gitrepo='../dependencies/swim')
 
 l = []
 
