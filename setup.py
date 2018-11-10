@@ -8,10 +8,10 @@ from setuptools import setup, find_packages
 import swimpy
 
 requirements = [
-    "pandas>=0.20, <0.30.0",
-    "django>=1.11, <2.0",
-    "parse>=1.8, <2.0",
-    "matplotlib>=2.0, <3.0",
+    "pandas>=0.23.4, <0.30.0",
+    "django>=1.11.15, <2.0",
+    "parse>=1.9, <2.0",
+    "matplotlib>=2.2.3, <3.0",
     "model-manager>=0.4",
 ]
 
