@@ -75,8 +75,9 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
-servedocs: docs ## compile the docs watching for changes
-	rsync -crzP docs/_build/html/ wortmann@cluster.pik-potsdam.de:www/swimpy/
+servedocs: docs ## upload docs once versioned and unversioned
+	rsync -crzP docs/_build/html/ wortmann@cluster.pik-potsdam.de:www/swimpy
+	rsync -crzP docs/_build/html/ wortmann@cluster.pik-potsdam.de:www/swimpy/`python -c "import swimpy; print(swimpy.__version__)"`
 
 release: clean ## package and upload a release
 	python setup.py sdist upload
