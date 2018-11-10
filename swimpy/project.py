@@ -355,10 +355,10 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
 
     # rename templates with project name in filename
     for fp in ['cod', 'bsn']:
-        ppn = glob.glob(osp.join(projectdir, 'input', '*.'+fp))
+        ppn = mm.utils.get_paths_pattern('input/*.' + fp, projectdir)
         tp = osp.join(mmproject.resourcedir, 'templates')
         if len(ppn) > 0:
-            os.rename(osp.join(tp, 'input/%s.txt' % fp), ppn[0])
+            os.rename(osp.join(tp, 'input/%s.txt' % fp), osp.join(tp, ppn[0]))
     # load as a swim project
     project = Project(projectdir)
     return project

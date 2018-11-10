@@ -284,7 +284,7 @@ class StructureFile(ReadWriteDataFrame):
             df.columns = self.file_columns
         else:
             msg = ('Non-standard column names: Found different number of '
-                   'columns .str file, expecting %i, got %i: %s')
+                   'columns in .str file, expecting %i, got %i: %s')
             warnings.warn(msg % (nexp, nstr, ', '.join(df.columns)))
         # get rid of last 0 line
         if df.iloc[-1, :].sum() == 0:

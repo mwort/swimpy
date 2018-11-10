@@ -32,11 +32,6 @@ MSWIM_GRASSDB = '../dependencies/m.swim/test/grassdb'
 
 TEST_SETTINGS = './test_settings.py'
 
-if not os.path.exists(SWIM_TEST_PROJECT):
-    shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT)
-if not os.path.exists(TEST_GRASSDB):
-    shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB)
-
 
 def skip_if_py3(f):
     """Unittest skip test if PY3 decorator."""
@@ -46,42 +41,45 @@ def skip_if_py3(f):
 
 class TestSetup(unittest.TestCase):
 
-    resourcedir = osp.join(SWIM_TEST_PROJECT, 'swimpy')
+    projectdir = SWIM_TEST_PROJECT
+    resourcedir = osp.join(projectdir, 'swimpy')
 
     def test_setup(self):
-        self.project = swimpy.project.setup(SWIM_TEST_PROJECT)
+        self.project = swimpy.project.setup(self.projectdir, name='test',
+                                            gitrepo=SWIM_REPO)
         self.assertTrue(isinstance(self.project, swimpy.Project))
         self.assertTrue(osp.exists(self.resourcedir))
         self.assertTrue(osp.exists(self.project.resourcedir))
+        self.assertTrue(osp.exists(osp.join(self.projectdir, 'input',
+                                            'test.bsn')))
+        self.assertTrue(osp.exists(osp.join(self.projectdir, 'swim.conf')))
+        self.assertTrue(osp.islink(osp.join(self.projectdir, 'swim')))
         for a in ['browser', 'clone', 'templates']:
             self.assertTrue(hasattr(self.project, a))
             self.assertIsNot(getattr(self.project, a), None)
 
     def test_setup_commandline(self):
-        subprocess.call(['swimpy', 'setup',
-                         '--projectdir=%s' % SWIM_TEST_PROJECT])
+        subprocess.call(['swimpy', 'setup', '--name=test',
+                         '--projectdir='+self.projectdir,
+                         '--gitrepo='+SWIM_REPO])
         self.assertTrue(osp.exists(self.resourcedir))
-        self.project = swimpy.Project(SWIM_TEST_PROJECT)
-
-    def test_empty(self):
-        pd = self.resourcedir
-        os.mkdir(pd)
-        self.project = swimpy.project.setup(projectdir=pd, name='empty',
-                                            gitrepo=SWIM_REPO)
-        self.assertTrue(osp.exists(osp.join(pd, 'input', 'empty.bsn')))
-        self.assertTrue(osp.exists(osp.join(pd, 'swim.conf')))
-        self.assertTrue(osp.islink(osp.join(pd, 'swim')))
+        self.project = swimpy.Project(self.projectdir)
 
     def tearDown(self):
         self.project.browser.settings.unset()
-        shutil.rmtree(self.resourcedir)
+        shutil.rmtree(self.projectdir)
 
 
 class ProjectTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        # copy swim and m.swim test projects
+        shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT)
+        shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB)
+        # new test project with Blankenstein project
         p = swimpy.project.setup(SWIM_TEST_PROJECT)
+        # add test_settings.py
         shutil.copy(TEST_SETTINGS, p.settings.file)
         self.project = swimpy.Project(SWIM_TEST_PROJECT)
         # reload brower project instance
@@ -90,7 +88,8 @@ class ProjectTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.project.browser.settings.unset()
-        shutil.rmtree(self.project.resourcedir)
+        shutil.rmtree(self.project.projectdir)
+        shutil.rmtree(TEST_GRASSDB)
 
 
 class TestParameters(ProjectTestCase, test_project.Parameters):
@@ -230,7 +229,7 @@ class TestGrass(ProjectTestCase):
                      'Sub/groundwater.tab', 'Sub/routing.tab',
                      'Sub/subbasin.tab']
 
-    class testgrasstbl(mmgrass.GrassAttributeTable):
+    class grassattrtbl(mmgrass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
         key = 'NAME'
         obs = pd.DataFrame({'HOF': [12, 2, 2, 4]})
@@ -256,13 +255,13 @@ class TestGrass(ProjectTestCase):
             self.assertTrue(osp.exists(p))
 
     def test_attribute_table(self):
-        self.project.settings(self.testgrasstbl)
-        self.assertTrue(hasattr(self.project, 'testgrasstbl'))
-        self.assertIsInstance(self.project.testgrasstbl.obs.HOF, pd.Series)
-        self.project.testgrasstbl['new'] = 1000
-        self.project.testgrasstbl.write()
-        self.project.testgrasstbl.read()
-        self.assertEqual(self.project.testgrasstbl['new'].mean(), 1000)
+        self.project.settings(self.grassattrtbl)
+        self.assertTrue(hasattr(self.project, 'grassattrtbl'))
+        self.assertIsInstance(self.project.grassattrtbl.obs.HOF, pd.Series)
+        self.project.grassattrtbl['new'] = 1000
+        self.project.grassattrtbl.write()
+        self.project.grassattrtbl.read()
+        self.assertEqual(self.project.grassattrtbl['new'].mean(), 1000)
 
     @skip_if_py3
     def test_to_raster(self):
