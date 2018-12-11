@@ -45,15 +45,17 @@ class subcatch_parameters(ReadWriteDataFrame):
     Read or write parameters in the subcatch.prm file.
     """
     path = 'input/subcatch.prm'
+    force_dtype = {'catchmentID': int}
 
     def read(self, **kwargs):
-        bsn = pd.read_table(self.path, delim_whitespace=True)
+        bsn = pd.read_table(self.path, delim_whitespace=True,
+                            dtype=self.force_dtype)
         stn = 'stationID' if 'stationID' in bsn.columns else 'station'
         bsn.set_index(stn, inplace=True)
         return bsn
 
     def write(self, **kwargs):
-        bsn = self.copy()
+        bsn = self.sort_values('catchmentID')
         bsn['stationID'] = bsn.index
         strtbl = bsn.to_string(index=False, index_names=False)
         with open(self.path, 'w') as f:
