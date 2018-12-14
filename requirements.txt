@@ -1,6 +1,7 @@
 backports.functools-lru-cache==1.5
 cycler==0.10.0
 Django==1.11.16
+f90nml==1.0.2
 kiwisolver==1.0.1
 matplotlib==2.2.3
 model-manager==0.5

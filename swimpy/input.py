@@ -10,6 +10,7 @@ from modelmanager.utils import propertyplugin
 from modelmanager.plugins.templates import TemplatesDict
 from modelmanager.plugins.pandas import ReadWriteDataFrame
 from modelmanager.plugins import grass as mmgrass
+import f90nml
 
 from swimpy import utils, plot
 import matplotlib.pyplot as plt  # after plot
@@ -253,6 +254,41 @@ class climate(object):
                 xlabs = {'d': 'Day of year', 'm': 'Month'}
                 ax.set_xlabel(xlabs[freq])
             return bars
+
+    @propertyplugin
+    class config_parameters(f90nml.Namelist):
+        path = 'ncinfo.nml'
+        _nml = None
+        plugin = ['__call__']
+
+        def __init__(self, project):
+            self.path = osp.join(project.projectdir,
+                                 project.config_parameters['climatedir'],
+                                 self.path)
+            f90nml.Namelist.__init__(self)
+            nml = f90nml.read(self.path)
+            self.update(nml['nc_parameters'])
+            self._nml = nml
+            return
+
+        def write(self, path=None):
+            self._nml["nc_parameters"].update(self)
+            self._nml.write(path or self.path, force=True)
+            return
+
+        def __setitem__(self, key, value):
+            f90nml.Namelist.__setitem__(self, key, value)
+            if self._nml:
+                self.write()
+            return
+
+        def __call__(self, *get, **set):
+            assert get or set
+            if set:
+                self.update(set)
+            if get:
+                return [self[k] for k in get]
+            return
 
 
 class StructureFile(ReadWriteDataFrame):
