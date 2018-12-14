@@ -39,6 +39,11 @@ class config_parameters(TemplatesDict):
     def end_date(self):
         return dt.date(self['iyr']+self['nbyr']-1, 12, 31)
 
+    def __getitem__(self, k):
+        v = TemplatesDict.__getitem__(self, k)
+        path = osp.abspath(osp.join(self.project.projectdir, str(v)))
+        return path if osp.exists(path) else v
+
 
 @propertyplugin
 class subcatch_parameters(ReadWriteDataFrame):
