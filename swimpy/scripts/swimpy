@@ -4,8 +4,5 @@ from swimpy.project import Project, setup
 import swimpy
 
 description = 'SWIMpy commandline interface\n\nDocumentation: %s' % swimpy.__docs__
-try:
-    commandline.CommandlineInterface(Project(), description=description).run()
-except project.ProjectDoesNotExist:
-    functions = {'setup': setup}
-    commandline.CommandlineInterface(functions=functions, description=description).run()
+
+commandline.CommandlineInterface(Project, description=description, setup=setup).run()

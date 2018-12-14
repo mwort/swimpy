@@ -3,7 +3,7 @@ cycler==0.10.0
 Django==1.11.16
 kiwisolver==1.0.1
 matplotlib==2.2.3
-model-manager==0.4.1
+model-manager==0.5
 numpy==1.15.4
 pandas==0.23.4
 parse==1.9.0
