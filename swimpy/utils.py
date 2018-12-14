@@ -9,6 +9,7 @@ import warnings
 import sys
 import time
 import datetime as dt
+import io
 
 import numpy as np
 from modelmanager.settings import parse_settings
@@ -35,7 +36,7 @@ class cluster(object):
             return subprocess.check_output(cmds).strip()
 
         def cancel(self):
-            return subprocess.check_call(['scancel', self.id])
+            return subprocess.check_call(['scancel', str(self.id)])
 
         def status(self, _print=True):
             ks, vs = self._sacct("-lP").split('\n')
@@ -231,9 +232,9 @@ class cluster(object):
             clones = self.create_clones(clones, prefix=prefix)
         timeout = timeout or {'hours': 24}
         assert (type(timeout) == dict) or isinstance(timeout, dt.timedelta)
-        timeout = dt.timedelta(**timeout)if type(timeout) == dict else timeout
+        timeout = dt.timedelta(**timeout) if type(timeout) == dict else timeout
 
-        slurmargs = {'time': int(timeout.seconds/60.)+1} if timeout else {}
+        slurmargs = {'time': int(round(timeout.total_seconds()/60.))}
         tag = prefix + '_' + str(os.getpid())
         runkw.setdefault('cluster', {})
         deftag = runkw.setdefault('tags', '')
@@ -250,12 +251,14 @@ class cluster(object):
                     try:
                         clone.settings[preprocess](**a)
                     except Exception as e:
+                        import traceback
+                        traceback.print_exc()
                         m = '\nAn exception occurred while running %s.%s(**%r)'
                         raise RuntimeError(str(e) + m % (clone, preprocess, a))
             # run
             for clone in qclones:
                 runkw['cluster'].update(dict(jobname=clone.clonename,
-                                        slurmargs=slurmargs))
+                                             slurmargs=slurmargs))
                 runkw['tags'] = ' '.join([deftag, tag, clone.clonename])
                 try:
                     job = clone.run(**runkw)
@@ -264,13 +267,13 @@ class cluster(object):
                     jf = osp.join(self.project.cluster.resourcedir,
                                   clone.clonename+'.py')
                     mp_jobs.append((jf, clone.projectdir))
+            # remove run items from queue
+            queue = queue[n:]
             # wait for runs to finish
             if mp_jobs:
                 self.mp_process(mp_jobs)
             else:
                 self.wait(slurm_jobs)
-            # remove run items from queue
-            queue = queue[n:]
 
         runs = self.project.browser.runs.filter(
                 tags__contains=tag, time__gt=st)
@@ -297,6 +300,9 @@ class cluster(object):
             dict to datetime.timedelta, e.g. hours, days, minutes, seconds.
         """
         st = dt.datetime.now()
+        # make sure stdout is always encoding utf8
+        sys.stdout = io.open(sys.stdout.fileno(), mode='w',
+                             encoding='utf8', buffering=1)
         ms = u"\r\033[K\u29D6 Waiting for %s runs (status: %s) for %s hh:mm:ss"
         ndone = 0
         njobs = len(jobs)
@@ -331,7 +337,7 @@ class cluster(object):
                 failed.append((j, stderr))
             elif st == 'TIMEOUT':
                 failed.append((j, 'timed out.'))
-        errors = '\n\n'.join([jn+':\n'+se for jn, se in failed])
+        errors = '\n\n'.join([str(jn)+':\n'+se for jn, se in failed])
         nf = len(failed)
         raise RuntimeError('%i SLURM jobs failed/timedout:\n' % nf + errors)
 
