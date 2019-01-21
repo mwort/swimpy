@@ -24,6 +24,7 @@ class cluster(object):
 
     class _job(object):
         """A dict-like store of slurm job attributes provided through sacct."""
+
         def __init__(self, id, **attributes):
             assert type(id) == int
             self.id = id
@@ -273,7 +274,7 @@ class cluster(object):
             if mp_jobs:
                 self.mp_process(mp_jobs)
             else:
-                self.wait(slurm_jobs)
+                self.wait(slurm_jobs, timeout=timeout)
 
         runs = self.project.browser.runs.filter(
                 tags__contains=tag, time__gt=st)
@@ -300,10 +301,8 @@ class cluster(object):
             dict to datetime.timedelta, e.g. hours, days, minutes, seconds.
         """
         st = dt.datetime.now()
-        # make sure stdout is always encoding utf8
-        sys.stdout = io.open(sys.stdout.fileno(), mode='w',
-                             encoding='utf8', buffering=1)
-        ms = u"\r\033[K\u29D6 Waiting for %s runs (status: %s) for %s hh:mm:ss"
+        # \u29D6 for hour glass removed
+        ms = u"\r\033[KWaiting for %s runs (status: %s) for %s hh:mm:ss"
         ndone = 0
         njobs = len(jobs)
         status = {}
@@ -320,7 +319,8 @@ class cluster(object):
             if 'FAILED' in status or 'TIMEOUT' in status:
                 self._raise_failed(jobs)
             ndone = status.get('COMPLETED', 0)
-        cmsg = u"\r\033[K\u2713 Completed %s runs in %s hh:mm:ss\n"
+        # \u2713 for complete tick remove
+        cmsg = u"\r\033[KCompleted %s runs in %s hh:mm:ss\n"
         sys.stdout.write(cmsg % (njobs, et))
         sys.stdout.flush()
         return
