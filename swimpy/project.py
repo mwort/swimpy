@@ -49,7 +49,7 @@ class Project(mm.Project):
         return
 
     @parse_settings
-    def run(self, save=True, cluster=False, quiet=False, **kw):
+    def run(self, save=True, cluster=None, quiet=False, **kw):
         """
         Execute SWIM.
 
@@ -57,8 +57,8 @@ class Project(mm.Project):
         ---------
         save : bool
             Run save_run after successful execution of SWIM.
-        cluster : False | str | dict
-            False or a job name to submit this run to SLURM. A dict will set
+        cluster : str | dict
+            Job name to submit this run to SLURM or a dict will set
             other cluster() arguments but must include a ``jobname``.
         quiet : bool
             Dont show SWIM output if True.
