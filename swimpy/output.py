@@ -41,7 +41,7 @@ class station_daily_discharge(ProjectOrRunData):
     Daily discharge of selected stations.
     """
     path = osp.join(RESDIR, 'Q_gauges_sel_sub_routed_m3s.csv')
-    plugin = ['plot', 'plot_flow_duration_polar']
+    plugin = ['plot', 'plot_regime', 'plot_flow_duration_polar']
 
     @staticmethod
     def from_project(path, **readkwargs):
@@ -57,9 +57,17 @@ class station_daily_discharge(ProjectOrRunData):
         df.index = df.index.to_period(freq='d')
         return df
 
+    def _default_stations(self, stations=None):
+        if stations is None:
+            dstations = self.columns[1:]  # first column is observed
+        else:
+            assert type(stations) == str or len(stations) > 0
+            dstations = [stations] if type(stations) == str else stations
+        return dstations
+
     @_plot_function
     def plot(self, stations=None, regime=False, freq='d', minmax=False,
-             ax=None, runs=None, output=None, **linekw):
+             observed=False, ax=None, runs=None, output=None, **linekw):
         """Line plot of daily discharge of selected stations.
 
         Arguments
@@ -71,28 +79,71 @@ class station_daily_discharge(ProjectOrRunData):
             Plot regime. freq must be 'd' or 'm'.
         freq : <pandas frequency>
             Any pandas frequency to aggregate to.
-        minmax : bool | dict
-            Show min-max range if regime=True. Maybe a dictionary kwargs parsed
-            to ax.fill_between.
+        observed : bool
+            Add line for observed discharge. stations.daily_discharge_observed
+            must be configured.
         **linekw :
             Parse any keyword to the line plot function.
         """
-        if stations is None:
-            stations = self.columns[1:]  # first column is observed
-        else:
-            assert type(stations) == str or len(stations) > 0
-            stations = [stations] if type(stations) == str else stations
+        stations = self._default_stations(stations)
+        data = utils.aggregate_time(self[stations], freq=freq)
+        # plot observed
+        if observed:
+            obs = utils.aggregate_time(
+                (self.project.stations.daily_discharge_observed
+                 .loc[self.index, stations]), regime=regime, freq=freq)
+            clrs = plot.default_colors(len(stations), linekw.get('colors', []))
+            for c, s in zip(clrs, stations):
+                plot.plot_discharge(obs[s], ax, linestyle='--', color=c)
+        for s in stations:
+            # add label if multiple runs
+            if runs and len(runs[0]) > 1:
+                qs, i = runs
+                lab = '%s ' % qs[i] + ('' if len(stations) == 1 else str(s))
+                linekw['label'] = lab
+            line = plot.plot_discharge(data[s], ax, **linekw)
+        return line
 
+    @_plot_function
+    def plot_regime(self, stations=None, freq='d', minmax=False,
+                    observed=False, ax=None, runs=None, output=None, **linekw):
+        """Line plot of daily discharge of selected stations.
+
+        Arguments
+        ---------
+        stations : None | str | iterable
+            Only show single (str) or subset (iterable) of stations. If None,
+            show all found in file.
+        freq : str
+            Regime frequency, d (daily) or m (monthly).
+        minmax : bool | dict
+            Show min-max range. May be a dictionary kwargs
+            parsed to ax.fill_between.
+        observed : bool
+            Add line for observed discharge. stations.daily_discharge_observed
+            must be configured.
+        **linekw :
+            Parse any keyword to the line plot function.
+        """
+        stations = self._default_stations(stations)
         data = {}
-        for st in ['mean'] + (['min', 'max'] if regime and minmax else []):
-            data[st] = utils.aggregate_time(self[stations], regime=regime,
+        for st in ['mean'] + (['min', 'max'] if minmax else []):
+            data[st] = utils.aggregate_time(self[stations], regime=True,
                                             freq=freq, regime_method=st)
         # show range first if required
-        if regime and minmax:
+        if minmax:
             for s in stations:
                 fbkw = minmax if type(minmax) == dict else {}
                 fbkw.setdefault("alpha", 0.5)
                 ax.fill_between(data['min'][s].index, data['max'][s], **fbkw)
+        # plot observed
+        if observed:
+            obs = utils.aggregate_time(
+                (self.project.stations.daily_discharge_observed
+                 .loc[self.index, stations]), regime=True, freq=freq)
+            clrs = plot.default_colors(len(stations), linekw.get('colors', []))
+            for c, s in zip(clrs, stations):
+                plot.plot_discharge(obs[s], ax, linestyle='--', color=c)
         for s in stations:
             # add label if multiple runs
             if runs and len(runs[0]) > 1:
@@ -101,9 +152,8 @@ class station_daily_discharge(ProjectOrRunData):
                 linekw['label'] = lab
             line = plot.plot_discharge(data['mean'][s], ax, **linekw)
 
-        if regime:
-            xlabs = {'d': 'Day of year', 'm': 'Month'}
-            ax.set_xlabel(xlabs[freq])
+        xlabs = {'d': 'Day of year', 'm': 'Month'}
+        ax.set_xlabel(xlabs[freq])
         return line
 
     @_plot_function

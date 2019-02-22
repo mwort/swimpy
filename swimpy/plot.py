@@ -16,6 +16,7 @@ import tempfile
 import functools
 import datetime as dt
 import warnings
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -242,6 +243,12 @@ def _index_to_timestamp(index):
     """Convert a pandas index to timestamps if needed.
     Needed to parse pandas PeriodIndex to pyplot plotting functions."""
     return index.to_timestamp() if hasattr(index, 'to_timestamp') else index
+
+
+def default_colors(n, colors=[]):
+    """Return n default colors starting with given colors if any."""
+    defc = colors + plt.rcParams['axes.prop_cycle'].by_key()['color']
+    return list(itertools.islice(itertools.cycle(defc), n))
 
 
 def plot_function(function):
@@ -559,7 +566,8 @@ class plot_summary(object):
         if legends:
             plot_function.figure.legend(*axes[0].get_legend_handles_labels())
             [l.remove() for l in legends]
-
+        # tight layout
+        plot_function.figure.tight_layout()
         # output/display
         if plot_function.output:
             save(plot_function.output, plot_function.figure,
