@@ -125,7 +125,7 @@ class Project(mm.Project):
         if isinstance(value, Number):
             i = insert_ind(run=run, name=name, value=value, tags=tags)
         elif type(value) is dict or hasattr(value, 'items'):
-            assert all([isinstance(v, Number) for v in value.values()]), emsg
+            assert all([isinstance(v, Number) for k, v in value.items()]), emsg
             i = [insert_ind(run=run, name=name, value=v, tags=tags+' '+str(k))
                  for k, v in value.items()]
         else:
