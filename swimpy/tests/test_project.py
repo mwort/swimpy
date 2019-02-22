@@ -13,8 +13,9 @@ class Parameters:
     def test_config_parameters(self):
         cod = self.project.config_parameters
         self.assertGreater(len(cod), 0)
-        for k, v in cod.items():
-            self.assertEqual(self.project.config_parameters(k)[0], v)
+        for k in cod:
+            self.assertEqual(self.project.config_parameters(k)[0],
+                             self.project.config_parameters[k])
 
 
 class Input:
