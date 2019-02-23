@@ -221,20 +221,18 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        df = pd.read_table(path, delim_whitespace=True, **readkwargs)
-        dtms = [dt.date(1900 + y, 1, 1) + dt.timedelta(d - 1)
-                for y, d in zip(df.pop('YR'), df.pop('DAY'))]
-        dtmspi = pd.PeriodIndex(dtms, freq='d', name='time')
-        df.index = pd.MultiIndex.from_arrays([dtmspi, df.pop('SUB')])
-        return df.unstack()  # time alone as index
+        def parse_time(y, d):
+            dto = dt.date(1900 + int(y), 1, 1) + dt.timedelta(int(d) - 1)
+            return pd.Period(dto, freq='d')
+        d = pd.read_table(path, delim_whitespace=True, date_parser=parse_time,
+                          parse_dates=[[0, 1]], index_col=[0, 1], **readkwargs)
+        d.index.names = ['time', 'subbasinID']
+        return d
 
     @staticmethod
     def from_csv(path, **readkwargs):
-        df = pd.read_csv(path, index_col=0, header=[0, 1], parse_dates=[0],
-                         **readkwargs)
-        colstrint = [(v, int(i)) for v, i in df.columns]
-        df.columns = pd.MultiIndex.from_tuples(colstrint)
-        df.index = df.index.to_period(freq='d')
+        df = pd.read_csv(path, index_col=[0, 1], parse_dates=[0],
+                         date_parser=pd.Period, **readkwargs)
         return df
 
     def to_raster(self, variable, timestep=None, prefix=None, name=None,
@@ -245,12 +243,31 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
         """
         prefix = prefix or self.__class__.__name__ + '_' + variable.lower()
         _subbasin_or_hydrotope_values_to_raster(
-            self.project, self[variable], self.project.subbasins.reclass,
-            timestep=timestep, name=name, prefix=prefix, strds=strds,
-            mapset=mapset)
+            self.project, self[variable].unstack(),
+            self.project.subbasins.reclass, timestep=timestep, name=name,
+            prefix=prefix, strds=strds, mapset=mapset)
         return
     to_raster.__doc__ = (_subbasin_or_hydrotope_values_to_raster.__doc__ +
                          to_raster.__doc__)
+
+
+@propertyplugin
+class subbasin_monthly_waterbalance(subbasin_daily_waterbalance.plugin):
+    path = osp.join(RESDIR, 'subm.prn')
+
+    def from_project(self, path, **readkwargs):
+        styr = self.project.config_parameters['iyr']
+
+        def parse_time(y, m):
+            return pd.Period('%04i-%02i' % (styr+int(y)-1, int(m)), freq='m')
+        f = open(path)
+        header = f.readline().split()
+        df = pd.read_table(f, delim_whitespace=True, skiprows=1, header=None,
+                           index_col=[0, 1], names=header,
+                           parse_dates=[[0, 1]], date_parser=parse_time,
+                           **readkwargs)
+        df.index.names = ['time', 'subbasinID']
+        return df
 
 
 @propertyplugin
