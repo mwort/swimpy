@@ -117,6 +117,19 @@ class subcatch_definition(ReadWriteDataFrame):
         self.__call__(tbl)
         return
 
+    def subcatch_subbasin_ids(self, catchmentID):
+        """Return all subbasinIDs of the subcatchment."""
+        return pd.Series(self.index, index=self.iloc[:, 0])[catchmentID].values
+
+    def catchment_subbasin_ids(self, catchmentID):
+        """Return all subbasins of the catchment respecting the topology.
+
+        The `project.stations` "ds_stationID" column needs to give the from-to
+        topology of catchments/stations.
+        """
+        ft = self.project.stations['ds_stationID']
+        return self.subcatch_subbasin_ids(utils.upstream_ids(catchmentID, ft))
+
 
 class climate(object):
     """All climate input related functionality."""

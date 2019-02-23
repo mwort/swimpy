@@ -396,7 +396,7 @@ def aggregate_time(obj, freq='d', regime=False, resample_method='mean',
         Aggregate to different frequency, any pandas frequency string
         or object is allowed.
     regime : bool
-        Aggregate to month or day-of-year mean regime. freq must be 'a' | 'd'.
+        Aggregate to month or day-of-year mean regime. freq must be 'm' | 'd'.
     resample_method :
         The aggregator for the resample method. See DataFrame.groupby.agg.
     regime_method :
@@ -520,3 +520,21 @@ def pbias(obs, sim):
     """
     valid = np.isfinite(obs).tolist()  # so that nans arent incl in sum
     return (sim[valid].sum() / obs[valid].sum() - 1) * 100
+
+
+def upstream_ids(id, fromtoseries, maxcycle=1e6):
+    """Return all ids upstream of id given a from (index) to (values) map.
+    """
+    s = [id]
+    ids = []
+    cycles = 0
+    while len(s) > 0:
+        si = []
+        for i in s:
+            si.extend(list(fromtoseries[fromtoseries == i].index))
+        ids.extend(si)
+        s = si
+        cycles += 1
+        if cycles > maxcycle:
+            raise RuntimeError('maxcycles reached. Circular fromto?')
+    return ids
