@@ -120,7 +120,6 @@ class _EvoalgosSwimProblem(Problem):
         do = prefix+'_'+self.algorithm if prefix else self.algorithm
         defout = osp.join(self.project.projectdir, do+'_populations.csv')
         self.output = output or defout
-        self.observerfile = open(self.output, 'w')
 
         # init problem
         Problem.__init__(self, lambda dummy: dummy,
@@ -342,8 +341,9 @@ class _EvoalgosSwimProblem(Problem):
             popinfolist.append(iline)
         # make dataframe and write out
         popframe = pd.DataFrame(popinfolist, columns=cols)
-        popframe.to_csv(self.observerfile, header=initial, index=False)
-        self.observerfile.flush()
+        with open(self.output, 'a') as f:
+            popframe.to_csv(f, header=initial, index=False)
+        # report stats
         if not initial:
             obj_stats = popframe[objs].describe().T[['50%', 'min']]
             mt = self.mean_generation_time()
