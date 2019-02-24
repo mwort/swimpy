@@ -26,7 +26,7 @@ import pandas as pd
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.pandas import ProjectOrRunData
 
-from swimpy import utils, plot
+from swimpy import utils, plot, hydro
 from swimpy.plot import plot_function as _plot_function
 from swimpy.grass import _subbasin_or_hydrotope_values_to_raster
 
@@ -195,7 +195,7 @@ class station_daily_discharge(ProjectOrRunData):
     def NSE(self):
         """pandas.Series of Nash-Sutcliff efficiency excluding warmup year."""
         obs, sim = self._obs_sim_overlap()
-        return pd.Series({s: utils.NSE(obs[s], sim[s]) for s in obs.columns})
+        return pd.Series({s: hydro.NSE(obs[s], sim[s]) for s in obs.columns})
 
     @property
     def rNSE(self):
@@ -206,7 +206,7 @@ class station_daily_discharge(ProjectOrRunData):
     def pbias(self):
         """pandas.Series of percent bias excluding warmup year."""
         obs, sim = self._obs_sim_overlap()
-        return pd.Series({s: utils.pbias(obs[s], sim[s]) for s in obs.columns})
+        return pd.Series({s: hydro.pbias(obs[s], sim[s]) for s in obs.columns})
 
     @property
     def pbias_abs(self):
