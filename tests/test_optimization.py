@@ -23,7 +23,7 @@ PARAMETERS = {'smrate': (0.2, 0.7),
 
 class TestEvoalgos(ProjectTestCase):
 
-    output='s01_SMSEMOA_populations.csv'
+    outputfile = 's01_SMSEMOA_populations.csv'
     algorithm_kwargs = {
         "parameters": PARAMETERS,
         "objectives": OBJECTIVES,
@@ -36,16 +36,20 @@ class TestEvoalgos(ProjectTestCase):
     @classmethod
     def setUpClass(self):
         super(TestEvoalgos, self).setUpClass()
-        os.chdir(self.project.projectdir)
         self.project.settings(SMSEMOA)
         # add to browser project instance too
         from django.conf import settings
         settings.PROJECT.settings(SMSEMOA)
+        self.output = osp.join(self.project.projectdir, self.outputfile)
         # only run algorithm if output doesnt exist to speed up output tests
         if not osp.exists(self.output):
             self.project.config_parameters(nbyr=2)
             self.project.basin_parameters(subcatch=0)
+            # need to be in the projectdir for the swim test run
+            wd = os.getcwd()
+            os.chdir(self.project.projectdir)
             run = self.project.SMSEMOA(**self.algorithm_kwargs)
+            os.chdir(wd)
             self.populations = run.optimization_populations
         else:
             self.populations = self.project.SMSEMOA.read_populations(
@@ -69,7 +73,7 @@ class TestEvoalgos(ProjectTestCase):
                      'plot_parameter_distribution']
         args = {'plot_objective_scatter': dict(best=True)}
         for pf in functions:
-            opath = pf+'.png'
+            opath = osp.join(self.project.projectdir, pf+'.png')
             getattr(pops, pf)(output=opath, **(args[pf] if pf in args else {}))
             self.assertTrue(osp.exists(opath))
 
