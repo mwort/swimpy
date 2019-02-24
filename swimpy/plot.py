@@ -189,9 +189,9 @@ def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
     nticks = 5
     margin = 0.1  # fraction of median
     stats = performances.describe()
-    rng = (stats.ix['max'] - stats.ix['min']) * margin
-    limits = {'max': stats.ix['max'] + rng,
-              'min': stats.ix['min'] - rng}
+    rng = (stats.loc['max'] - stats.loc['min']) * margin
+    limits = {'max': stats.loc['max'] + rng,
+              'min': stats.loc['min'] - rng}
 
     naxes = len(objectives) - 1
     if ax:

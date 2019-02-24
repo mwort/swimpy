@@ -454,7 +454,7 @@ class optimization_populations(ProjectOrRunData):
 
     @property
     def last_generation(self):
-        return self.ix[max(self.index.levels[0])]
+        return self.loc[max(self.index.levels[0])]
     # alias
     lastgen = last_generation
 
@@ -487,7 +487,7 @@ class optimization_populations(ProjectOrRunData):
             Any keyword passed onto the scatter function.
         """
         # get objectives to plot
-        gen = self.ix[generation] if generation else self.lastgen
+        gen = self.loc[generation] if generation else self.lastgen
 
         if best:
             selected = self.best_tradeoff(best if type(best) == list else None)
@@ -567,7 +567,7 @@ class optimization_populations(ProjectOrRunData):
         # distance to origin
         dist = np.sqrt((scobs**2).sum(1))
         # store best parameter set with the lowest distance
-        best = self.lastgen.ix[dist.idxmin()]
+        best = self.lastgen.loc[dist.idxmin()]
         return best
 
     def select_min_objectives(self, minobjectives=None, **minobjkwargs):
