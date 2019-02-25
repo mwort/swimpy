@@ -365,13 +365,18 @@ class catchment_annual_waterbalance(ProjectOrRunData):
     def print_mean(self):
         mean = self.mean().to_string()
         print(mean)
-        return mean
+        return
+
+    @property
+    def runoff_coefficient(self):
+        (_, p), (_, r) = self[['PREC', '3Q']].items()
+        return r/p
 
 
 @propertyplugin
 class subcatch_annual_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'bay_sc.csv')
-    plugin = []
+    plugin = ['print_mean']
 
     def from_project(self, path, **readkwargs):
         nby = self.project.config_parameters['nbyr']
@@ -395,6 +400,18 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         api = df.index.levels[1].to_period(freq='a')
         df.index = pd.MultiIndex.from_product([df.index.levels[0], api])
         return df
+
+    @property
+    def runoff_coefficient(self):
+        (_, p), (_, r) = self[['PREC', '3Q']].items()
+        return (r/p).unstack(level=0)
+
+    def print_mean(self, catchments=None):
+        """Print average values. Selected catchments or all (default)."""
+        df = self.loc[catchments] if catchments else self
+        ml = 0 if hasattr(df.index, 'levels') else None
+        print(df.mean(level=ml).T.to_string())
+        return
 
 
 class gis_files(object):
