@@ -120,6 +120,15 @@ def plot_discharge(series, ax=None, **linekwargs):
     return lines
 
 
+def plot_flow_duration(series, ax=None, **linekwargs):
+    """Plot flow duration lines."""
+    ax = ax or plt.gca()
+    lines = ax.plot(series.index, series, **linekwargs)
+    ax.set_ylabel('Discharge [m$^3$s$^{-1}$]')
+    ax.set_xlabel('% of time exceeded')
+    return lines
+
+
 def plot_flow_duration_polar(series, axes=None, percentilestep=10,
                              freq='m', colormap='jet_r', **barkw):
     """Bins the values in series into 100/percentilestep steps and displays the

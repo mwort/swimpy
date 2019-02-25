@@ -157,6 +157,17 @@ class station_daily_discharge(ProjectOrRunData):
         return line
 
     @_plot_function
+    def plot_flow_duration(self, stations=None, ax=None, runs=None,
+                           output=None, **linekw):
+        stations = self._default_stations(stations)
+        lines = []
+        for s in stations:
+            fd = hydro.flow_duration(self[s])
+            line = plot.plot_flow_duration(fd, ax=ax, **linekw)
+            lines.append(line)
+        return
+
+    @_plot_function
     def plot_flow_duration_polar(self, station, percentilestep=10, freq='m',
                                  colormap='jet_r', ax=None, runs=None,
                                  output=None, **barkw):
@@ -179,6 +190,35 @@ class station_daily_discharge(ProjectOrRunData):
                                            percentilestep=percentilestep,
                                            colormap=colormap, **barkw)
         return ax
+
+    def peak_over_threshold(self, percentile=1, threshold=None, maxgap=None,
+                            stations=None):
+        """Identify peaks over a threshold, return max, length, date and recurrence.
+
+        Arguments
+        ---------
+        percentile : number
+            The percentile threshold of q., e.g. 1 means Q1.
+        threshold : number, optional
+            Absolute threshold to use for peak identification.
+        maxgap : int, optional
+            Largest gap between two threshold exceedance periods to count as
+            single flood event. Number of timesteps. If not given, every
+            exceedance is counted as individual flood event.
+        stations : stationID | list of stationIDs
+            Return subset of stations. Default all.
+
+        Returns
+        -------
+        pd.DataFrame :
+            Peak discharge ordered dataframe with order index and peak q,
+            length, peak date and recurrence columns with MultiIndex if more
+            than one station is selected.
+        """
+        stations = self._default_stations(stations)
+        kw = dict(percentile=percentile, threshold=threshold, maxgap=maxgap)
+        pot = [hydro.peak_over_threshold(self[s], **kw) for s in stations]
+        return pot[0] if len(stations) == 1 else pd.concat(pot, keys=stations)
 
     def _obs_sim_overlap(self):
         """Return overlapping obs and sim discharge series excluding warmup."""

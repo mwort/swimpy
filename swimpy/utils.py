@@ -9,9 +9,10 @@ import warnings
 import sys
 import time
 import datetime as dt
-import io
+import codecs
 
 import numpy as np
+import pandas as pd
 from modelmanager.settings import parse_settings
 
 import swimpy
@@ -482,3 +483,64 @@ def upstream_ids(id, fromtoseries, maxcycle=1e6):
         if cycles > maxcycle:
             raise RuntimeError('maxcycles reached. Circular fromto?')
     return ids
+
+
+class GRDCStation(pd.DataFrame):
+    """A dataframe created from a GRDC discharge data file."""
+    # some assumptions about GRDC files as class attributes
+    fileEncoding = 'latin_1'
+    dataStart = '# DATA'
+
+    def __init__(self, path):
+        super(GRDCStation, self).__init__()
+        # precess file
+        with codecs.open(path, 'r', encoding=self.fileEncoding) as f:
+            self.read_header(f)
+            # read data and initialise DF with it
+            super(GRDCStation, self).__init__(self.read(f))
+        # file name
+        self.filepath = path
+        return
+
+    def read_header(self, fobj):
+        self.header = ''
+        self.headerAttributes = []
+        for l in fobj:
+            if l.startswith(self.dataStart):
+                break
+            elif l.startswith('#'):
+                self.header += l
+                if len(l.split(':')) == 2:
+                    k, v = l.split(':')
+                    clek = [''.join([c.lower() for c in string if c.isalnum()])
+                            for string in k.split()]
+                    k = '_'.join([c for c in clek if len(c) > 0])
+                    self.__dict__.update({k: v.strip()})
+                    self.headerAttributes += [k]
+        return
+
+    def read(self, fobj):
+        df = pd.read_table(fobj, sep=str(self.field_delimiter),
+                           index_col=0,
+                           # faster then doing it in a loop afterw
+                           parse_dates=[0],
+                           engine='python')  # because of already open file
+        # set -999 to na
+        df[df == -999] = np.nan
+        # day or month index
+        if hasattr(df.index, 'to_period'):
+            df.index = df.index.to_period()
+        elif str(df.index[0]).endswith('00'):  # monthly
+            df.index = pd.PeriodIndex(
+                [i[:7] for i in df.index.astype(str)], freq='m')
+        # format columns
+        df.columns = [c.strip().lower() for c in df.columns]
+        if 'hh:mm' in df.columns:
+            df.drop('hh:mm', axis=1, inplace=True)
+        return df
+
+    def __repr__(self):
+        dfrep = super(pd.DataFrame, self).__repr__().split(u'\n')
+        header = self.header.split(u'\n')
+        rep = dfrep[0] + '\n' + u'\n'.join(header + dfrep[1:])
+        return rep.encode('ascii', 'ignore')
