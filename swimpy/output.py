@@ -22,6 +22,7 @@ from glob import glob
 import datetime as dt
 import warnings
 
+import numpy as np
 import pandas as pd
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.pandas import ProjectOrRunData
@@ -300,12 +301,12 @@ class subbasin_monthly_waterbalance(subbasin_daily_waterbalance.plugin):
 
         def parse_time(y, m):
             return pd.Period('%04i-%02i' % (styr+int(y)-1, int(m)), freq='m')
-        f = open(path)
-        header = f.readline().split()
-        df = pd.read_table(f, delim_whitespace=True, skiprows=1, header=None,
-                           index_col=[0, 1], names=header,
-                           parse_dates=[[0, 1]], date_parser=parse_time,
-                           **readkwargs)
+        with open(path) as f:
+            header = f.readline().split()
+            df = pd.read_table(f, delim_whitespace=True, skiprows=1,
+                               header=None, index_col=[0, 1], names=header,
+                               parse_dates=[[0, 1]], date_parser=parse_time,
+                               **readkwargs)
         df.index.names = ['time', 'subbasinID']
         return df
 
@@ -452,6 +453,62 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         ml = 0 if hasattr(df.index, 'levels') else None
         print(df.mean(level=ml).T.to_string())
         return
+
+
+@propertyplugin
+class hydrotope_daily_crop_indicators(ProjectOrRunData):
+    path = osp.join(RESDIR, 'crop.out')
+    plugin = []
+    column_names = ['doy', 'water_stress', 'temp_stress', 'maturity',
+                    'biomass', 'lai', 'root_depth']
+
+    def from_project(self, path, **readkwargs):
+        iyr = self.project.config_parameters['iyr']
+        df = pd.read_csv(path, delim_whitespace=True, header=None,
+                         names=self.column_names)
+        prds, hydid = [], []
+        idoy, iy, ihyd = 0, iyr-1, 0
+        for d in df.pop('doy'):
+            ihyd = 1 if d != idoy else ihyd+1
+            idoy = d
+            hydid += [ihyd]
+            iy = iy+1 if d == 1 and ihyd == 1 else iy
+            prds += [dt.date(iy, 1, 1)+dt.timedelta(d-1)]
+        pix = pd.PeriodIndex(prds, freq='d')
+        df.index = pd.MultiIndex.from_arrays([pix, hydid],
+                                             names=['time', 'hydrotope'])
+        return df
+
+    @staticmethod
+    def from_csv(path, **readkwargs):
+        df = pd.read_csv(path, index_col=[0, 1], parse_dates=[0],
+                         date_parser=pd.Period, **readkwargs)
+        return df
+
+
+@propertyplugin
+class subbasin_annual_crop_yield(ProjectOrRunData):
+    path = osp.join(RESDIR, 'cryld.prn')
+    plugin = []
+    column_names = ['cropID', 'year', 'subbasinID', 'soilID', 'yield', 'area']
+    column_seperators = ['Crp=', 'Yr=', 'Sub=', 'Sol=', 'Yld=', 'Area=']
+
+    def from_project(self, path, **readkwargs):
+        df = pd.read_csv(path, sep="|".join(self.column_seperators),
+                         engine='python', header=None, names=self.column_names)
+        # index
+        df.set_index(self.column_names[:4], inplace=True)
+        # clean units
+        df['yield'] = np.array([y.replace('dt/ha', '') for y in df['yield']],
+                               dtype=float)
+        df['area'] = np.array([y.replace('ha', '') for y in df['area']],
+                              dtype=float)
+        return df
+
+    @staticmethod
+    def from_csv(path, **readkwargs):
+        df = pd.read_csv(path, index_col=[0, 1, 2, 3], **readkwargs)
+        return df
 
 
 class gis_files(object):
