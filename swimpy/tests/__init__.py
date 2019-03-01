@@ -23,26 +23,28 @@ class tests(object):
     Test case classes maybe defined in any submodule of the tests package and
     should be named ``test_*.py``.
     """
+
     def __init__(self, project):
         self.project = project
         self.test_methods = {}
         # add all test cases (mixin classes)
         testpaths = glob.glob(osp.join(osp.dirname(__file__), 'test_*.py'))
+        testpaths += glob.glob(osp.join(project.resourcedir, 'test_*.py'))
         for modpath in testpaths:
             testmodule = load_module_path(modpath)
-            classes = [getattr(testmodule, i) for i in dir(testmodule)
-                       if inspect.isclass(getattr(testmodule, i))]
+            classes = self._get_classes(testmodule)
             for Tc in classes:
-                test_function = self._create_test_function(Tc)
-                # attach function to Tests class
-                method = types.MethodType(test_function, self)
-                name = Tc.__name__.lower()
-                setattr(self, name, method)
-                self.test_methods[name] = method
+                self._add_test_method(Tc)
         return
 
-    def _create_test_function(self, testcaseclass):
+    def _get_classes(self, obj):
+        vrs = [v for v in dir(obj) if not v.startswith('_')]
+        objts = [getattr(obj, v) for v in vrs]
+        return [o for o in objts if inspect.isclass(o)]
+
+    def _add_test_method(self, testcaseclass):
         PROJECT = self.project
+        name = testcaseclass.__name__.lower()
 
         class TestCase(unittest.TestCase, testcaseclass):
             project = PROJECT
@@ -51,7 +53,15 @@ class tests(object):
             loader = unittest.TestLoader()
             suite = loader.loadTestsFromTestCase(TestCase)
             return unittest.TextTestRunner().run(suite)
-        return test_function
+
+        test_function.__name__ = name
+        test_method = types.MethodType(test_function, self)
+        # attach function to Tests class
+        setattr(self, name, test_method)
+        self.test_methods[name] = test_method
+        testadd = self.__class__.__name__+'.'+name
+        self.project.settings.register_function(test_method, testadd)
+        return test_method
 
     def all(self):
         for n, m in self.test_methods.items():
