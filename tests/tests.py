@@ -212,10 +212,6 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
         check_files(run.files.all())
 
 
-class TestRun(ProjectTestCase, test_project.Run):
-    pass
-
-
 class TestPlotting(ProjectTestCase):
 
     plot_prefix = 'plot'

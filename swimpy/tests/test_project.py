@@ -60,8 +60,6 @@ class Processing:
                     clones, prefix='test2', timeout={'minutes': 1})
         self.assertEqual(runs2.count(), 2)
 
-
-class Run:
     def test_project_run_data(self):
         resultproperties = self.project.runfile_interfaces
         self.assertGreater(len(resultproperties), 0)
