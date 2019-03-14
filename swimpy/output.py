@@ -426,8 +426,14 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         scids = []
         for i in range(1, nbsc+1):
             # skip header and entire basin
-            [f.readline() for _ in range((nby+2)*i)]
-            scids.append(int(f.readline()))
+            for _ in range((nby+2)*i):
+                next(f)
+            try:
+                isc = int(f.readline())
+            except ValueError:
+                raise RuntimeError('Cant read %s. Do the number of ' % path +
+                                   'years match those given in the .cod file?')
+            scids.append(isc)
             d = catchment_annual_waterbalance.plugin.from_project(f, nrows=nby)
             dfs.append(d)
             f.seek(0)
