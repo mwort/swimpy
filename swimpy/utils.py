@@ -35,7 +35,7 @@ class cluster(object):
 
         def _sacct(self, *args):
             cmds = ["sacct", "-j", str(self.id)]+list(args)
-            return subprocess.check_output(cmds).strip()
+            return subprocess.check_output(cmds).decode().strip()
 
         def cancel(self):
             return subprocess.check_call(['scancel', str(self.id)])
