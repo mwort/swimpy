@@ -203,7 +203,7 @@ class _EvoalgosSwimProblem(Problem):
             clones.append(clone)
 
         if len(self.evaltimes) > 0:
-            rtime = {'seconds': self.mean_generation_time().seconds * 3}
+            rtime = {'seconds': self.mean_generation_time().total_seconds()*3}
         else:
             rtime = {}
         # process clones and wait for runs
