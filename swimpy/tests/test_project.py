@@ -47,6 +47,7 @@ class Processing:
         self.assertTrue(osp.exists(jfp))
 
     def test_run_parallel(self):
+        oyrs = self.project.config_parameters['nbyr']
         self.project.config_parameters(nbyr=2)
         args = [dict(smrate=i) for i in [0.1, 0.3, 0.6]]
         runs = self.project.cluster.run_parallel(
@@ -59,6 +60,7 @@ class Processing:
         runs2 = self.project.cluster.run_parallel(
                     clones, prefix='test2', timeout={'minutes': 1})
         self.assertEqual(runs2.count(), 2)
+        self.project.config_parameters(nbyr=oyrs)
 
     def test_project_run_data(self):
         resultproperties = self.project.runfile_interfaces
