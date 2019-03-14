@@ -64,7 +64,7 @@ class _EvoalgosSwimProblem(Problem):
 
     @parse_settings
     def __call__(self, parameters=None, objectives=None, population_size=10,
-                 max_generations=10, update_interval=10, output=None,
+                 max_generations=10, output=None,
                  test=None, prefix=None, keep_clones=False, **kwargs):
         """Run the optimisation algorithm.
 
@@ -84,8 +84,6 @@ class _EvoalgosSwimProblem(Problem):
             the ``num_offspring`` argument to the algorithm.
         max_generation : int
             Maximum number of iterations the algorithm is run with.
-        update_interval : int in seconds
-            Interval the subprocesses are polled for progress.
         output : string path, optional
             Output .csv file with saved parameters and performances for each
             generation and individual (default:
@@ -115,7 +113,6 @@ class _EvoalgosSwimProblem(Problem):
         assert type(parameters) == dict
         self.parameters = collections.OrderedDict(sorted(parameters.items()))
         self.objectives, self.indicators = self._parse_objectives(objectives)
-        self.update_interval = update_interval
         self.prefix = prefix or self.algorithm
         do = prefix+'_'+self.algorithm if prefix else self.algorithm
         defout = osp.join(self.project.projectdir, do+'_populations.csv')
@@ -136,6 +133,7 @@ class _EvoalgosSwimProblem(Problem):
             'start_population', self.create_start_population())
         # run tests if test is True (and exit) or None (and continue)
         if test is not False:
+            print('Testing single run...')
             self.run_tests()
         if test is True:
             return
@@ -203,12 +201,12 @@ class _EvoalgosSwimProblem(Problem):
             clones.append(clone)
 
         if len(self.evaltimes) > 0:
-            rtime = {'seconds': self.mean_generation_time().total_seconds()*3}
+            rt = int(round(self.mean_generation_time().total_seconds()*3/60.))
         else:
-            rtime = {}
+            rt = {}
         # process clones and wait for runs
-        runs = self.project.cluster.run_parallel(
-                clones, timeout=rtime, indicators=self.indicators)
+        runs = self.project.cluster.run_parallel(clones, time=rt,
+                                                 indicators=self.indicators)
         objective_values = self.retrieve_objectives(runs)
         # delte all runs again
         runs.delete()

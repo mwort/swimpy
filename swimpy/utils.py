@@ -185,7 +185,7 @@ class cluster(object):
             print('Would execute: %s' % (' '.join(submit)))
         return rid
 
-    def run_parallel(self, clones=None, args=None, timeout=None,
+    def run_parallel(self, clones=None, args=None, time=None,
                      preprocess='basin_parameters', prefix='run_parallel',
                      **runkw):
         """Run SWIM in parallel using cluster jobs or multiprocessing.
@@ -198,10 +198,10 @@ class cluster(object):
             only be run.
         args : list of dicts
             Arguments to parse to the preprocess function.
-        timeout : dict | datetime.timedelta instance
-            Limit job time and raise RuntimeError after timeout is elapsed.
-            Parse any keyword as dict to datetime.timedelta, e.g. hours, days,
-            minutes, seconds. Default: {'hours': 24}
+        time : str | int, optional
+            Slurm job time limit to reduce queuing times.
+            Format is (see slurm manual): 'mins' | 'hh:mm'
+            Default is the default of the QOS class.
         preprocess : str
             Name or dotted address of the project function to call with each
             entry of args.
@@ -233,14 +233,13 @@ class cluster(object):
         if type(clones) == int:
             assert args and preprocess
             clones = self.create_clones(clones, prefix=prefix)
-        timeout = timeout or {'hours': 24}
-        assert (type(timeout) == dict) or isinstance(timeout, dt.timedelta)
-        timeout = dt.timedelta(**timeout) if type(timeout) == dict else timeout
 
-        slurmargs = {'time': int(round(timeout.total_seconds()/60.))}
         tag = prefix + '_' + str(os.getpid())
         runkw.setdefault('cluster', {})
         deftag = runkw.setdefault('tags', '')
+        if time:
+            runkw['cluster'].update({'slurmargs': str(time)})
+
         queue = args or clones
 
         while len(queue) > 0:
@@ -260,8 +259,7 @@ class cluster(object):
                         raise RuntimeError(str(e) + m % (clone, preprocess, a))
             # run
             for clone in qclones:
-                runkw['cluster'].update(dict(jobname=clone.clonename,
-                                             slurmargs=slurmargs))
+                runkw['cluster'].update({'jobname': clone.clonename})
                 runkw['tags'] = ' '.join([deftag, tag, clone.clonename])
                 try:
                     job = clone.run(**runkw)
@@ -276,7 +274,7 @@ class cluster(object):
             if mp_jobs:
                 self.mp_process(mp_jobs)
             else:
-                self.wait(slurm_jobs, timeout=timeout)
+                self.wait(slurm_jobs)
 
         runs = self.project.browser.runs.filter(
                 tags__contains=tag, time__gt=st)
@@ -289,6 +287,7 @@ class cluster(object):
         clones = [self.project.clone(cn % i, **clonekw) for i in range(n)]
         return clones
 
+    @parse_settings
     def wait(self, jobs, timeout=None, interval=5):
         """Wait until all jobs are COMPLETED as per job.state.
 
