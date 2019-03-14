@@ -45,7 +45,9 @@ class _EvoalgosSwimProblem(Problem):
     #: Attributes of individuals written to output
     output_attribute_columns = ['generation', 'id_number',
                                 'clone', 'birthgeneration']
-
+    #: list of run times to estimate cluster.run_parallel timeout
+    #: overwrite to set timeout of first generation
+    evaltimes = []
     plugin = ['__call__']
 
     def __init__(self, project):
@@ -115,8 +117,6 @@ class _EvoalgosSwimProblem(Problem):
         self.objectives, self.indicators = self._parse_objectives(objectives)
         self.update_interval = update_interval
         self.prefix = prefix or self.algorithm
-        # for time keeping
-        self.evaltimes = []
         do = prefix+'_'+self.algorithm if prefix else self.algorithm
         defout = osp.join(self.project.projectdir, do+'_populations.csv')
         self.output = output or defout
