@@ -54,8 +54,8 @@ class subcatch_parameters(ReadWriteDataFrame):
     force_dtype = {'catchmentID': int}
 
     def read(self, **kwargs):
-        bsn = pd.read_table(self.path, delim_whitespace=True,
-                            dtype=self.force_dtype)
+        bsn = pd.read_csv(self.path, delim_whitespace=True,
+                          dtype=self.force_dtype)
         stn = 'stationID' if 'stationID' in bsn.columns else 'station'
         bsn.set_index(stn, inplace=True)
         return bsn
@@ -78,7 +78,7 @@ class subcatch_definition(ReadWriteDataFrame):
     plugin = ['__call__']
 
     def read(self, **kwargs):
-        scdef = pd.read_table(self.path, delim_whitespace=True, index_col=0)
+        scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=0)
         return scdef
 
     def write(self, **kwargs):
@@ -175,7 +175,7 @@ class climate(object):
             assert len(variables) == 3
             readargs = dict(delim_whitespace=True, header=None, skiprows=1)
             readargs.update(readkwargs)
-            df = pd.read_table(path, **readargs)
+            df = pd.read_csv(path, **readargs)
             df.index = pd.PeriodIndex(start=str(startyear), periods=len(df),
                                       freq='d', name='time')
             nsub = int(len(df.columns)/3)
@@ -329,7 +329,7 @@ class StructureFile(ReadWriteDataFrame):
         return
 
     def read(self, **kwargs):
-        df = pd.read_table(self.path, delim_whitespace=True)
+        df = pd.read_csv(self.path, delim_whitespace=True)
         # pandas issues UserWarning if attribute is set with Series-like
         warnings.simplefilter('ignore', UserWarning)
         self.file_header = list(df.columns)
@@ -349,7 +349,7 @@ class StructureFile(ReadWriteDataFrame):
         return df
 
     def write(self, **kwargs):
-        with file(self.path, 'w') as f:
+        with open(self.path, 'w') as f:
             self.to_string(f, index=False, header=self.file_header)
             f.write('\n'+' '.join(['0 ']*len(self.file_header)))
         return
@@ -378,10 +378,9 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         except ValueError:
             warnings.warn('No subbasinIDs given in second row of %s' % path)
         # read entire file
-        rodata = pd.read_table(path, skiprows=skiphead, header=None,
-                               delim_whitespace=True, index_col=0,
-                               parse_dates=[[0, 1, 2]], names=colnames,
-                               na_values=na_values)
+        rodata = pd.read_csv(path, skiprows=skiphead, header=None, index_col=0,
+                             delim_whitespace=True, parse_dates=[[0, 1, 2]],
+                             names=colnames, na_values=na_values)
         rodata.index = rodata.index.to_period()
         self.outlet_station = rodata.columns[0]
         return rodata

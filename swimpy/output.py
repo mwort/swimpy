@@ -265,8 +265,8 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
         def parse_time(y, d):
             dto = dt.date(1900 + int(y), 1, 1) + dt.timedelta(int(d) - 1)
             return pd.Period(dto, freq='d')
-        d = pd.read_table(path, delim_whitespace=True, date_parser=parse_time,
-                          parse_dates=[[0, 1]], index_col=[0, 1], **readkwargs)
+        d = pd.read_csv(path, delim_whitespace=True, date_parser=parse_time,
+                        parse_dates=[[0, 1]], index_col=[0, 1], **readkwargs)
         d.index.names = ['time', 'subbasinID']
         return d
 
@@ -303,10 +303,9 @@ class subbasin_monthly_waterbalance(subbasin_daily_waterbalance.plugin):
             return pd.Period('%04i-%02i' % (styr+int(y)-1, int(m)), freq='m')
         with open(path) as f:
             header = f.readline().split()
-            df = pd.read_table(f, delim_whitespace=True, skiprows=1,
-                               header=None, index_col=[0, 1], names=header,
-                               parse_dates=[[0, 1]], date_parser=parse_time,
-                               **readkwargs)
+            df = pd.read_csv(f, delim_whitespace=True, skiprows=1, header=None,
+                             index_col=[0, 1], date_parser=parse_time,
+                             parse_dates=[[0, 1]], names=header, **readkwargs)
         df.index.names = ['time', 'subbasinID']
         return df
 
@@ -317,8 +316,8 @@ class subbasin_daily_discharge(ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        df = pd.read_table(path, delim_whitespace=True, index_col=[0, 1],
-                           **readkwargs)
+        df = pd.read_csv(path, delim_whitespace=True, index_col=[0, 1],
+                         **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1) for y, d in df.index]
         df.index = pd.PeriodIndex(dtms, freq='d', name='time')
         df.columns = df.columns.astype(int)
@@ -343,7 +342,7 @@ class catchment_daily_waterbalance(ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        df = pd.read_table(path, delim_whitespace=True, **readkwargs)
+        df = pd.read_csv(path, delim_whitespace=True, **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YR'), df.pop('DAY'))]
         df.index = pd.PeriodIndex(dtms, freq='d', name='time')
@@ -364,8 +363,8 @@ class catchment_monthly_waterbalance(ProjectOrRunData):
     def from_project(path, **readkwargs):
         with open(path, 'r') as f:
             iyr = int(f.readline().strip().split('=')[1])
-            df = pd.read_table(f, delim_whitespace=True, index_col=False,
-                               **readkwargs)
+            df = pd.read_csv(f, delim_whitespace=True, index_col=False,
+                             **readkwargs)
         df.dropna(inplace=True)  # exclude Year = ...
         df = df.drop(df.index[range(12, len(df), 12+1)])  # excluded headers
         dtms = ['%04i-%02i' % (iyr+int((i-1)/12.), m)
@@ -387,8 +386,8 @@ class catchment_annual_waterbalance(ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        df = pd.read_table(path, delim_whitespace=True, index_col=0,
-                           parse_dates=[0], **readkwargs)
+        df = pd.read_csv(path, delim_whitespace=True, index_col=0,
+                         parse_dates=[0], **readkwargs)
         df.index = df.index.to_period(freq='a')
         return df
 
@@ -559,8 +558,8 @@ class gis_files(object):
         """Read a SWIM GIS file by full path or by the filename."""
         namepath = osp.join(self.gisdir, pathorname)
         path = namepath if osp.exists(namepath) else pathorname
-        df = pd.read_table(path, delim_whitespace=True, usecols=[0, 2],
-                           header=None, names=['id', 'value'], **readkwargs)
+        df = pd.read_csv(path, delim_whitespace=True, usecols=[0, 2],
+                         header=None, names=['id', 'value'], **readkwargs)
         # make 2D array (timesteps, hydrotopes)
         nhyd = df.id.max()
         dfrs = df.value.T.values.reshape(-1, nhyd)
@@ -577,11 +576,11 @@ class gis_files(object):
         nbyr, iyr = self.project.config_parameters('nbyr', 'iyr')
         ixkw = dict(start=str(iyr), periods=nsteps, name='time')
         if nsteps == nbyr:
-            ix = pd.PeriodIndex(freq='a', **ixkw)
+            ix = pd.period_range(freq='a', **ixkw)
         elif nsteps == nbyr*12:
-            ix = pd.PeriodIndex(freq='m', **ixkw)
+            ix = pd.period_range(freq='m', **ixkw)
         else:
-            ix = pd.PeriodIndex(freq='d', **ixkw)
+            ix = pd.period_range(freq='d', **ixkw)
             if ix[-1] != pd.Period(str(iyr+nbyr-1)+'-12-31'):
                 msg = 'Last day is %s. Is this really daily?' % ix[-1]
                 warnings.warn(msg)

@@ -520,7 +520,7 @@ class GRDCStation(pd.DataFrame):
         return
 
     def read(self, fobj):
-        df = pd.read_table(fobj, sep=str(self.field_delimiter),
+        df = pd.read_csv(fobj, sep=str(self.field_delimiter),
                            index_col=0,
                            # faster then doing it in a loop afterw
                            parse_dates=[0],
