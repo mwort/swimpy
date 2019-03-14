@@ -107,7 +107,8 @@ class cluster(object):
             functionname = jobname.get('functionname', functionname)
             script = jobname.get('script', script)
             dryrun = jobname.get('dryrun', dryrun)
-            slurmargs = jobname.get('slurmargs', slurmargs)
+            # special treatment since slurmargs is often parsed by settings
+            slurmargs.update(jobname.get('slurmargs', slurmargs))
             jobname = jobname['jobname']
         assert type(functionname) == str or type(script) == str
         if functionname:

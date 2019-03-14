@@ -6,12 +6,14 @@ import pandas as pd
 # path outside project dir dynamic relative to resourcedir to work with clones
 grass_db = property(lambda p: osp.join(osp.realpath(p.resourcedir), '..', '..', 'grassdb'))
 grass_location = "utm32n"
-grass_mapset =  "swim"
-grass_setup = dict(elevation = "elevation@PERMANENT",
-                   stations = "stations@PERMANENT",
+grass_mapset = "swim"
+grass_setup = dict(elevation="elevation@PERMANENT",
+                   stations="stations@PERMANENT",
                    upthresh=40, lothresh=11,
-                   landuse = "landuse@PERMANENT",
-                   soil = "soil@PERMANENT")
+                   landuse="landuse@PERMANENT",
+                   soil="soil@PERMANENT")
+
+cluster_slurmargs = dict(qos='priority')
 
 
 def _read_q():
