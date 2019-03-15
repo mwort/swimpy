@@ -203,7 +203,7 @@ class _EvoalgosSwimProblem(Problem):
             clones.append(clone)
 
         meansecs = self.mean_generation_time().total_seconds()
-        rt = (int(round(meansecs*self.time_safty_factor/60.))
+        rt = (int(round(meansecs*self.time_safty_factor/60. + 0.5))
               if len(self.evaltimes) > 0 else None)
         # process clones and wait for runs
         runs = self.project.cluster.run_parallel(clones, time=rt,
