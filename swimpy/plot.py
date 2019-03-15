@@ -17,6 +17,7 @@ import functools
 import datetime as dt
 import warnings
 import itertools
+import os
 
 import numpy as np
 import pandas as pd
@@ -438,7 +439,9 @@ runs : Run | runID | iterable of Run/runID | QuerySet | (str), optional
             warnings.warn('Figure doesnt allow tight layout.')
         # in Django API
         if len(sys.argv) > 1 and sys.argv[1] == 'browser':
-            imgpath = tempfile.mkstemp()[1] + '.png'
+            tmpdir = self.project.browser.settings.tmpfilesdir
+            tf, imgpath = tempfile.mkstemp(suffix='.png', dir=tmpdir)
+            os.close(tf)
             save(imgpath, self.figure, **self.savekwargs)
             self.figure.clear()
             return imgpath
