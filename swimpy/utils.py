@@ -238,7 +238,8 @@ class cluster(object):
         runkw.setdefault('cluster', {})
         deftag = runkw.setdefault('tags', '')
         if time:
-            runkw['cluster'].update({'slurmargs': str(time)})
+            runkw['cluster'].setdefault('slurmargs', {})
+            runkw['cluster']['slurmargs'] = {'time': str(time)}
 
         queue = args or clones
 
@@ -259,7 +260,7 @@ class cluster(object):
                         raise RuntimeError(str(e) + m % (clone, preprocess, a))
             # run
             for clone in qclones:
-                runkw['cluster'].update({'jobname': clone.clonename})
+                runkw['cluster']['jobname'] = clone.clonename
                 runkw['tags'] = ' '.join([deftag, tag, clone.clonename])
                 try:
                     job = clone.run(**runkw)

@@ -200,10 +200,8 @@ class _EvoalgosSwimProblem(Problem):
             self.set_parameters(clone, dict(zip(pnames, ind.phenome)))
             clones.append(clone)
 
-        if len(self.evaltimes) > 0:
-            rt = int(round(self.mean_generation_time().total_seconds()*3/60.))
-        else:
-            rt = {}
+        rt = (int(round(self.mean_generation_time().total_seconds()*3/60.))
+              if len(self.evaltimes) > 0 else None)
         # process clones and wait for runs
         runs = self.project.cluster.run_parallel(clones, time=rt,
                                                  indicators=self.indicators)
