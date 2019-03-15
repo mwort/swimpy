@@ -45,9 +45,9 @@ class _EvoalgosSwimProblem(Problem):
     #: Attributes of individuals written to output
     output_attribute_columns = ['generation', 'id_number',
                                 'clone', 'birthgeneration']
-    #: list of run times to estimate cluster.run_parallel timeout
-    #: overwrite to set timeout of first generation
-    evaltimes = []
+    #: factor to multiply the average runtime for job time out estimation
+    time_safty_factor = 3
+
     plugin = ['__call__']
 
     def __init__(self, project):
@@ -117,7 +117,6 @@ class _EvoalgosSwimProblem(Problem):
         do = prefix+'_'+self.algorithm if prefix else self.algorithm
         defout = osp.join(self.project.projectdir, do+'_populations.csv')
         self.output = output or defout
-
         # init problem
         Problem.__init__(self, lambda dummy: dummy,
                          num_objectives=len(objectives),
@@ -132,9 +131,12 @@ class _EvoalgosSwimProblem(Problem):
         self.start_population = kwargs.setdefault(
             'start_population', self.create_start_population())
         # run tests if test is True (and exit) or None (and continue)
+        self.evaltimes = []
         if test is not False:
             print('Testing single run...')
+            tst = dt.datetime.now()
             self.run_tests()
+            self.evaltimes.append(dt.datetime.now()-tst)
         if test is True:
             return
         # initialise algorithm
@@ -200,7 +202,8 @@ class _EvoalgosSwimProblem(Problem):
             self.set_parameters(clone, dict(zip(pnames, ind.phenome)))
             clones.append(clone)
 
-        rt = (int(round(self.mean_generation_time().total_seconds()*3/60.))
+        meansecs = self.mean_generation_time().total_seconds()
+        rt = (int(round(meansecs*self.time_safty_factor/60.))
               if len(self.evaltimes) > 0 else None)
         # process clones and wait for runs
         runs = self.project.cluster.run_parallel(clones, time=rt,
@@ -337,7 +340,7 @@ class _EvoalgosSwimProblem(Problem):
             popinfolist.append(iline)
         # make dataframe and write out
         popframe = pd.DataFrame(popinfolist, columns=cols)
-        with open(self.output, 'a') as f:
+        with open(self.output, 'w' if initial else 'a') as f:
             popframe.to_csv(f, header=initial, index=False)
         # report stats
         if not initial:
