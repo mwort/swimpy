@@ -439,33 +439,44 @@ class StationsUnconfigured(object):
 
     Examples
     --------
-    Path relative to settings.py file::
+    Here are some examples of how to set this attribute in the `settings.py` of
+    your project. Note that the settings file is loaded from various locations,
+    i.e. dont rely on relative paths. It's best to use dynamic or absolute
+    paths. For example, the path to the swimpy resource directory can be
+    obtained like this::
 
         import os.path as osp
-        att_path = osp.join(osp.dirname(__file__), 'stations_attribute.csv')
-        q_path = osp.join(osp.dirname(__file__), 'stations_q_data.csv')
+        _here = osp.dirname(__file__)
 
-    Read discharge data from file::
+    Assuming you have your station information in `stations_info.csv` (one
+    station per line, one attribute per column) and observed discharge in
+    `q_data.csv` (one day per line with dates as YYYY-MM-DD in first column,
+    one station per column) in well-formatted CSV files in the swimpy resource
+    directory, a basic configuration would be::
 
-        _q = pd.read_csv(q_path, parse_dates=[0], index_col=0)
+        import pandas as pd
+        stations = pd.read_csv(osp.join(_here, 'stations_info.csv'), index_col=0)
+        _qdat = pd.read_csv(osp.join(_here, 'q_data.csv'), parse_dates=[0],
+                            index_col=0)
+        stations.daily_discharge_observed = _qdat
 
-    Now read attributes from a csv file and add discharge. Make sure the index
-    refers to the same IDs as your gauges.output file::
+    Make sure the station info row index and discharge data column names refer
+    to the same IDs as your gauges.output file. Refer to the `pandas.read_csv
+    help page <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv>`_
+    for help with reading data into a pandas DataFrame.
 
-        stations = pd.read_csv(att_path, index_col=0)
-        stations.daily_discharge_observed = _q
-
-    Or from a GRASS table and csv Q data (requires GRASS settings)::
+    To load the station infos from GRASS stations_snapped vector table
+    (requires GRASS settings)::
 
         import modelmanager.plugins.grass as mmgrass
         class stations(mmgrass.GrassAttributeTable):
             vector = 'stations_snapped'
             key = None  # specify here the column of your SWIM IDs
-            daily_discharge_observed = _q
+            daily_discharge_observed = _qdat
 
     """
 
-    #: Default observed runoff file in SWIMpy resource directory
+    #: Default observed discharge file in SWIMpy resource directory
     daily_discharge_observed_file = 'daily_discharge_observed.csv'
 
     def __init__(self, project):

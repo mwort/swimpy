@@ -117,13 +117,12 @@ in the commandline and browser interfaces. Some rules apply:
         return 'ignored'
 
 2) Classes (i.e. plugins) will be instantiated on load with the project as
-   the only argument. Their names will be lower-cased (according to PEP8).
-   E.g.:
+   the only argument. E.g.:
 
    .. code-block:: python
 
     # in settings.py
-    class MyPlugin:
+    class myplugin:
         def __init__(self, project):
             self.project = project
         def hello(self):
@@ -158,6 +157,17 @@ in the commandline and browser interfaces. Some rules apply:
 4) Python properties will be attached to the project class and executed when
    accessed. Property-plugins (from ``modelmanager.utils.propertyplugin``) will
    be instantiated on use (e.g. see the ``input.py`` and ``output.py`` modules).
+
+5) Note that the settings are loaded from various locations,
+   i.e. dont rely on relative paths. It's best to use dynamic or absolute
+   paths. For example, the path to the swimpy resource or the project directory
+   can be obtained like this:
+
+   .. code-block:: python
+
+     import os.path as osp
+     _here = osp.dirname(__file__)
+     _projectdir = osp.dirname(_here)
 
 
 

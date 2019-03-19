@@ -13,7 +13,7 @@ run the following to install (requires *git* and prompts twice for username/pass
 
 .. code-block:: console
 
-    $ pip install git+https://gitlab.pik-potsdam.de/wortmann/swimpy.git
+    $ pip install -U git+https://gitlab.pik-potsdam.de/wortmann/swimpy.git
 
 
 Setup a Python environment
@@ -60,11 +60,8 @@ file), activate the environment like this:
 
     $ source activate swimpyenv
 
-New packages can be installed like this:
-
-.. code-block:: console
-
-  $ pip install ipython
+New packages can be installed with pip (see above) or conda. To install
+*swimpy* follow the `Quick install`_ now.
 
 
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/installation/
