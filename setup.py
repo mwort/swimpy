@@ -13,7 +13,7 @@ requirements = [
     "django>=1.11.20, <2.0",
     "parse>=1.9, <2.0",
     "matplotlib>=2.2.3, <3.0",
-    "model-manager>=0.5.1",
+    "model-manager>=0.5.2",
     "f90nml>=1.0.2",
     "evoalgos>=1.0"
 ]
