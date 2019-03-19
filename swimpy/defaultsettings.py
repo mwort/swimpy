@@ -15,6 +15,7 @@ from swimpy.tests import tests
 from swimpy.utils import StationsUnconfigured as stations
 from swimpy.utils import cluster
 from swimpy.plot import plot_summary
+from swimpy.optimization import SMSEMOA, CommaEA, NSGA2b, CMSAES
 
 #: SWIM executable
 swim = './swim'
