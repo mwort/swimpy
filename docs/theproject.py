@@ -42,4 +42,5 @@ with open(FILE, 'w') as f:
     f.write('\n'.join(l))
 
 # clean
+p.browser.settings.unset()
 shutil.rmtree(p.resourcedir)
