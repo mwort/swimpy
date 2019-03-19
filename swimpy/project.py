@@ -352,7 +352,11 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
         os.symlink(osp.join(repopath, 'code', 'swim'),
                    osp.join(projectdir, 'swim'))
         shutil.copy(osp.join(repopath, 'project', 'swim.conf'), projectdir)
-
+        # change input names in file.cio
+        with open(osp.join(projectdir, 'input', 'file.cio')) as f:
+            cio = f.read().replace('blank', name)
+        with open(osp.join(projectdir, 'input', 'file.cio'), 'w') as f:
+            f.write(cio.replace('blank', name))
     # rename templates with project name in filename
     for fp in ['cod', 'bsn']:
         ppn = mm.utils.get_paths_pattern('input/*.' + fp, projectdir)
