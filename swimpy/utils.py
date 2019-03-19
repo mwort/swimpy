@@ -421,8 +421,21 @@ def aggregate_time(obj, freq='d', regime=False, resample_method='mean',
 
 class StationsUnconfigured(object):
     """Dummy stations plugin. The stations setting needs to be configured.
-    It should be a pandas.DataFrame or subclass thereof, e.g.
-    modelmanager.plugins.grass.GrassAttributeTable to link it to a GRASS table.
+
+    It should be a pandas.DataFrame or subclass thereof of station information
+    indexed by the same IDs used in `input/gauges.output`. It is possible to
+    link it to the GRASS stations vector table (see examples). Observed
+    discharge should be in `stations.daily_discharge_observed`.
+
+    If a file called `daily_discharge_observed.csv` exists in the SWIMpy
+    resource directory and has the below format, the
+    `stations.daily_discharge_observed` attribute will be loaded::
+
+        yyyy-mm-dd, station1, station2, ...
+        2000-01-01,    100.0,    200.0, ...
+        2000-01-02,    102.0,    201.0, ...
+        2000-01-03,    103.0,    204.0, ...
+        ...
 
     Examples
     --------
@@ -451,17 +464,25 @@ class StationsUnconfigured(object):
             daily_discharge_observed = _q
 
     """
+
+    #: Default observed runoff file in SWIMpy resource directory
+    daily_discharge_observed_file = 'daily_discharge_observed.csv'
+
     def __init__(self, project):
         u = (swimpy.__docs__ +
              "/modules/utils.html#swimpy.utils.StationsUnconfigured")
         self.error = RuntimeError('The Stations attribute is unconfigured, '
                                   'for help see:\n' + u)
+        # add daily_discharge_observed_file if it exists
+        daily_discharge_observed_path = osp.join(
+            project.resourcedir, self.daily_discharge_observed_file)
+        if osp.exists(daily_discharge_observed_path):
+            self.daily_discharge_observed = pd.read_csv(
+                daily_discharge_observed_path, index_col=0, parse_dates=[0],
+                date_parser=pd.Period)
         return
 
     def __getattr__(self, a):
-        raise self.error
-
-    def __repr__(self):
         raise self.error
 
     def __getitem__(self, k):
