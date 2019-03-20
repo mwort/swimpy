@@ -427,7 +427,7 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         for i in range(1, nbsc+1):
             # skip header and entire basin
             for _ in range((nby+2)*i):
-                next(f)
+                f.readline()
             try:
                 isc = int(f.readline())
             except ValueError:
@@ -456,8 +456,9 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         """Print average values. Selected catchments or all (default)."""
         df = self.loc[catchments] if catchments else self
         ml = 0 if hasattr(df.index, 'levels') else None
-        print(df.mean(level=ml).T.to_string())
-        return
+        mdf = df.mean(level=ml).T
+        print(mdf.to_string())
+        return mdf
 
 
 @propertyplugin
