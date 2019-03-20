@@ -244,8 +244,12 @@ class TestPlotting(ProjectTestCase):
 
     def test_runs(self):
         resfile_interfaces = self.project.runfile_interfaces
-        resfile_plotf = [n for n in self.plot_functions.keys()
-                         if '.'.join(n.split('.')[:-1]) in resfile_interfaces]
+        setprops = self.project.settings.properties
+        resfile_plotf = []
+        for n in self.plot_functions.keys():
+            ifn = '.'.join(n.split('.')[:-1])
+            if ifn in resfile_interfaces and setprops[ifn].plugin.path:
+                resfile_plotf.append(n)
         resfiles_w_plotf = ['.'.join(n.split('.')[:-1]) for n in resfile_plotf]
         resfile_plotf.append('plot_summary')
         run = self.project.save_run(files=resfiles_w_plotf,
