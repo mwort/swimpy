@@ -67,7 +67,7 @@ class station_daily_discharge(ProjectOrRunData):
         return dstations
 
     @_plot_function
-    def plot(self, stations=None, regime=False, freq='d', minmax=False,
+    def plot(self, stations=None, freq='d', minmax=False,
              observed=False, ax=None, runs=None, output=None, **linekw):
         """Line plot of daily discharge of selected stations.
 
@@ -76,8 +76,6 @@ class station_daily_discharge(ProjectOrRunData):
         stations : None | str | iterable
             Only show single (str) or subset (iterable) of stations. If None,
             show all found in file.
-        regime : bool
-            Plot regime. freq must be 'd' or 'm'.
         freq : <pandas frequency>
             Any pandas frequency to aggregate to.
         observed : bool
@@ -92,7 +90,7 @@ class station_daily_discharge(ProjectOrRunData):
         if observed:
             obs = utils.aggregate_time(
                 (self.project.stations.daily_discharge_observed
-                 .loc[self.index, stations]), regime=regime, freq=freq)
+                 .loc[self.index, stations]), freq=freq)
             clrs = plot.default_colors(len(stations), linekw.get('colors', []))
             for c, s in zip(clrs, stations):
                 plot.plot_discharge(obs[s], ax, linestyle='--', color=c)
