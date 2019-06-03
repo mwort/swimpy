@@ -20,6 +20,7 @@ Conventions
 import os.path as osp
 from glob import glob
 import datetime as dt
+import calendar
 import warnings
 
 import numpy as np
@@ -153,6 +154,8 @@ class station_daily_discharge(ProjectOrRunData):
 
         xlabs = {'d': 'Day of year', 'm': 'Month'}
         ax.set_xlabel(xlabs[freq])
+        ax.set_xticks(range(1, 12+1))
+        ax.set_xticklabels([s[0] for s in calendar.month_abbr[1:]])
         return line
 
     @_plot_function
