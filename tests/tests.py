@@ -212,7 +212,7 @@ class TestProcessing(ProjectTestCase, test_project.Processing):
         check_files(run.files.all())
 
 
-class TestPlotting(ProjectTestCase):
+class TestOutputPlotting(ProjectTestCase):
 
     plot_prefix = 'plot'
     default_positional_arguments = {
@@ -221,9 +221,14 @@ class TestPlotting(ProjectTestCase):
 
     @property
     def plot_functions(self):
-        fitems = self.project.settings.functions.items()
-        fd = {n: f for n, f in fitems
-              if n.split('.')[-1].startswith(self.plot_prefix)}
+        pset = self.project.settings
+        fd = []
+        for n in pset.functions.keys():
+            prts = n.split('.')
+            if prts[-1].startswith(self.plot_prefix):
+                pim = pset.plugins.get('.'.join(prts[:-1]), type).__module__
+                if pim == 'swimpy.output':
+                    fd += [n]
         return fd
 
     def run_with_defaults(self, fname, **kwargs):
@@ -234,7 +239,7 @@ class TestPlotting(ProjectTestCase):
     def test_output(self):
         print('Testing plot functions...')
         fig = pl.figure()
-        for a, f in self.plot_functions.items():
+        for a in self.plot_functions:
             fig.clear()
             print(a)
             ppath = osp.join(self.project.projectdir, a+'.png')
@@ -246,7 +251,7 @@ class TestPlotting(ProjectTestCase):
         resfile_interfaces = self.project.runfile_interfaces
         setprops = self.project.settings.properties
         resfile_plotf = []
-        for n in self.plot_functions.keys():
+        for n in self.plot_functions:
             ifn = '.'.join(n.split('.')[:-1])
             if ifn in resfile_interfaces and setprops[ifn].plugin.path:
                 resfile_plotf.append(n)

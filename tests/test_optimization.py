@@ -32,6 +32,8 @@ class TestEvoalgos(ProjectTestCase):
         "prefix": 's01'
     }
     populations = None
+    plot_functions = ['plot_generation_objectives', 'plot_objective_scatter',
+                      'plot_parameter_distribution']
 
     @classmethod
     def setUpClass(self):
@@ -69,10 +71,8 @@ class TestEvoalgos(ProjectTestCase):
 
     def test_plots(self):
         pops = self.populations
-        functions = ['plot_generation_objectives', 'plot_objective_scatter',
-                     'plot_parameter_distribution']
         args = {'plot_objective_scatter': dict(best=True)}
-        for pf in functions:
+        for pf in self.plot_functions:
             opath = osp.join(self.project.projectdir, pf+'.png')
             getattr(pops, pf)(output=opath, **(args[pf] if pf in args else {}))
             self.assertTrue(osp.exists(opath))
