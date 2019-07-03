@@ -59,7 +59,7 @@ class _EvoalgosSwimProblem(Problem):
         self.clones = {}
         self.__call__.__func__.__doc__ = getattr(algo, self.algorithm).__doc__
         # output interface
-        self.project.settings(optimization_populations)
+        self.project.settings(propertyplugin(optimization_populations))
         return
 
     @parse_settings
@@ -368,7 +368,7 @@ class _EvoalgosSwimProblem(Problem):
     def read_populations(self, filepath=None):
         assert filepath or self.output
         path = filepath or self.output
-        return optimization_populations.plugin(self.project).from_path(path)
+        return optimization_populations(self.project).from_path(path)
 
 
 class SMSEMOA(_EvoalgosSwimProblem):
@@ -387,23 +387,23 @@ class NSGA2b(_EvoalgosSwimProblem):
     pass
 
 
-@propertyplugin
 class optimization_populations(ProjectOrRunData):
     """Dataframe to handle successive populations from a genetic optimisation.
 
     Note
     ----
-    Either just import in settings.py and use
-    ``project.optimization_populations.from_path(path)`` to read an output file
-    or subclass with the @propertyplugin decorator and set the ``path`` class
-    attribute which enables using the class also as part of saved runs with
-    equally named files.
+    Class of propertyplugin that will be added to settings by the algorithm
+    plugin. It enables reading population files via::
+
+        project.optimization_populations.from_path(path)
+        run.optimization_populations  # if the run was saved with algorithm
+        project.algorithm.read_populations  # with_EvoalgosSwimProblem subclass
+
     """
 
     path = None
     index_col = (0, 1)
     _metadata = ['parameters', 'parameter_ranges', 'objectives', 'indicators']
-
     plugin = ['plot_generation_objectives', 'plot_objective_scatter',
               'plot_parameter_distribution', 'best_tradeoff']
 
