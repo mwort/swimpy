@@ -316,7 +316,8 @@ class StructureFile(ReadWriteDataFrame):
     placed here for consistency and reuse.
     """
     file_columns = ['subbasinID', 'landuseID', 'soilID', 'management',
-                    'wetland', 'elevation', 'glacier', 'area', 'cells']
+                    'wetland', 'elevation', 'glacier', 'area', 'cells',
+                    'irrigation']
 
     @property
     def path(self):

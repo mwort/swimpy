@@ -6,8 +6,8 @@ SWITCH PARAMETERS
 {iemeth:d}         iemeth         =0/1,2 EVAPORATION: Priestley-Taylor/Turc-Ivanov / Turc-Ivanov no monthly correction
 {idvwk:d}         idvwk          =0/1 EVAPORATION CALCULUS: DVWK-Merkblatt 238
 {subcatch:d}         subcatch       =0/1, all subs same parameters/individual parameterization (requires input files subcatch.def and subcatch.bsn)
-{landmgt:d}         landmgt        =0/1, land mgt hard coded / mgt from input file landmgt.csv
 {bResModule:d}         bResModule     =0/1, reservoir module off / reservoir module on
+{bWAM_Module:d}         bWAM_Module    =0/1, water management module off / on
 {bSnowModule:d}         bSnowModule    =0/1, snow module off / snow module on ! NOTE: This module is also extremely useful for mountainous catchments not affected by snow. Preciptiation and temperature is corrected by HRU elevation.
 {radiation:d}         radiation      =0/1, 0 = read radiation data from clim1; 1 = calculate radiation after Hargreaves (latitude in degrees in file stat-outdat.csv) required!
 {bDormancy:d}         bDormancy      =0/1, day length threshold for dormancy of natural vegetation: 0 = do not limit or extent; 1 = calculate from subbasin latitude

@@ -419,32 +419,16 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
     plugin = ['print_mean']
 
     def from_project(self, path, **readkwargs):
-        nby = self.project.config_parameters['nbyr']
-        nbsc = len(self.project.subcatch_parameters)
-        f = open(path)
-        dfs = []
-        scids = []
-        for i in range(1, nbsc+1):
-            # skip header and entire basin
-            for _ in range((nby+2)*i):
-                f.readline()
-            try:
-                isc = int(f.readline())
-            except ValueError:
-                raise RuntimeError('Cant read %s. Do the number of ' % path +
-                                   'years match those given in the .cod file?')
-            scids.append(isc)
-            d = catchment_annual_waterbalance.plugin.from_project(f, nrows=nby)
-            dfs.append(d)
-            f.seek(0)
-        f.close()
-        return pd.concat(dfs, keys=scids, names=['catchmentID', 'year'])
+        df = pd.read_csv(path, index_col=[0, 1], parse_dates=[1], **readkwargs)
+        api = df.index.levels[1].to_period(freq='a')
+        df.index.set_levels(api, level=1, inplace=True)
+        return df
 
     @staticmethod
     def from_csv(path, **readkwargs):
         df = pd.read_csv(path, index_col=[0, 1], parse_dates=[1], **readkwargs)
         api = df.index.levels[1].to_period(freq='a')
-        df.index = pd.MultiIndex.from_product([df.index.levels[0], api])
+        df.index.set_levels(api, level=1, inplace=True)
         return df
 
     @property
