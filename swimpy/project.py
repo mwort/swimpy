@@ -3,6 +3,7 @@
 """
 The main project module.
 """
+from __future__ import absolute_import, print_function
 import os
 import os.path as osp
 import sys
@@ -195,6 +196,19 @@ class Project(mm.Project):
         fi = [n for n, p in self.settings.properties.items()
               if hasattr(p, 'plugin') and ProjectOrRunData in p.plugin.__mro__]
         return fi
+
+    def output_interface_paths(self, print_=False):
+        """Return dict (or print) of names and absolute (relative) paths."""
+        oi = {}
+        for rf in self.output_interfaces:
+            pth = self.settings.properties[rf].plugin.path
+            if pth:
+                oi[rf] = osp.join(self.projectdir, pth)
+        if print_:
+            for n, p in oi.items():
+                print('%s: %s' % (n, osp.relpath(p, os.getcwd())))
+        else:
+            return oi
 
     @parse_settings
     def save_run(self, indicators=None, files=None, parameters=None, **kw):
