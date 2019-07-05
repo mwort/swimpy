@@ -176,8 +176,8 @@ class climate(object):
             readargs = dict(delim_whitespace=True, header=None, skiprows=1)
             readargs.update(readkwargs)
             df = pd.read_csv(path, **readargs)
-            df.index = pd.PeriodIndex(start=str(startyear), periods=len(df),
-                                      freq='d', name='time')
+            df.index = pd.period_range(start=str(startyear), periods=len(df),
+                                       freq='d', name='time')
             nsub = int(len(df.columns)/3)
             df.columns = cls._create_columns(nsub, variables)
             return df
