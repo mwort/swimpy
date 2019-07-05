@@ -184,7 +184,7 @@ class Project(mm.Project):
         return f
 
     @property
-    def runfile_interfaces(self):
+    def output_interfaces(self):
         """List of output file project or run attributes.
 
         Apart from interfacing between current SWIM output files, these

@@ -248,7 +248,7 @@ class TestOutputPlotting(ProjectTestCase):
         return
 
     def test_runs(self):
-        resfile_interfaces = self.project.runfile_interfaces
+        resfile_interfaces = self.project.output_interfaces
         setprops = self.project.settings.properties
         resfile_plotf = []
         for n in self.plot_functions:

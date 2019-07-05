@@ -63,7 +63,7 @@ class Processing:
         self.project.config_parameters(nbyr=oyrs)
 
     def test_project_run_data(self):
-        resultproperties = [rf for rf in self.project.runfile_interfaces
+        resultproperties = [rf for rf in self.project.output_interfaces
                             if self.project.settings.properties[rf].plugin.path]
         self.assertGreater(len(resultproperties), 0)
         for r in sorted(resultproperties):
