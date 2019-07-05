@@ -268,6 +268,11 @@ class TestOutputPlotting(ProjectTestCase):
 
 
 if __name__ == '__main__':
+    # just setup test files/directories
+    if len(sys.argv) == 2 and sys.argv[1] == 'setup':
+        ProjectTestCase.setUpClass()
+        sys.exit(0)
+    # run unittest
     cProfile.run('unittest.main()', 'pstats')
     # print profile stats ordered by time
     pstats.Stats('pstats').strip_dirs().sort_stats('time').print_stats(5)

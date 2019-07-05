@@ -11,6 +11,9 @@ clean:
 test_%:
 	$(PY) $@.py
 
+setup:
+	$(PY) tests.py setup
+
 coverage:
 	$(MAKE) PY='coverage run -a' all
 	coverage html -i --include=../swimpy/*
