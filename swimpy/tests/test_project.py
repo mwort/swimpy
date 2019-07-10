@@ -66,10 +66,10 @@ class Processing:
         resultproperties = [rf for rf in self.project.output_interfaces
                             if self.project.settings.properties[rf].plugin.path]
         self.assertGreater(len(resultproperties), 0)
+        run = self.project.save_run(files=resultproperties)
         for r in sorted(resultproperties):
+            print(r)
             df_project = getattr(self.project, r)
-            self.project.settings(save_run_files=[r])
-            run = self.project.save_run(notes='test saved ' + r)
             df_run = getattr(run, r)
             self.assertTrue(all(df_project.index == df_run.index), r)
             self.assertTrue(all(df_project.columns == df_run.columns), r)

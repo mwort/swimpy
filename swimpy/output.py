@@ -263,7 +263,7 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
     @staticmethod
     def from_project(path, **readkwargs):
         def parse_time(y, d):
-            dto = dt.date(1900 + int(y), 1, 1) + dt.timedelta(int(d) - 1)
+            dto = dt.date(int(y), 1, 1) + dt.timedelta(int(d) - 1)
             return pd.Period(dto, freq='d')
         d = pd.read_csv(path, delim_whitespace=True, date_parser=parse_time,
                         parse_dates=[[0, 1]], index_col=[0, 1], **readkwargs)
@@ -448,16 +448,15 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
 
 @propertyplugin
 class hydrotope_daily_waterbalance(ProjectOrRunData):
-    path = osp.join(RESDIR, 'htp-%i.prn')
+    path = osp.join(RESDIR, 'htp.prn')
 
     @staticmethod
     def from_project(path, **readkwargs):
-        paths = [path % i for i in range(1, 7+1) if osp.exists(path % i)]
         args = dict(
             delim_whitespace=True, index_col=[0, 1, 2], parse_dates=[[0, 1]],
             date_parser=lambda y, d: dt.datetime.strptime(y+'-'+d, '%Y-%j'))
         args.update(readkwargs)
-        htp = pd.concat([pd.read_csv(p, **args) for p in paths])
+        htp = pd.read_csv(path, **args)
         htp.index.set_levels(htp.index.levels[0].to_period(), 0, inplace=True)
         htp.index = htp.index.reorder_levels([1, 2, 0])
         htp.index.names = ['subbasinID', 'hydrotope', 'time']

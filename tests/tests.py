@@ -116,10 +116,10 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
 
     def test_subcatch_definition(self):
         scdef = self.project.subcatch_definition
-        self.assertEqual(list(scdef.index), list(range(1, 10+1)))
+        self.assertEqual(list(scdef.index), list(range(1, 11+1)))
         scdef.update(catchments=[1])
         scdef.read()
-        self.assertEqual(list(scdef.index), list(range(5, 10+1)))
+        self.assertEqual(list(scdef.index), [3, 4, 5, 6, 7, 8, 9, 10, 11])
         scdef.update(subbasins=[1, 2])
         scdef.read()
         self.assertEqual(list(scdef.index), [1, 2])
