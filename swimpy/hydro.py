@@ -187,7 +187,9 @@ def peak_over_threshold(q, percentile=1, threshold=None, maxgap=None):
     qpotgrp = qfl.groupby(flgisteps[iflood])
     qpot = qpotgrp.max().to_frame('q')
     qpot['length'] = qpotgrp.count()
-    qpot['date'] = qpotgrp.idxmax()
+    qpot['start_date'] = qpotgrp.apply(lambda df: df.index[0])
+    qpot['peak_date'] = qpotgrp.idxmax()
+    qpot['end_date'] = qpotgrp.apply(lambda df: df.index[-1])
     qpot.sort_values('q', ascending=False, inplace=True)
     qpot.index = np.arange(1, len(qpot) + 1)
     nyears = (q.index.year[-1] - q.index.year[0] + 1
