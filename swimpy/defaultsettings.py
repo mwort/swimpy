@@ -11,7 +11,7 @@ from modelmanager.plugins import clone, templates
 from swimpy.grass import subbasins, hydrotopes, routing, substats
 from swimpy.input import *
 from swimpy.output import *
-from swimpy.tests import tests
+from swimpy.tests import test
 from swimpy.utils import StationsUnconfigured as stations
 from swimpy.utils import cluster
 from swimpy.plot import plot_summary
@@ -35,7 +35,7 @@ save_figure_defaults = dict(
 #: :meth:`browser.Run.plot_summary`
 plot_summary_functions = ['station_daily_discharge.plot',
                           [('station_daily_discharge.plot', {'freq': 'a'}),
-                           ('station_daily_discharge.plot', {'regime': True})],
+                           'station_daily_discharge.plot_regime'],
                           'catchment_annual_waterbalance.plot_mean',
                           ]
 

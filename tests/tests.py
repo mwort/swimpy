@@ -7,7 +7,6 @@ swimpy.tests package that serves as a test suite to check the validity of any
 project setup.
 """
 from __future__ import print_function, absolute_import
-import os
 import os.path as osp
 import sys
 import subprocess
@@ -19,7 +18,8 @@ import pandas as pd
 import pylab as pl
 
 import swimpy
-from swimpy.tests import test_project
+# project-independent tests
+from swimpy.tests import test_io, test_running, test_swimpy_config
 
 SWIM_REPO = '../dependencies/swim'
 
@@ -85,7 +85,7 @@ class ProjectTestCase(unittest.TestCase):
         shutil.rmtree(TEST_GRASSDB)
 
 
-class TestParameters(ProjectTestCase, test_project.Parameters):
+class TestParameters(ProjectTestCase, test_io.Parameters):
 
     def test_subcatch_parameters(self):
         from swimpy.input import subcatch_parameters as SubcatchParameters
@@ -150,10 +150,7 @@ class TestParameters(ProjectTestCase, test_project.Parameters):
         self.assertEqual(nametags, expresult)
 
 
-class TestInput(ProjectTestCase, test_project.Input):
-
-    def test_station_daily_discharge_observed(self):
-        super(TestInput, self).test_station_daily_discharge_observed()
+class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
 
     def test_station_daily_discharge_observed_write(self):
         self.project.station_daily_discharge_observed(stations=['HOF'])
@@ -163,7 +160,7 @@ class TestInput(ProjectTestCase, test_project.Input):
         ro(stations=['BLANKENSTEIN'])
 
 
-class TestProcessing(ProjectTestCase, test_project.Processing):
+class TestProcessing(ProjectTestCase, test_running.Cluster):
 
     def test_save_run(self):
         # test indicators and files
@@ -265,6 +262,10 @@ class TestOutputPlotting(ProjectTestCase):
             self.assertIsNotNone(self.run_with_defaults(a, runs=('*', run)))
             fig.clear()
         return
+
+
+class TestOutput(ProjectTestCase, test_io.Output):
+    pass
 
 
 if __name__ == '__main__':
