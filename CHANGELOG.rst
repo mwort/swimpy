@@ -2,6 +2,14 @@
 Change log
 ==========
 
+0.4 (2019-07-11)
+----------------
+* `tests` plugin renamed to `test`
+* Added more project-independent tests (water balance)
+* Lots of updating with SWIM/develop as m.swim/master
+* Various improvements and fixes
+
+
 0.3 (2019-03-19)
 ----------------
 * Add optimization algorithms to default settings and include the `evoalgos`
