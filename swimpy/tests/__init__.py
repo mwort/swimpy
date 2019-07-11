@@ -16,9 +16,9 @@ class test(object):
     The plugin makes project-unspecifc tests available to the project instance
     through the following syntax::
 
-        project.tests.<testcaseclass>()
-        project.tests.all()
-        project.tests()  # same as all
+        project.test.<testcaseclass>()
+        project.test.all()
+        project.test()  # same as all
 
     Test case classes maybe defined in any submodule of the tests package and
     should be named ``test_*.py``.

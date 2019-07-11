@@ -3,8 +3,7 @@ swimpy.tests
 
 .. automodule:: swimpy.tests
 
-
-swimpy.tests.test\_project
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: swimpy.tests.test_project
+.. automodule:: swimpy.tests.test_io
+.. automodule:: swimpy.tests.test_running
+.. automodule:: swimpy.tests.test_swimpy_config
+.. automodule:: swimpy.tests.test_waterbalance
