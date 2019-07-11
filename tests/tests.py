@@ -19,7 +19,8 @@ import pylab as pl
 
 import swimpy
 # project-independent tests
-from swimpy.tests import test_io, test_running, test_swimpy_config
+from swimpy.tests import (test_io, test_running, test_swimpy_config,
+                          test_waterbalance)
 
 SWIM_REPO = '../dependencies/swim'
 
@@ -265,6 +266,10 @@ class TestOutputPlotting(ProjectTestCase):
 
 
 class TestOutput(ProjectTestCase, test_io.Output):
+    pass
+
+
+class TestWaterBalance(ProjectTestCase, test_waterbalance.WaterBalance):
     pass
 
 
