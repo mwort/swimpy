@@ -2,6 +2,8 @@
 
 Most functions are used in the `swimpy.output` module but they are placed here
 to enable """
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -199,24 +201,42 @@ def peak_over_threshold(q, percentile=1, threshold=None, maxgap=None):
 
 
 def gumbel_recurrence(q, recurrence):
-    """Estimate values of given recurrence via the Gumbel distribution.
+    """Deprecated! Use dist_recurrence(..., dist='gumbel_r')."""
+    warnings.warn(gumbel_recurrence.__doc__, DeprecationWarning)
+    return dist_recurrence(q, recurrence, dist='gumble_r')
 
-    Requires the `scipy` to be installed.
+
+def dist_recurrence(q, recurrence, dist='genextreme', shape=None):
+    """Estimate values of given recurrence via any scipy distribution.
+
+    Requires the `scipy` package to be installed.
 
     Arguments
     ---------
     q : 1D-array-like
-        Observed values of distribution. E.g. annual max Q.
+        Observed values of distribution without NaNs. E.g. annual max Q.
     recurrence : 1D-array-like
         Recurrence intervals for which to return values for. Must be > 1.
+    dist : str
+        Any valid scipy distribution function. Common flood distributions are:
+        genextreme, gumbel_r, weibull_min, lognorm, gamma. Refer to:
+        https://docs.scipy.org/doc/scipy/reference/stats.html
+    shape : float | None
+        Fit distribution with fixed shape parameter or not if None. Only valid
+        if dist actually has a shape parameter.
     """
-    from scipy.stats import genextreme as gev
-    # Estimate Generalised Extreme Value distribution parameters
-    fits = gev.fit(q, fix_c=0)
+    from scipy import stats
+    assert hasattr(stats, dist), '%s is not a valid scipy distribution.' % dist
+    df = getattr(stats, dist)
+    kw = {}
+    if shape and df.shapes:
+        kw['fix_'+df.shapes] = shape
+    # Estimate distribution parameters
+    fits = df.fit(q, **kw)
     # quantiles of exceedence probability
     r = 1 - 1./recurrence
-    # calculate GEV values
-    ppf = gev.ppf(r, *fits)
+    # calculate recurrence/probability values
+    ppf = df.ppf(r, *fits)
     return pd.Series(ppf, index=recurrence)
 
 

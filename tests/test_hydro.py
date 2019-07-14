@@ -39,6 +39,11 @@ class TestHydro(unittest.TestCase):
         sim = sim * 1.1
         self.assertAlmostEqual(hydro.pbias(obs, sim), 10)
 
+    def test_dist_recurrence(self):
+        sim = np.random.rand(1000)
+        rec = hydro.dist_recurrence(sim, 100./np.arange(11))
+        self.assertLess(rec[10.], rec[100.])
+
 
 if __name__ == '__main__':
     cProfile.run('unittest.main()', 'pstats')
