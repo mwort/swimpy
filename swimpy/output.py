@@ -222,16 +222,16 @@ class station_daily_discharge(ProjectOrRunData):
         pot = [hydro.peak_over_threshold(self[s], **kw) for s in stations]
         return pot[0] if len(stations) == 1 else pd.concat(pot, keys=stations)
 
-    def _obs_sim_overlap(self):
+    def _obs_sim_overlap(self, warmupyears=1):
         """Return overlapping obs and sim discharge series excluding warmup."""
         obs = self.project.stations.daily_discharge_observed
-        six = self[str(self.index[0].year+1):].index  # exclude first year
-        ix = list(set(obs.index) & set(six))
-        if len(ix) == 0:
+        # exclude warmup period
+        sim = self[str(self.index[0].year+warmupyears):]
+        obsa, sima = obs.align(sim, join='inner')
+        if len(obsa) == 0:
             raise RuntimeError('No observed and simulated overlap:\n%s\n%s'
-                               % (obs, six))
-        col = list(set(obs.columns) & set(self.columns))
-        return obs.loc[ix, col], self.loc[ix, col]
+                               % (obs, sim))
+        return obsa, sima
 
     @property
     def NSE(self):
