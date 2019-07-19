@@ -160,6 +160,10 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         self.assertIn('HOF', ro.columns)
         ro(stations=['BLANKENSTEIN'])
 
+    def test_station_output(self):
+        self.project.station_output.update(stations=['HOF'])
+        self.assertEqual(self.project.station_output.index.tolist(), ['HOF'])
+
 
 class TestProcessing(ProjectTestCase, test_running.Cluster):
 

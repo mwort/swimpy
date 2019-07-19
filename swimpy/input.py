@@ -75,7 +75,7 @@ class subcatch_definition(ReadWriteDataFrame):
     Interface to the subcatchment definition file from DataFrame or grass.
     """
     path = 'input/subcatch.def'
-    plugin = ['__call__']
+    plugin = ['update']
 
     def read(self, **kwargs):
         scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=0)
@@ -90,6 +90,7 @@ class subcatch_definition(ReadWriteDataFrame):
         return
 
     def update(self, catchments=None, subbasins=None):
+
         """Write the definition file from the subbasins grass table.
 
         Arguments
@@ -129,6 +130,40 @@ class subcatch_definition(ReadWriteDataFrame):
         """
         ft = self.project.stations['ds_stationID']
         return self.subcatch_subbasin_ids(utils.upstream_ids(catchmentID, ft))
+
+
+@propertyplugin
+class station_output(ReadWriteDataFrame):
+    """
+    Interface to the station output file.
+    """
+    path = 'input/gauges.output'
+    plugin = ['update']
+
+    def read(self, **kwargs):
+        scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=1)
+        return scdef
+
+    def write(self, **kwargs):
+        tbl = self.copy()
+        tbl.insert(1, 'stationID', tbl.index)
+        tblstr = tbl.to_string(index=False, index_names=False)
+        with open(self.path, 'w') as f:
+            f.write(tblstr)
+        return
+
+    def update(self, stations=None):
+        """Write the definition file from project.stations table.
+
+        Arguments
+        ---------
+        stations : list-like
+            Station ids to subset the table to. Default is all stations.
+        """
+        t = self.project.stations.loc[stations or slice(None), ['subbasinID']]
+        # save and write
+        self.__call__(t)
+        return
 
 
 class climate(object):
