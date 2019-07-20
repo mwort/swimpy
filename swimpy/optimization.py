@@ -132,11 +132,13 @@ class _EvoalgosSwimProblem(Problem):
             'start_population', self.create_start_population())
         # run tests if test is True (and exit) or None (and continue)
         self.evaltimes = []
+        self.max_run_time = None
         if test is not False:
             print('Testing single run...')
             tst = dt.datetime.now()
             self.run_tests()
             self.evaltimes.append(dt.datetime.now()-tst)
+            self.max_run_time = self.evaltimes[0]
         if test is True:
             return
         # initialise algorithm
@@ -164,6 +166,7 @@ class _EvoalgosSwimProblem(Problem):
         if type(objectives) == dict:
             assert all([type(v) == str for v in objectives.values()])
             o, i = zip(*sorted(objectives.items()))
+            o, i = list(o), list(i)
         else:
             o = sorted(objectives)
             i = sorted(objectives)
@@ -202,13 +205,15 @@ class _EvoalgosSwimProblem(Problem):
             self.set_parameters(clone, dict(zip(pnames, ind.phenome)))
             clones.append(clone)
 
-        meansecs = self.mean_generation_time().total_seconds()
-        rt = (int(round(meansecs*self.time_safty_factor/60. + 0.5))
-              if len(self.evaltimes) > 0 else None)
+        mrts = self.max_run_time.total_seconds()
+        rt = (int(round(mrts*self.time_safty_factor/60. + 0.5))
+              if self.max_run_time else None)
         # process clones and wait for runs
         runs = self.project.cluster.run_parallel(clones, time=rt,
                                                  indicators=self.indicators)
         objective_values = self.retrieve_objectives(runs)
+        mrt = max(runs.values_list('run_time', flat=True))
+        self.max_run_time = max(self.max_run_time, mrt)
         # delte all runs again
         runs.delete()
         # assign values to individuals
@@ -249,7 +254,7 @@ class _EvoalgosSwimProblem(Problem):
             obvals[clonename] = vals
         return obvals
 
-    def run_tests(self):
+    def run_tests(self, quiet=False):
         """Execute a series of tests before running the algorithm.
 
         Tests:
@@ -259,7 +264,7 @@ class _EvoalgosSwimProblem(Problem):
         - runs clone
         - checks if returned run contains the same number of indicators
           as self.indicators
-        - checks if retrived_objectives return some number of values as
+        - checks if retrived_objectives return same number of values as
           self.objectives
         """
         try:
@@ -267,7 +272,7 @@ class _EvoalgosSwimProblem(Problem):
             params0 = dict(zip(self.parameters.keys(),
                                self.start_population[0].genome))
             self.set_parameters(clone, params0)
-            run = clone.run(indicators=self.indicators, quiet=True,
+            run = clone.run(indicators=self.indicators, quiet=quiet,
                             tags='run_test '+clone.clonename)
             assert run.indicators.all().count() == len(self.indicators)
             runqset = clone.browser.runs.filter(tags__contains=clone.clonename)
@@ -346,13 +351,14 @@ class _EvoalgosSwimProblem(Problem):
         if not initial:
             obj_stats = popframe[objs].describe().T[['50%', 'min']]
             mt = self.mean_generation_time()
-            mgt = mt*(self.max_generations-self.ea.generation)
+            rt = self.max_run_time
+            mg = mt*(self.max_generations-self.ea.generation)
             ovstr = ['%s: %3.6f %3.6f' % (o, i[0], i[1])
                      for o, i in zip(self.objectives, obj_stats.values)]
             msg = ('Generation %s completed in %s, mean generation time %s, ' +
-                   'max_generations in ~%s hh:mm:ss\n' +
+                   'max run time %s, max_generations in ~%s hh:mm:ss\n' +
                    'Objectives (median, min):\n' + '\n'.join(ovstr))
-            print(msg % (self.ea.generation+1, self.evaltimes[-1], mt, mgt))
+            print(msg % (self.ea.generation+1, self.evaltimes[-1], mt, rt, mg))
         return
 
     def mean_generation_time(self):
@@ -363,7 +369,8 @@ class _EvoalgosSwimProblem(Problem):
         datetime.timedelta
         """
         # giving dt.timedelta(0) as the start value makes sum work on tds
-        return sum(self.evaltimes, dt.timedelta(0)) / len(self.evaltimes)
+        nt = max(len(self.evaltimes), 1)
+        return sum(self.evaltimes, dt.timedelta(0)) / nt
 
     def read_populations(self, filepath=None):
         assert filepath or self.output

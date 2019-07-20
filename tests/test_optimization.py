@@ -38,20 +38,12 @@ class TestEvoalgos(ProjectTestCase):
     @classmethod
     def setUpClass(self):
         super(TestEvoalgos, self).setUpClass()
-        self.project.settings(SMSEMOA)
-        # add to browser project instance too
-        from django.conf import settings
-        settings.PROJECT.settings(SMSEMOA)
         self.output = osp.join(self.project.projectdir, self.outputfile)
         # only run algorithm if output doesnt exist to speed up output tests
         if not osp.exists(self.output):
             self.project.config_parameters(nbyr=2)
             self.project.basin_parameters(subcatch=0)
-            # need to be in the projectdir for the swim test run
-            wd = os.getcwd()
-            os.chdir(self.project.projectdir)
             run = self.project.SMSEMOA(**self.algorithm_kwargs)
-            os.chdir(wd)
             self.populations = run.optimization_populations
         else:
             self.populations = self.project.SMSEMOA.read_populations(
