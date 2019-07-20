@@ -82,14 +82,14 @@ class Project(mm.Project):
         stdout = open(os.devnull, 'w') if quiet else None
         # run
         subprocess.check_call(swimcommand, stdout=stdout)
+        delta = dt.datetime.now() - st
         # save
         if save:
-            run = self.save_run(**kw)
+            run = self.save_run(run_time=delta, **kw)
         else:
             run = None
         # report runtime
         if not quiet:
-            delta = dt.datetime.now() - st
             print('Execution took %s hh:mm:ss' % delta)
         return run
 

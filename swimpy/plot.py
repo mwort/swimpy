@@ -216,7 +216,7 @@ def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
         f = plt.figure()
     if ax is None:
         ax = f.subplots(naxes, naxes, squeeze=False)
-    plt.subplots_adjust(hspace=0.1, wspace=0.1)
+    f.subplots_adjust(hspace=0.1, wspace=0.1)
 
     for i, n in enumerate(objectives[1:]):  # row
         for ii, nn in enumerate(objectives[:-1]):  # column

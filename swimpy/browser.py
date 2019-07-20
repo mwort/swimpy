@@ -80,6 +80,7 @@ class SwimRun(Run):
     # extra fields
     start = models.DateField('Start date', null=True)
     end = models.DateField('End date', null=True)
+    run_time = models.DurationField(blank=True, null=True)
 
     @property
     def file_interfaces(self):
