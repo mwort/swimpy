@@ -22,6 +22,38 @@ class basin_parameters(TemplatesDict):
     Set or get any values from the .bsn file by variable name.
     """
     template_patterns = ['input/*.bsn']
+    default_values = {
+        'C3C4crop': 0,      'ekc0': 1.0,        'retPsur': 20.0,
+        'CO2ref': 0,        'epco': 1.0,        'rnew': 0.08,
+        'CO2scen': 0,       'evrch': 1.0,       'roc2': 5.0,
+        'abf0': 0.0,        'gmrate': 10.0,     'roc4': 5.0,
+        'bDormancy': 0,     'gwq0': 0.0,        'sccor': 1.0,
+        'bResModule': 0,    'ialpha': 0,        'smrate': 0.5,
+        'bRunoffDat': 0,    'ibeta': 0,         'snow1': 0.0,
+        'bSnowModule': 1,   'icn': 0,           'spcon': 0.0,
+        'bff': 1.0,         'idlef': 0,         'spexp': 1.0,
+        'chcc0': 1.0,       'idvwk': 0,         'stinco': 0.0,
+        'chnnc0': 1.0,      'iemeth': 0,        'storc1': 0.0,
+        'chwc0': 1.0,       'intercep': 1,      'subcatch': 0,
+        'chxkc0': 1.0,      'isc': 0,           'tgrad1': -0.0068,
+        'cnum1': 1.0,       'landmgt': 0,       'thc': 1.0,
+        'cnum2': 1.0,       'maxup': 0.0,       'tlgw': 0,
+        'cnum3': 1.0,       'prcor': 1.0,       'tlrch': 1.0,
+        'degNgrw': 0.3,     'prf': 1.0,         'tmelt': 0.0,
+        'degNsub': 0.3,     'radiation': 0,     'tsnfall': 0.0,
+        'degNsur': 0.02,    'rdcor': 1.0,       'ulmax0': 1.0,
+        'degPsur': 0.02,    'retNgrw': 15000.0, 'xgrad1': 0.0,
+        'ec1': 0.135,       'retNsub': 365.0,
+        'ecal': 1.0,        'retNsur': 5.0,
+        }
+
+    def set_default(self, *subset, **override):
+        """Set the basin parameters to neutral or standard values."""
+        pn = subset or self.default_values.keys()
+        new = {i: self.default_values[i] for i in pn}
+        new.update(override)
+        self(**new)
+        return
 
 
 @propertyplugin
