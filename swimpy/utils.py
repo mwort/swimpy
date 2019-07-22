@@ -187,7 +187,7 @@ class cluster(object):
 
     def run_parallel(self, clones=None, args=None, time=None,
                      preprocess='basin_parameters', prefix='run_parallel',
-                     **runkw):
+                     parallelism='jobs', **runkw):
         """Run SWIM in parallel using cluster jobs or multiprocessing.
 
         Arguments
@@ -208,6 +208,9 @@ class cluster(object):
         prefix : str
             A prefix for clone names (if they need to be created) and
             identification run tags (<prefix>_<pid>).
+        parallelism : 'jobs' | 'mp' | 'mpi'
+            Cluster processing method: submit as jobs or run on all available
+            CPUs via shared-memory multiprocessing (mp) or via MPI.
         runkw :
             Keywords to parse to the project.run method.
 
@@ -218,6 +221,121 @@ class cluster(object):
         """
         st = dt.datetime.now()
         # check input
+        clones, preprocess, args = self._check_args(clones, preprocess, args)
+        runmethod = getattr(self, '_run_'+parallelism, None)
+        if runmethod is None:
+            raise RuntimeError('Cant find method %s' % parallelism)
+        tag = prefix + '_' + str(os.getpid())
+        deftag = runkw.setdefault('tags', '')
+
+        if parallelism == 'jobs':
+            runkw.setdefault('cluster', {})
+            if time:
+                runkw['cluster'].setdefault('slurmargs', {})
+                runkw['cluster']['slurmargs'] = {'time': str(time)}
+
+        if parallelism == 'mpi':
+            comm = self._mpi_comm()
+            rank, size = comm.Get_rank(), comm.Get_size()
+            tag = comm.bcast(tag, root=0)
+            if type(clones) == int and clones > size:
+                clones = size
+        else:
+            rank = 0
+
+        # create or convert clones to names
+        if type(clones) == int:
+            assert args and preprocess
+            no = rank if parallelism == 'mpi' else None
+            clones_names = self._create_clones(clones, prefix=prefix, nonly=no)
+        else:
+            clones_names = [getattr(c, 'clonename', c) for c in clones]
+
+        queue = args or clones_names
+        while len(queue) > 0:
+            n = min(len(queue), len(clones_names))
+            qclones = clones_names[:n]
+            # submit
+            ag = queue[:n] if args else None
+            runmethod(qclones, deftag+' '+tag, preprocess, ag, **runkw)
+            # remove run items from queue
+            queue = queue[n:]
+
+        runs = self.project.browser.runs.filter(
+                tags__contains=tag, time__gt=st)
+        return runs
+
+    def _run_jobs(self, clones, tag, preprocess, args, **runkw):
+        """Run all clones by submitting them as jobs."""
+        runkw.setdefault('cluster', {})
+        slurm_jobs = []
+        for clonen, a in zip(clones, args or [None]*len(clones)):
+            clone = self.project.clone[clonen]
+            if args:
+                self._call(clone, preprocess, a)
+                runkw['notes'] = str(a)
+            runkw['cluster']['jobname'] = clone.clonename
+            runkw['tags'] = ' '.join([tag, clone.clonename])
+            job = self._call(clone, 'run', runkw)
+            slurm_jobs.append(job)
+        # wait for runs to finish
+        self.wait(slurm_jobs)
+        return
+
+    def _run_mp(self, clones, tag, preprocess, args, **runkw):
+        """Run the clones through multiprocessing."""
+        import multiprocessing
+        ncpu = min(len(clones), multiprocessing.cpu_count())
+        msg = 'Using multiprocessing on %s CPUs.' % ncpu
+        warnings.warn(msg)
+        mp_jobs = []
+        # create inputs to mp_process_clone
+        for clonen, a in zip(clones, args or [None]*len(clones)):
+            if args:
+                self._call(clonen, preprocess, a)
+                runkw['notes'] = str(a)
+            runkw['tags'] = ' '.join([tag, clonen])
+            runkw['quiet'] = osp.join(self.resourcedir, clonen+'.out')
+            cpath = osp.join(self.project.clone_dir, clonen)
+            mp_jobs.append((cpath, runkw.copy()))
+        # wait for runs to finish
+        pool = multiprocessing.Pool()
+        pool.map(_mp_process_clone, mp_jobs)
+        pool.close()
+        return
+
+    def _run_mpi(self, clones, tag, preprocess, args, **runkw):
+        """Run clones using mpi4py."""
+        comm = self._mpi_comm()
+        rank, size = comm.Get_rank(), comm.Get_size()
+        if rank >= len(clones):
+            comm.Barrier()
+            return
+        if rank == 0:
+            msg = 'Not enough CPUs (%s) for %s clones.'
+            assert len(clones) <= size, msg % (size, len(clones))
+            if len(clones) < size:
+                warnings.warn('Lower clones count than available CPUs. %s < %s'
+                              % (len(clones), size))
+        clone = self.project.clone[clones[rank]]
+        if args:
+            self._call(clone, preprocess, args[rank])
+            runkw['notes'] = str(args[rank])
+        runkw.pop('cluster', None)
+        runkw['tags'] = ' '.join([tag, clone.clonename])
+        runkw['quiet'] = osp.join(self.resourcedir, clone.clonename+'.out')
+        run = self._call(clone, 'run', runkw)
+        comm.Barrier()
+        return run
+
+    def _mpi_comm(self):
+        try:
+            from mpi4py import MPI
+        except ImportError:
+            raise ImportError('mpi4py needed to run with mpi.')
+        return MPI.COMM_WORLD
+
+    def _check_args(self, clones, preprocess, args):
         lt = (list, tuple,)
         assert (type(clones) in lt+(int,)) or (type(args) in lt)
         if args:
@@ -230,63 +348,36 @@ class cluster(object):
             except AttributeError:
                 raise AttributeError('%r is not a valid project function.'
                                      % preprocess)
-        if type(clones) == int:
-            assert args and preprocess
-            clones = self.create_clones(clones, prefix=prefix)
+        else:
+            preprocess = None
+        return clones, preprocess, args
 
-        tag = prefix + '_' + str(os.getpid())
-        runkw.setdefault('cluster', {})
-        deftag = runkw.setdefault('tags', '')
-        if time:
-            runkw['cluster'].setdefault('slurmargs', {})
-            runkw['cluster']['slurmargs'] = {'time': str(time)}
-
-        queue = args or clones
-
-        while len(queue) > 0:
-            slurm_jobs = []
-            mp_jobs = []
-            n = min(len(queue), len(clones))
-            qclones = clones[:n]
-            # preprocess
-            if args:
-                for clone, a in zip(qclones, queue[:n]):
-                    try:
-                        clone.settings[preprocess](**a)
-                    except Exception as e:
-                        import traceback
-                        traceback.print_exc()
-                        m = '\nAn exception occurred while running %s.%s(**%r)'
-                        raise RuntimeError(str(e) + m % (clone, preprocess, a))
-            # run
-            for clone in qclones:
-                runkw['cluster']['jobname'] = clone.clonename
-                runkw['tags'] = ' '.join([deftag, tag, clone.clonename])
-                try:
-                    job = clone.run(**runkw)
-                    slurm_jobs.append(job)
-                except OSError:
-                    jf = osp.join(self.project.cluster.resourcedir,
-                                  clone.clonename+'.py')
-                    mp_jobs.append((jf, clone.projectdir))
-            # remove run items from queue
-            queue = queue[n:]
-            # wait for runs to finish
-            if mp_jobs:
-                self.mp_process(mp_jobs)
-            else:
-                self.wait(slurm_jobs)
-
-        runs = self.project.browser.runs.filter(
-                tags__contains=tag, time__gt=st)
-        return runs
-
-    def create_clones(self, n, prefix='clone', **clonekw):
+    def _create_clones(self, n, prefix='clone', nonly=None, **clonekw):
         """Create n clones named <prefix>_0-n.
+        If nonly (int) is given, only this id's clone is created.
+        Returns a list of clone names.
         """
         cn = prefix + ('_%' + '0%0ii' % len(str(n - 1)))
-        clones = [self.project.clone(cn % i, **clonekw) for i in range(n)]
+        clones = []
+        for i in range(n):
+            n = cn % i
+            if nonly is None or i == nonly:
+                self.project.clone(n, **clonekw)
+            clones.append(n)
         return clones
+
+    def _call(self, clone, functionpath, args):
+        """Call function on clone with args."""
+        clone = self.project.clone[clone] if type(clone) == str else clone
+        try:
+            r = clone.settings[functionpath](**args)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            m = '\nAn exception occurred while running %s.%s(**%r)'
+            errmsg = str(e)+m % (clone.clonename, functionpath, args)
+            raise RuntimeError(errmsg)
+        return r
 
     @parse_settings
     def wait(self, jobs, timeout=None, interval=5):
@@ -353,37 +444,17 @@ class cluster(object):
             status[s] += 1
         return status
 
-    def mp_process(self, jobfileprojectdir):
-        """Run the jobfiles in mp_jobs through multiprocessing.
-        """
-        import multiprocessing
-        ncpu = min(len(jobfileprojectdir), multiprocessing.cpu_count())
-        msg = 'Using multiprocessing on %s CPUs.' % ncpu
-        warnings.warn(msg)
-        pool = multiprocessing.Pool()
-        pool.map(mp_process_clone, jobfileprojectdir)
-        return
 
-
-def mp_process_clone(clonejobfclonedir):
-    """Execute a cluster jobfile with the same name as the clone in the clone's
-    projectdir. This function needs to be here so that it can be pickled by the
+def _mp_process_clone(clonedirkw):
+    """Simple run function to use with multiprocessing.Pool.map.
+    This function needs to be here so that it can be pickled by the
     multiprocessing.Pool.
     """
-    jf, cd = clonejobfclonedir
-    os.chdir(os.path.join(cd))
-    # create stderr, stdout files
-    jpre = os.path.splitext(jf)[0]
-    stderr, stdout = [open(jpre + '.%s' % s, 'w') for s in ('err', 'out')]
-    # start subprocess
-    try:
-        ret = subprocess.check_call(['python', jf], stdout=stdout,
-                                    stderr=stderr)
-    except subprocess.CalledProcessError as cpe:
-        raise Exception(str(cpe))
-    stderr.close()
-    stdout.close()
-    return ret
+    clonedir, kw = clonedirkw
+    clone = swimpy.Project(clonedir)
+    clone.run(**kw)
+    clone.browser.settings.unset()
+    return
 
 
 def aggregate_time(obj, freq='d', regime=False, resample_method='mean',

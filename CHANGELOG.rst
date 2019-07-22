@@ -2,6 +2,13 @@
 Change log
 ==========
 
+upcoming
+--------
+* MPI support to `cluster.run_parallel` and optional `jobs` or `mp` parallelism
+* Record `run_time` in runs table
+* `basin_parameters.set_defaults` added
+
+
 0.4 (2019-07-11)
 ----------------
 * `tests` plugin renamed to `test`
