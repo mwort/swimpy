@@ -205,15 +205,10 @@ class _EvoalgosSwimProblem(Problem):
             self.set_parameters(clone, dict(zip(pnames, ind.phenome)))
             clones.append(clone)
 
-        mrts = self.max_run_time.total_seconds()
-        rt = (int(round(mrts*self.time_safty_factor/60. + 0.5))
-              if self.max_run_time else None)
-        # process clones and wait for runs
-        runs = self.project.cluster.run_parallel(clones, time=rt,
-                                                 indicators=self.indicators)
+        runs = self.batch_run(clones)
         objective_values = self.retrieve_objectives(runs)
         mrt = max(runs.values_list('run_time', flat=True))
-        self.max_run_time = max(self.max_run_time, mrt)
+        self.max_run_time = max(self.max_run_time or dt.timedelta(0), mrt)
         # delte all runs again
         runs.delete()
         # assign values to individuals
@@ -221,6 +216,15 @@ class _EvoalgosSwimProblem(Problem):
             i.objective_values = objective_values[i.clonename]
         self.evaltimes += [dt.datetime.now()-st]
         return
+
+    def batch_run(self, clones):
+        mrt = self.max_run_time
+        rt = (int(round(mrt.total_seconds()*self.time_safty_factor/60. + 0.5))
+              if mrt else None)
+        # process clones and wait for runs
+        runs = self.project.cluster.run_parallel(clones, time=rt,
+                                                 indicators=self.indicators)
+        return runs
 
     def _get_clone(self, i):
         cn = self.prefix+('_%'+'0%0ii' % len(str(self.population_size-1))) % i
