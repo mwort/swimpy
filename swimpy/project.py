@@ -61,8 +61,8 @@ class Project(mm.Project):
         cluster : str | dict
             Job name to submit this run to SLURM or a dict will set
             other cluster() arguments but must include a ``jobname``.
-        quiet : bool
-            Dont show SWIM output if True.
+        quiet : bool | str path
+            Dont show SWIM output if True or redirect it to a file path.
         **kw : optional
             Keyword arguments passed to save_run.
 
@@ -79,9 +79,12 @@ class Project(mm.Project):
 
         swimcommand = [self.swim, self.projectdir+'/']
         # silence output
-        stdout = open(os.devnull, 'w') if quiet else None
+        sof = quiet if type(quiet) == str else os.devnull
+        stdout = open(sof, 'w') if quiet else None
         # run
         subprocess.check_call(swimcommand, stdout=stdout)
+        if quiet:
+            stdout.close()
         delta = dt.datetime.now() - st
         # save
         if save:
