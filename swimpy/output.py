@@ -222,8 +222,18 @@ class station_daily_discharge(ProjectOrRunData):
         pot = [hydro.peak_over_threshold(self[s], **kw) for s in stations]
         return pot[0] if len(stations) == 1 else pd.concat(pot, keys=stations)
 
-    def _obs_sim_overlap(self, warmupyears=1):
-        """Return overlapping obs and sim discharge series excluding warmup."""
+    def obs_sim_overlap(self, warmupyears=1):
+        """Return overlapping obs and sim dataframes excluding warmup period.
+
+        Arguments
+        ---------
+        warmupyears : int
+            Number of years to skip at beginng as warm up period.
+
+        Returns
+        -------
+        (pd.DataFrame, pd.DataFrame) : observed and simulated discharge.
+        """
         obs = self.project.stations.daily_discharge_observed
         # exclude warmup period
         sim = self[str(self.index[0].year+warmupyears):]
@@ -236,7 +246,7 @@ class station_daily_discharge(ProjectOrRunData):
     @property
     def NSE(self):
         """pandas.Series of Nash-Sutcliff efficiency excluding warmup year."""
-        obs, sim = self._obs_sim_overlap()
+        obs, sim = self.obs_sim_overlap()
         return pd.Series({s: hydro.NSE(obs[s], sim[s]) for s in obs.columns})
 
     @property
@@ -247,7 +257,7 @@ class station_daily_discharge(ProjectOrRunData):
     @property
     def pbias(self):
         """pandas.Series of percent bias excluding warmup year."""
-        obs, sim = self._obs_sim_overlap()
+        obs, sim = self.obs_sim_overlap()
         return pd.Series({s: hydro.pbias(obs[s], sim[s]) for s in obs.columns})
 
     @property
