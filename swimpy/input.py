@@ -83,7 +83,8 @@ class subcatch_parameters(ReadWriteDataFrame):
     Read or write parameters in the subcatch.prm file.
     """
     path = 'input/subcatch.prm'
-    force_dtype = {'catchmentID': int}
+    index_name = 'catchmentID'
+    force_dtype = {index_name: int}
 
     def read(self, **kwargs):
         bsn = pd.read_csv(self.path, delim_whitespace=True,
@@ -93,7 +94,14 @@ class subcatch_parameters(ReadWriteDataFrame):
         return bsn
 
     def write(self, **kwargs):
-        bsn = self.sort_values('catchmentID')
+        # make sure catchmentID is first column
+        if self.columns[0] != self.index_name:
+            if self.index_name in self.columns:
+                cid = self.pop(self.index_name)
+            else:
+                cid = self.project.stations.loc[self.index, 'stationID']
+            self.insert(0, self.index_name, cid)
+        bsn = self.sort_values(self.index_name)
         bsn['stationID'] = bsn.index
         strtbl = bsn.to_string(index=False, index_names=False)
         with open(self.path, 'w') as f:
@@ -138,9 +146,9 @@ class subcatch_definition(ReadWriteDataFrame):
                                           vector=self.project.subbasins.vector,
                                           subset_columns=cols)
         # optionally filter
-        if catchments:
+        if catchments is not None:
             tbl = tbl[[i in catchments for i in tbl.catchmentID]]
-        elif subbasins:
+        elif subbasins is not None:
             tbl = tbl.filter(items=subbasins, axis=0)
         # add stationID
         scp = {v: k for k, v in
