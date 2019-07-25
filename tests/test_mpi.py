@@ -14,7 +14,7 @@ class TestMpi(tests.ProjectTestCase):
     @classmethod
     def setUpClass(self):
         if RANK == 0:
-            super().setUpClass()
+            super(TestMpi, self).setUpClass()
             self.project.config_parameters(nbyr=2)
         COMM.Barrier()
         self.project = swimpy.Project(tests.SWIM_TEST_PROJECT)
@@ -24,7 +24,7 @@ class TestMpi(tests.ProjectTestCase):
         self.project.browser.settings.unset()
         COMM.Barrier()
         if RANK == 0:
-            super().tearDownClass()
+            super(TestMpi, self).tearDownClass()
 
     def test_run_parallel(self):
         n = int(SIZE*1.5)

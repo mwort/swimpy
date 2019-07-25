@@ -187,7 +187,7 @@ class cluster(object):
 
     def run_parallel(self, clones=None, args=None, time=None,
                      preprocess='basin_parameters', prefix='run_parallel',
-                     parallelism='jobs', **runkw):
+                     parallelism='jobs', mpi_master=False, **runkw):
         """Run SWIM in parallel using cluster jobs or multiprocessing.
 
         Arguments
@@ -211,6 +211,9 @@ class cluster(object):
         parallelism : 'jobs' | 'mp' | 'mpi'
             Cluster processing method: submit as jobs or run on all available
             CPUs via shared-memory multiprocessing (mp) or via MPI.
+        mpi_master : bool
+            If using MPI, reserve process 0 as master without running SWIM to
+            preserve its memory.
         runkw :
             Keywords to parse to the project.run method.
 
@@ -240,13 +243,14 @@ class cluster(object):
             tag = comm.bcast(tag, root=0)
             if type(clones) == int and clones > size:
                 clones = size
+            self.mpi_master = mpi_master
         else:
             rank = 0
 
         # create or convert clones to names
         if type(clones) == int:
             assert args and preprocess
-            no = rank if parallelism == 'mpi' else None
+            no = (rank - int(mpi_master)) if parallelism == 'mpi' else None
             clones_names = self._create_clones(clones, prefix=prefix, nonly=no)
         else:
             clones_names = [getattr(c, 'clonename', c) for c in clones]
@@ -306,21 +310,24 @@ class cluster(object):
 
     def _run_mpi(self, clones, tag, preprocess, args, **runkw):
         """Run clones using mpi4py."""
+        mpim = int(self.mpi_master)
+        nc = len(clones)
         comm = self._mpi_comm()
         rank, size = comm.Get_rank(), comm.Get_size()
-        if rank >= len(clones):
-            comm.Barrier()
-            return
         if rank == 0:
             msg = 'Not enough CPUs (%s) for %s clones.'
-            assert len(clones) <= size, msg % (size, len(clones))
-            if len(clones) < size:
+            assert nc <= size-mpim, msg % (size, nc)
+            if nc < size-mpim:
                 warnings.warn('Lower clones count than available CPUs. %s < %s'
-                              % (len(clones), size))
-        clone = self.project.clone[clones[rank]]
+                              % (nc, size-mpim))
+            print('Running %i clones on %i CPUs using MPI.' % (nc, size))
+        if rank-mpim >= nc or (mpim and rank == 0):
+            comm.Barrier()
+            return
+        clone = self.project.clone[clones[rank-mpim]]
         if args:
-            self._call(clone, preprocess, args[rank])
-            runkw['notes'] = str(args[rank])
+            self._call(clone, preprocess, args[rank-mpim])
+            runkw['notes'] = str(args[rank-mpim])
         runkw.pop('cluster', None)
         runkw['tags'] = ' '.join([tag, clone.clonename])
         runkw['quiet'] = osp.join(self.resourcedir, clone.clonename+'.out')
