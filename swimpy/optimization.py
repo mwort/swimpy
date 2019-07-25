@@ -56,7 +56,7 @@ class _EvoalgosSwimProblem(Problem):
         msg = ('Either set the algorithm class attribute or name the subclass '
                'after a valid evoalgos algorithm.')
         assert hasattr(algo, self.algorithm), msg
-        self.clones = {}
+        self.clones = []
         self.__call__.__func__.__doc__ = getattr(algo, self.algorithm).__doc__
         # output interface
         self.project.settings(propertyplugin(optimization_populations))
@@ -147,14 +147,16 @@ class _EvoalgosSwimProblem(Problem):
         self.observe_population(self.ea, initial=True)
         # attach observer function
         self.ea.attach(self.observe_population)
+        # create clones
+        self.clones = self._create_clones()
         # process
         self.ea.run()
         # run final population again or remove
         if keep_clones:
             self.batch_evaluate(self.ea.population)
         else:
-            for c in self.clones.values():
-                c.remove()
+            for c in self.clones:
+                self.project.clone[c].remove()
         # reset runIDs
         self.project.browser.runs.reset_ids()
         run = self._save_run()
@@ -198,14 +200,13 @@ class _EvoalgosSwimProblem(Problem):
         st = dt.datetime.now()
         # start swim runs
         pnames = self.parameters.keys()
-        clones = []
         for i, ind in enumerate(individuals):
-            clone = self._get_clone(i)
+            clone = self.project.clone[self.clones[i]]
             ind.clonename = clone.clonename
             self.set_parameters(clone, dict(zip(pnames, ind.phenome)))
-            clones.append(clone)
+            del clone
 
-        runs = self.batch_run(clones)
+        runs = self.batch_run()
         objective_values = self.retrieve_objectives(runs)
         mrt = max(runs.values_list('run_time', flat=True))
         self.max_run_time = max(self.max_run_time or dt.timedelta(0), mrt)
@@ -217,23 +218,23 @@ class _EvoalgosSwimProblem(Problem):
         self.evaltimes += [dt.datetime.now()-st]
         return
 
-    def batch_run(self, clones):
+    def batch_run(self):
         mrt = self.max_run_time
         rt = (int(round(mrt.total_seconds()*self.time_safty_factor/60. + 0.5))
               if mrt else None)
         # process clones and wait for runs
-        runs = self.project.cluster.run_parallel(clones, time=rt,
-                                                 indicators=self.indicators)
+        runs = self.project.cluster.run_parallel(
+            self.clones, time=rt, indicators=self.indicators)
         return runs
 
-    def _get_clone(self, i):
-        cn = self.prefix+('_%'+'0%0ii' % len(str(self.population_size-1))) % i
-        if cn in self.clones:
-            clone = self.clones[cn]
-        else:
-            clone = self.project.clone(cn)
-            self.clones[cn] = clone
-        return clone
+    def _create_clones(self):
+        cn = self.prefix+('_%'+'0%0ii' % len(str(self.population_size-1)))
+        cnames = []
+        for i in range(self.population_size):
+            name = cn % i
+            self.project.clone(name)
+            cnames.append(name)
+        return cnames
 
     def retrieve_objectives(self, runs):
         """Get objective values from the browser database.
