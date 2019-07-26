@@ -320,18 +320,25 @@ class cluster(object):
             if nc < size-mpim:
                 warnings.warn('Lower clones count than available CPUs. %s < %s'
                               % (nc, size-mpim))
-            print('Running %i clones on %i CPUs using MPI.' % (nc, size))
+        # if unneeded rank or master rank 0, wait until others have finished
         if rank-mpim >= nc or (mpim and rank == 0):
             comm.Barrier()
             return
+
         clone = self.project.clone[clones[rank-mpim]]
         if args:
+            print('MPI preprocess %i/%i (rank/clones).' % (rank, nc))
             self._call(clone, preprocess, args[rank-mpim])
             runkw['notes'] = str(args[rank-mpim])
         runkw.pop('cluster', None)
         runkw['tags'] = ' '.join([tag, clone.clonename])
-        runkw['quiet'] = osp.join(self.resourcedir, clone.clonename+'.out')
+        # let rank 0 print to standard out, others to file in swimpy/cluster
+        if rank > 0:
+            runkw['quiet'] = osp.join(self.resourcedir, clone.clonename+'.out')
+        print('MPI %i/%i running.' % (rank, nc))
         run = self._call(clone, 'run', runkw)
+        print('MPI %i done.' % rank)
+        # wait for all clones to finish before returning
         comm.Barrier()
         return run
 
