@@ -64,7 +64,7 @@ class _EvoalgosSwimProblem(Problem):
 
     @parse_settings
     def __call__(self, parameters=None, objectives=None, population_size=10,
-                 max_generations=10, output=None,
+                 max_generations=10, output=None, restart=False,
                  test=None, prefix=None, keep_clones=False, **kwargs):
         """Run the optimisation algorithm.
 
@@ -94,6 +94,8 @@ class _EvoalgosSwimProblem(Problem):
         prefix : str, optional
             A prefix to use for run tags and project clones. Defaults to
             algorithm name.
+        restart : bool
+            Attempt to restart the algorithm if output exists.
         keep_clones : bool
             Do not remove the project clones when completed and run the final
             population in them.
@@ -117,6 +119,7 @@ class _EvoalgosSwimProblem(Problem):
         do = prefix+'_'+self.algorithm if prefix else self.algorithm
         defout = osp.join(self.project.projectdir, do+'_populations.csv')
         self.output = output or defout
+        self.restart = restart and osp.exists(self.output)
         # init problem
         Problem.__init__(self, lambda dummy: dummy,
                          num_objectives=len(objectives),
@@ -128,8 +131,9 @@ class _EvoalgosSwimProblem(Problem):
                                                  max_generations)
         self.num_offspring = kwargs.setdefault("num_offspring",
                                                self.population_size)
-        self.start_population = kwargs.setdefault(
-            'start_population', self.create_start_population())
+        stpop = self.restart_population() if self.restart \
+            else self.create_start_population()
+        self.start_population = kwargs.setdefault('start_population', stpop)
         # run tests if test is True (and exit) or None (and continue)
         self.evaltimes = []
         self.max_run_time = None
@@ -143,10 +147,16 @@ class _EvoalgosSwimProblem(Problem):
             return
         # initialise algorithm
         self.ea = getattr(algo, self.algorithm)(self, **kwargs)
-        # write initial population to file
-        self.observe_population(self.ea, initial=True)
         # attach observer function
         self.ea.attach(self.observe_population)
+        # set generation if restart
+        if self.restart:
+            self.ea.generation = self.read_populations().index.levels[0][-1]
+            self.ea.remaining_generations = max_generations-self.ea.generation
+            print('Restarting from generation %i' % self.ea.generation)
+        else:
+            # write initial population to file
+            self.observe_population(self.ea, initial=True)
         # create clones
         self.clones = self._create_clones()
         # process
@@ -197,6 +207,9 @@ class _EvoalgosSwimProblem(Problem):
         ---------
         individuals : list of <evoalgos.Individual>s
         """
+        # only run if there is anything to evaluate, not checked in evoalgos
+        if not individuals:
+            return
         st = dt.datetime.now()
         # start swim runs
         pnames = self.parameters.keys()
@@ -308,11 +321,34 @@ class _EvoalgosSwimProblem(Problem):
         lo, up = zip(*self.parameters.values())
         for _ in range(self.population_size):
             parameters = [random.uniform(l, u) for l, u in zip(lo, up)]
-            indiv = SBXIndividual(genome=parameters)
-            indiv.min_bounds, indiv.max_bounds = lo, up
-            indiv.clonename = None
-            population.append(indiv)
+            kw = {"min_bounds": lo, "max_bounds": up, 'clonename': None}
+            population.append(self.create_individual(parameters, **kw))
         return population
+
+    def restart_population(self):
+        """Read output and return the last generation as population."""
+        opop = self.read_populations()
+        lo, up = zip(*self.parameters.values())
+        assert set(opop.parameters) == set(self.parameters), \
+            'Restart parameters dont match parsed.'
+        params = self.parameters.keys()  # OrderedDict
+        assert len(opop.last_generation) == self.population_size
+        population = []
+        for id, prs in opop.last_generation.iterrows():
+            parameters = prs[params].tolist()
+            kw = {"min_bounds": lo, "max_bounds": up, 'id': id,
+                  'clonename': prs['clone'],
+                  'objective_values': prs[self.objectives].tolist(),
+                  'date_of_birth': prs['birthgeneration']}
+            population.append(self.create_individual(parameters, **kw))
+        return population
+
+    def create_individual(self, parameters, **kwargs):
+        """Create a single evoalgos individual with parameters and bounds."""
+        indiv = SBXIndividual(genome=parameters)
+        for k, v in kwargs.items():
+            setattr(indiv, k, v)
+        return indiv
 
     def set_parameters(self, clonedproject, parameters):
         """Default parameter setting in method for convenient overriding.
@@ -357,7 +393,7 @@ class _EvoalgosSwimProblem(Problem):
             obj_stats = popframe[objs].describe().T[['50%', 'min']]
             mt = self.mean_generation_time()
             rt = self.max_run_time
-            mg = mt*(self.max_generations-self.ea.generation)
+            mg = mt*(self.max_generations-self.ea.generation-1)
             ovstr = ['%s: %3.6f %3.6f' % (o, i[0], i[1])
                      for o, i in zip(self.objectives, obj_stats.values)]
             msg = ('Generation %s completed in %s, mean generation time %s, ' +
