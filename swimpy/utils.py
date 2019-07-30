@@ -336,11 +336,11 @@ class cluster(object):
         if rank > 0:
             runkw['quiet'] = osp.join(self.resourcedir, clone.clonename+'.out')
         print('MPI %i/%i running.' % (rank, nc))
-        run = self._call(clone, 'run', runkw)
+        self._call(clone, 'run', runkw)
         print('MPI %i done.' % rank)
         # wait for all clones to finish before returning
         comm.Barrier()
-        return run
+        return
 
     def _mpi_comm(self):
         try:
