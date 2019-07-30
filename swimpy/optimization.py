@@ -137,7 +137,7 @@ class _EvoalgosSwimProblem(Problem):
         # run tests if test is True (and exit) or None (and continue)
         self.evaltimes = []
         self.max_run_time = None
-        if test is not False:
+        if test is not False and not self.restart:
             print('Testing single run...')
             tst = dt.datetime.now()
             self.run_tests()
