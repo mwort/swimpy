@@ -328,11 +328,12 @@ class _EvoalgosSwimProblem(Problem):
     def restart_population(self):
         """Read output and return the last generation as population."""
         opop = self.read_populations()
-        lo, up = zip(*self.parameters.values())
         assert set(opop.parameters) == set(self.parameters), \
             'Restart parameters dont match parsed.'
         params = self.parameters.keys()  # OrderedDict
         assert len(opop.last_generation) == self.population_size
+        # using the old parameter ranges from file
+        lo, up = zip(*[opop.parameter_ranges[i] for i in params])
         population = []
         for id, prs in opop.last_generation.iterrows():
             parameters = prs[params].tolist()
