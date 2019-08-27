@@ -609,6 +609,9 @@ class GRDCStation(pd.DataFrame):
     fileEncoding = 'latin_1'
     dataStart = '# DATA'
 
+    # avoid pandas complaining about new properties
+    _metadata = ['path', 'header', 'header_attributes']
+
     def __init__(self, path):
         super(GRDCStation, self).__init__()
         # precess file
@@ -617,12 +620,12 @@ class GRDCStation(pd.DataFrame):
             # read data and initialise DF with it
             super(GRDCStation, self).__init__(self.read(f))
         # file name
-        self.filepath = path
+        self.path = path
         return
 
     def read_header(self, fobj):
         self.header = ''
-        self.headerAttributes = []
+        self.header_attributes = []
         for l in fobj:
             if l.startswith(self.dataStart):
                 break
@@ -634,15 +637,15 @@ class GRDCStation(pd.DataFrame):
                             for string in k.split()]
                     k = '_'.join([c for c in clek if len(c) > 0])
                     self.__dict__.update({k: v.strip()})
-                    self.headerAttributes += [k]
+                    self.header_attributes += [k]
         return
 
     def read(self, fobj):
         df = pd.read_csv(fobj, sep=str(self.field_delimiter),
-                           index_col=0,
-                           # faster then doing it in a loop afterw
-                           parse_dates=[0],
-                           engine='python')  # because of already open file
+                         index_col=0,
+                         # faster then doing it in a loop afterw
+                         parse_dates=[0],
+                         engine='python')  # because of already open file
         # set -999 to na
         df[df == -999] = np.nan
         # day or month index
@@ -658,7 +661,7 @@ class GRDCStation(pd.DataFrame):
         return df
 
     def __repr__(self):
-        dfrep = super(pd.DataFrame, self).__repr__().split(u'\n')
+        dfrep = super(GRDCStation, self).__repr__().split(u'\n')
         header = self.header.split(u'\n')
         rep = dfrep[0] + '\n' + u'\n'.join(header + dfrep[1:])
-        return rep.encode('ascii', 'ignore')
+        return rep.encode('utf8', 'ignore').decode()
