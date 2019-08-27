@@ -36,7 +36,7 @@ class basin_parameters(TemplatesDict):
         'chnnc0': 1.0,      'iemeth': 0,        'storc1': 0.0,
         'chwc0': 1.0,       'intercep': 1,      'subcatch': 0,
         'chxkc0': 1.0,      'isc': 0,           'tgrad1': -0.0068,
-        'cnum1': 1.0,       'landmgt': 0,       'thc': 1.0,
+        'cnum1': 1.0,                           'thc': 1.0,
         'cnum2': 1.0,       'maxup': 0.0,       'tlgw': 0,
         'cnum3': 1.0,       'prcor': 1.0,       'tlrch': 1.0,
         'degNgrw': 0.3,     'prf': 1.0,         'tmelt': 0.0,
