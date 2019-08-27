@@ -32,6 +32,9 @@ from modelmanager.plugins import grass as mmgrass
 
 from swimpy.input import StructureFile
 
+# enable from swimpy.grass import GrassAttributeTable for convenience
+GrassAttributeTable = mmgrass.GrassAttributeTable
+
 
 class subbasins(mmgrass.GrassModulePlugin):
     """Plugin to deal with subbasin-related input creation.
