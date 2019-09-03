@@ -285,11 +285,10 @@ def _subbasin_or_hydrotope_values_to_raster(
         Create a space-time raster dataset if len(timestep)>1 named after
         `prefix` (trailing _ trimmed).
     mapset : str, optional
-        Mapset to write to. Default: `prefix` (trailing _ trimmed)
+        Mapset to write to. Defaults to `grass_mapset`.
     """
     # argument preparation
     prefix = prefix or values.__class__.__name__
-    mapset = mapset or prefix.strip('_')
     if timestep:
         assert type(timestep) in [str, list, slice]
         d = values.loc[[timestep] if type(timestep) == str else timestep]
@@ -301,11 +300,12 @@ def _subbasin_or_hydrotope_values_to_raster(
         assert len(names) == len(d), 'Wrong number of names parsed.'
     else:
         names = [prefix+'_'+str(i) for i in d.index]
+    mapsetlab = '@'+mapset if mapset else ''
     # do the reclassing
     for i, n in enumerate(names):
         reclasser(d.iloc[i, :], n, mapset=mapset)
         if int(os.environ.get('GRASS_VERBOSE', 1)):
-            print('Created raster %s' % (n+'@'+mapset))
+            print('Created raster %s' % (n+mapsetlab))
     # create spacetime ds
     if strds and len(d.index) > 1 and hasattr(d.index, 'freq'):
         dsname = prefix.strip('_')
@@ -317,5 +317,5 @@ def _subbasin_or_hydrotope_values_to_raster(
                               description='created with swimpy')
             grass.run_command('t.register', input=dsname, maps=','.join(names))
         if int(os.environ.get('GRASS_VERBOSE', 1)):
-            print('Created space-time raster dataset %s' % (dsname+'@'+mapset))
+            print('Created space-time raster dataset %s' % (dsname+mapsetlab))
     return
