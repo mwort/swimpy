@@ -435,7 +435,7 @@ class StructureFile(ReadWriteDataFrame):
 class station_daily_discharge_observed(ReadWriteDataFrame):
     path = 'input/runoff.dat'
     subbasins = []  #: Holds subbasinIDs if the file has them
-    outlet_station = []  #: Name of the first column which is always written
+    outlet_station = None  #: Name of the first column which is always written
 
     def read(self, path=None, **kwargs):
         path = path or self.path
@@ -475,11 +475,14 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
             out.to_string(fo, na_rep='-9999', header=False, index=False)
         return
 
-    def __call__(self, stations=[], start=None, end=None):
+    def __call__(self, data=None, stations=[], start=None, end=None):
         """Write daily_discharge_observed from stations with their subbasinIDs.
 
         Arguments
         ---------
+        data : pd.DataFrame
+            DataFrame to write with stationID columns. Takes presence over
+            stations and may or may not include outlet_station.
         stations : list-like, optional
             Stations to write to file. self.outlet_station will always be
             written as the first column.
@@ -487,12 +490,18 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
             Start and end to write to. Defaults to
             project.config_parameters.start_date/end_date.
         """
-        df = self._get_observed_discharge(stations=stations, start=start,
-                                          end=end)
+        if data is None:
+            data = self._get_observed_discharge(stations=stations, start=start,
+                                                end=end)
+        elif self.outlet_station not in data.columns:
+            start, end = data.index[[0, -1]].astype(str)
+            osq = self._get_observed_discharge(start=start, end=end)
+            data.insert(0, self.outlet_station, osq[self.outlet_station])
+
         # update subbasins
-        self.subbasins = self.project.stations.loc[df.columns, 'subbasinID']
+        self.subbasins = self.project.stations.loc[data.columns, 'subbasinID']
         # assign to self
-        pd.DataFrame.__init__(self, df)
+        pd.DataFrame.__init__(self, data)
         self.write()
         return self
 
