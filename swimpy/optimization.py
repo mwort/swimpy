@@ -483,10 +483,9 @@ class optimization_populations(ProjectOrRunData):
 
     from_project = from_csv
 
-    def to_run(self, run, tags=''):
-        """Put parameter ranges back into columns and save file.
+    def to_csv(self, *args, **kwargs):
+        """Put parameter ranges back into columns and save as csv.
         """
-        tags = (tags+' ' if tags else '')+'optimization_populations'
         df = self.copy()
         cols = []
         for c in df.columns:
@@ -496,11 +495,17 @@ class optimization_populations(ProjectOrRunData):
                 c = 'objective:'+c+':%s' % self.indicators[c]
             cols.append(c)
         df.columns = cols
+        df.to_csv(*args, **kwargs)
+        return
+
+    def to_run(self, run, tags=''):
+        """Save with run as compressed csv.
+        """
+        tags = (tags+' ' if tags else '')+'optimization_populations'
         fn = osp.basename(osp.splitext(self.path)[0])+'.csv.gzip'
         tmpf = osp.join(self.project.browser.settings.tmpfilesdir, fn)
-        df.to_csv(tmpf, compression='gzip')
-        f = self.project.browser.insert(
-                'file', run=run, tags=tags, file=tmpf)
+        self.to_csv(tmpf, compression='gzip')
+        f = self.project.browser.insert('file', run=run, tags=tags, file=tmpf)
         return f
 
     @property
