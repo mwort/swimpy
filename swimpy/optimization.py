@@ -529,7 +529,8 @@ class optimization_populations(ProjectOrRunData):
         return axs
 
     @plot_function
-    def plot_objective_scatter(self, generation=None, best=False, ax=None,
+    def plot_objective_scatter(self, generation=None, best=None,
+                               selected=None, selected_color='r', ax=None,
                                runs=None, output=None, **scatterkwargs):
         """Plot all objectives against each other in a stepped subplot.
 
@@ -537,18 +538,21 @@ class optimization_populations(ProjectOrRunData):
         ---------
         generation : int, optional
             The generation to plot objectives from. Default: last.
-        best : bool | list of min. objectives
-            Highlight the best tradeoff solution.
+        best : bool | min. objectives
+            Highlight the best tradeoff solution. Takes precendence over
+            selected.
+        selected : dict-like
+            Highlight selected point(s).
+        selected_color : matplotlib.color spec | str
+            Color for the selected points.
         scatterkwargs :
             Any keyword passed onto the scatter function.
         """
         # get objectives to plot
         gen = self.loc[generation] if generation else self.lastgen
 
-        if best:
-            selected = self.best_tradeoff(best if type(best) == list else None)
-        else:
-            selected = None
+        if best is not None:
+            selected = self.best_tradeoff(best)
 
         ax = plot_objective_scatter(gen[self.objectives], selected=selected,
                                     ax=ax, **scatterkwargs)
@@ -610,16 +614,13 @@ class optimization_populations(ProjectOrRunData):
         '''Select from last generation the parameter with the shortest distance
         to the scaled Pareto front to the origin. The front is either scaled
         by the max of each objective dimension or by minobjectives, which
-        should have the same length as self.objectives.'''
+        should be a dictionary of objectives to take account for.'''
         if minobjectives is not None:
-            msg = 'minobjectives must be the same length as objectives'
-            assert len(minobjectives) == len(self.objectives), msg
+            minobjectives = pd.Series(minobjectives)
         else:
+            # scale by objective maximum
             minobjectives = self.lastgen[self.objectives].max()
-        # scale by objective maximum
-        edges = np.min((self.lastgen[self.objectives].max(), minobjectives),
-                       axis=0)
-        scobs = self.lastgen[self.objectives] / edges
+        scobs = self.lastgen[self.objectives] / minobjectives
         # distance to origin
         dist = np.sqrt((scobs**2).sum(1))
         # store best parameter set with the lowest distance

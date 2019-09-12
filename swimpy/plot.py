@@ -184,7 +184,8 @@ def plot_flow_duration_polar(series, axes=None, percentilestep=10,
     return axes
 
 
-def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
+def plot_objective_scatter(performances, selected=None, selected_color='r',
+                           ax=None, **scatterkw):
     '''Plot scatter against all objectives combinations in a stepped subplot.
 
     Arguments
@@ -192,7 +193,9 @@ def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
     performances : pd.DataFrame
         DataFrame with performance values.
     selected : dict-like
-        Highlight one selected point.
+        Highlight selected point(s).
+    selected_color : matplotlib.color spec | str
+        Color for the selected points.
     '''
     objectives = performances.columns
     # calculate limits
@@ -202,13 +205,14 @@ def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
     rng = (stats.loc['max'] - stats.loc['min']) * margin
     limits = {'max': stats.loc['max'] + rng,
               'min': stats.loc['min'] - rng}
-
+    extend_limits = True
     naxes = len(objectives) - 1
     if ax:
         f = ax.get_figure()
         axs = f.get_axes()
         if len(axs) == naxes**2:
             ax = np.array(axs).reshape(naxes, naxes)
+            extend_limits = True
         else:
             f.clear()
             ax = None
@@ -224,14 +228,22 @@ def plot_objective_scatter(performances, selected=None, ax=None, **scatterkw):
                 ax[i][ii].scatter(
                     performances[nn], performances[n], **scatterkw)
                 if selected is not None:
-                    ax[i][ii].scatter(selected[nn], selected[n], c='r')
+                    ax[i][ii].scatter(selected[nn], selected[n],
+                                      c=selected_color)
                 # axis adjustments
                 xticks = mpl.ticker.MaxNLocator(nbins=nticks, prune='upper')
                 ax[i][ii].xaxis.set_major_locator(xticks)
                 yticks = mpl.ticker.MaxNLocator(nbins=nticks, prune='upper')
                 ax[i][ii].yaxis.set_major_locator(yticks)
-                ax[i][ii].set_ylim(limits['min'][n], limits['max'][n])
-                ax[i][ii].set_xlim(limits['min'][nn], limits['max'][nn])
+                if limits is not None:
+                    if extend_limits:
+                        exl, eyl = ax[i][ii].get_xlim(), ax[i][ii].get_ylim()
+                        limits['min'][n] = min(limits['min'][n], eyl[0])
+                        limits['max'][n] = max(limits['max'][n], eyl[1])
+                        limits['min'][nn] = min(limits['min'][nn], exl[0])
+                        limits['max'][nn] = max(limits['max'][nn], exl[1])
+                    ax[i][ii].set_ylim(limits['min'][n], limits['max'][n])
+                    ax[i][ii].set_xlim(limits['min'][nn], limits['max'][nn])
             else:  # remove unused axes
                 ax[i][ii].set_frame_on(False)
                 ax[i][ii].set_xticks([])
