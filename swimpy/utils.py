@@ -413,6 +413,7 @@ class cluster(object):
         ndone = 0
         njobs = len(jobs)
         status = {}
+        et = 0
         while ndone < njobs:
             et = dt.datetime.now()-st
             if timeout and et > timeout:
