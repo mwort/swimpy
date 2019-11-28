@@ -154,9 +154,15 @@ class station_daily_discharge(ProjectOrRunData):
 
         xlabs = {'d': 'Day of year', 'm': 'Month'}
         ax.set_xlabel(xlabs[freq])
-        ax.set_xticks(range(1, 12+1) if freq == 'm' else range(1, 365, 30))
         if freq == 'm':
             ax.set_xticklabels([s[0] for s in calendar.month_abbr[1:]])
+            ax.set_xticks(range(1, 12+1))
+            ax.set_xlim(1, 12)
+        elif freq == 'd':
+            nd = np.array(calendar.mdays).cumsum()
+            nd[:-1] += 1
+            ax.set_xticks(nd)
+            ax.set_xlim(1, 365)
         return line
 
     @_plot_function
