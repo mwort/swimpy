@@ -32,7 +32,7 @@ class Cluster:
     def test_run_parallel_jobs(self):
         try:
             self.run_parallel('jobs')
-        except OSError:
+        except (OSError, RuntimeError):
             warnings.warn('Looks like jobs cant be sumitted.')
 
     def test_run_parallel_mp(self):

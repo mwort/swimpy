@@ -1,9 +1,10 @@
 PY = python
 
-all: clean default hydro grass optimization
 
 default:
 	$(PY) tests.py -v
+
+all: clean default hydro grass optimization
 
 clean:
 	git clean -f -x ./*

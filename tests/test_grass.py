@@ -66,10 +66,11 @@ class TestGrass(ProjectTestCase):
         hyd_file = 'hydrotope_annual_evaporation_actual'
         sub_file = 'subbasin_daily_waterbalance'
         with mmgrass.GrassOverwrite(verbose=False):
-            getattr(self.project, hyd_file).to_raster()
+            getattr(self.project, hyd_file).to_raster(mapset=hyd_file)
             ts = slice('1991-01-01', '1991-01-10')
-            getattr(self.project, sub_file).to_raster('AET', timestep=ts)
-        for f in [hyd_file, sub_file+'_aet']:
+            getattr(self.project, sub_file).to_raster(
+                'AET', mapset=sub_file, timestep=ts)
+        for f in [hyd_file, sub_file]:
             with mmgrass.GrassSession(self.project, mapset=f) as grass:
                 rasters = grass.list_strings('raster', f+'*', mapset=f)
                 self.assertEqual(len(rasters), 10)
