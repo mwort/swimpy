@@ -563,9 +563,9 @@ class gis_files(object):
 
         def from_csv(self, path, **readkwargs):
             df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
-            if list(df.columns) == ['mean']:
+            if len(df.columns) == 1:
                 df.index = df.index.astype(int)
-                df = df['mean']
+                df = df.iloc[:, 0]
             else:
                 df.columns = df.columns.astype(int)
                 df.index = df.index.to_period()
@@ -600,10 +600,11 @@ class gis_files(object):
         nsteps = dfrs.shape[0]
         if nsteps > 1:
             ix = self._guess_gis_file_index(nsteps)
+            dat = pd.DataFrame(dfrs, columns=ids, index=ix)
         else:
             conf = self.project.config_parameters
-            ix = ['%s:%s' % (conf.start_date, conf.end_date)]
-        dat = pd.DataFrame(dfrs, columns=ids, index=ix)
+            name = '%s:%s' % (conf.start_date, conf.end_date)
+            dat = pd.Series(dfrs[0, :], index=ids, name=name)
         return dat
 
     def _guess_gis_file_index(self, nsteps):
