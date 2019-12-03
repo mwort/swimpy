@@ -4,19 +4,18 @@ SWIM input functionality.
 import os.path as osp
 import warnings
 import datetime as dt
+import inspect
 
 import pandas as pd
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.templates import TemplatesDict
 from modelmanager.plugins.pandas import ReadWriteDataFrame
-from modelmanager.plugins import grass as mmgrass
 import f90nml
 
 from swimpy import utils, plot
 import matplotlib.pyplot as plt  # after plot
 
 
-@propertyplugin
 class basin_parameters(TemplatesDict):
     """
     Set or get any values from the .bsn file by variable name.
@@ -56,7 +55,6 @@ class basin_parameters(TemplatesDict):
         return
 
 
-@propertyplugin
 class config_parameters(TemplatesDict):
     """
     Set or get any values from the .cod or swim.conf file by variable name.
@@ -77,7 +75,6 @@ class config_parameters(TemplatesDict):
         return path if osp.exists(path) else v
 
 
-@propertyplugin
 class subcatch_parameters(ReadWriteDataFrame):
     """
     Read or write parameters in the subcatch.prm file.
@@ -109,7 +106,6 @@ class subcatch_parameters(ReadWriteDataFrame):
         return
 
 
-@propertyplugin
 class subcatch_definition(ReadWriteDataFrame):
     """
     Interface to the subcatchment definition file from DataFrame or grass.
@@ -130,7 +126,6 @@ class subcatch_definition(ReadWriteDataFrame):
         return
 
     def update(self, catchments=None, subbasins=None):
-
         """Write the definition file from the subbasins grass table.
 
         Arguments
@@ -141,10 +136,11 @@ class subcatch_definition(ReadWriteDataFrame):
         subbasins : list-like
             Subbasin ids to subset the table to.
         """
+        from modelmanager.plugins.grass import GrassAttributeTable
+
         cols = ['subbasinID', 'catchmentID']
-        tbl = mmgrass.GrassAttributeTable(self.project,
-                                          vector=self.project.subbasins.vector,
-                                          subset_columns=cols)
+        tbl = GrassAttributeTable(self.project, subset_columns=cols,
+                                  vector=self.project.subbasins.vector)
         # optionally filter
         if catchments is not None:
             tbl = tbl[[i in catchments for i in tbl.catchmentID]]
@@ -172,7 +168,6 @@ class subcatch_definition(ReadWriteDataFrame):
         return self.subcatch_subbasin_ids(utils.upstream_ids(catchmentID, ft))
 
 
-@propertyplugin
 class station_output(ReadWriteDataFrame):
     """
     Interface to the station output file.
@@ -431,7 +426,6 @@ class StructureFile(ReadWriteDataFrame):
         return
 
 
-@propertyplugin
 class station_daily_discharge_observed(ReadWriteDataFrame):
     path = 'input/runoff.dat'
     subbasins = []  #: Holds subbasinIDs if the file has them
@@ -532,6 +526,8 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         return q
 
 
-# only import the property plugins on from output import *
-__all__ = [n for n, p in globals().items() if property in p.__class__.__mro__]
-__all__ += ['climate']
+# classes attached to project in defaultsettings
+PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
+           if inspect.isclass(p) and
+           set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__)}
+PLUGINS.update({n: globals()[n] for n in ['climate']})

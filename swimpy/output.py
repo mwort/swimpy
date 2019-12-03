@@ -22,6 +22,7 @@ from glob import glob
 import datetime as dt
 import calendar
 import warnings
+import inspect
 
 import numpy as np
 import pandas as pd
@@ -37,7 +38,6 @@ RESDIR = 'output/Res'
 GISDIR = 'output/GIS'
 
 
-@propertyplugin
 class station_daily_discharge(ProjectOrRunData):
     """
     Daily discharge of selected stations.
@@ -273,7 +273,6 @@ class station_daily_discharge(ProjectOrRunData):
         return self.pbias.abs()
 
 
-@propertyplugin
 class subbasin_daily_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'subd.prn')
     plugin = ['to_raster']
@@ -310,8 +309,7 @@ class subbasin_daily_waterbalance(ProjectOrRunData):
                          to_raster.__doc__)
 
 
-@propertyplugin
-class subbasin_monthly_waterbalance(subbasin_daily_waterbalance.plugin):
+class subbasin_monthly_waterbalance(subbasin_daily_waterbalance):
     path = osp.join(RESDIR, 'subm.prn')
 
     def from_project(self, path, **readkwargs):
@@ -328,7 +326,6 @@ class subbasin_monthly_waterbalance(subbasin_daily_waterbalance.plugin):
         return df
 
 
-@propertyplugin
 class subbasin_daily_discharge(ProjectOrRunData):
     path = osp.join(RESDIR, 'Q_gauges_all_sub_routed_m3s.csv')
 
@@ -349,12 +346,10 @@ class subbasin_daily_discharge(ProjectOrRunData):
         return df
 
 
-@propertyplugin
-class subbasin_daily_runoff(subbasin_daily_discharge.plugin):
+class subbasin_daily_runoff(subbasin_daily_discharge):
     path = osp.join(RESDIR, 'Q_gauges_all_sub_mm.csv')
 
 
-@propertyplugin
 class catchment_daily_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'bad.prn')
 
@@ -373,7 +368,6 @@ class catchment_daily_waterbalance(ProjectOrRunData):
         return df
 
 
-@propertyplugin
 class catchment_monthly_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'bam.prn')
 
@@ -397,7 +391,6 @@ class catchment_monthly_waterbalance(ProjectOrRunData):
         return df
 
 
-@propertyplugin
 class catchment_annual_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'bay.prn')
     plugin = ['plot_mean', 'print_mean']
@@ -431,7 +424,6 @@ class catchment_annual_waterbalance(ProjectOrRunData):
         return r/p
 
 
-@propertyplugin
 class subcatch_annual_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'bay_sc.csv')
     plugin = ['print_mean']
@@ -464,7 +456,6 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         return mdf
 
 
-@propertyplugin
 class hydrotope_daily_waterbalance(ProjectOrRunData):
     path = osp.join(RESDIR, 'htp.prn')
 
@@ -487,7 +478,6 @@ class hydrotope_daily_waterbalance(ProjectOrRunData):
         return df
 
 
-@propertyplugin
 class hydrotope_daily_crop_indicators(ProjectOrRunData):
     path = osp.join(RESDIR, 'crop.out')
     plugin = []
@@ -518,7 +508,6 @@ class hydrotope_daily_crop_indicators(ProjectOrRunData):
         return df
 
 
-@propertyplugin
 class subbasin_annual_crop_yield(ProjectOrRunData):
     path = osp.join(RESDIR, 'cryld.prn')
     plugin = []
@@ -635,6 +624,7 @@ class gis_files(object):
         return plugins
 
 
-# only import the property plugins on from output import *
-__all__ = [n for n, p in globals().items() if isinstance(p, propertyplugin)]
-__all__ += ['gis_files']
+# classes attached to project in defaultsettings
+PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
+           if inspect.isclass(p) and ProjectOrRunData in p.__mro__}
+PLUGINS.update({n: globals()[n] for n in ['gis_files']})

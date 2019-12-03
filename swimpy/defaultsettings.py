@@ -7,10 +7,11 @@ instantiating a project using `p = Project(setting=value)`.
 
 # plugins
 from modelmanager.plugins.browser import browser
-from modelmanager.plugins import clone, templates
+from modelmanager.plugins import clone
+from modelmanager.plugins import templates
 from swimpy.grass import subbasins, hydrotopes, routing, substats
-from swimpy.input import *
-from swimpy.output import *
+from swimpy import input
+from swimpy import output
 from swimpy.tests import test
 from swimpy.utils import StationsUnconfigured as stations
 from swimpy.utils import cluster
@@ -38,6 +39,11 @@ plot_summary_functions = ['station_daily_discharge.plot',
                            'station_daily_discharge.plot_regime'],
                           'catchment_annual_waterbalance.plot_mean',
                           ]
+
+
+#: All input/output file interface plugins as propertyplugins
+globals().update(input.PLUGINS)
+globals().update(output.PLUGINS)
 
 
 # put here to enable overriding
