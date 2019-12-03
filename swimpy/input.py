@@ -529,5 +529,5 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
 # classes attached to project in defaultsettings
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
            if inspect.isclass(p) and
-           set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__)}
+           set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__[1:])}
 PLUGINS.update({n: globals()[n] for n in ['climate']})

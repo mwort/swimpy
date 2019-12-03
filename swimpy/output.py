@@ -626,5 +626,5 @@ class gis_files(object):
 
 # classes attached to project in defaultsettings
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
-           if inspect.isclass(p) and ProjectOrRunData in p.__mro__}
+           if inspect.isclass(p) and ProjectOrRunData in p.__mro__[1:]}
 PLUGINS.update({n: globals()[n] for n in ['gis_files']})
