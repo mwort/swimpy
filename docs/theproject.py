@@ -1,5 +1,5 @@
 import swimpy
-import shutil
+from modelmanager.project import ProjectDoesNotExist
 
 FILE = 'theproject.rst'
 
@@ -7,35 +7,35 @@ TOP = """
 The Project
 ===========
 
-This is a list of registered attributes and methods of the ``Project`` instance
-(with the :mod:`swimpy.defaultsettings`). Attributes dynamically added by
+This is a list of registered attributes and methods of the
+:class:`~swimpy.project.Project` instance (with the
+:mod:`swimpy.defaultsettings`). Attributes dynamically added by
 plugins are not shown here.
-
-- :class:`~swimpy.project.Project`
 
 """
 
-p = swimpy.project.setup('../tests/project', name='blank',
-                         gitrepo='../dependencies/swim')
+try:
+    p = swimpy.Project('../tests/project')
+except ProjectDoesNotExist:
+    raise IOError('Make sure test/project exists.')
 
-l = []
-
+l = ['\nAttributes\n----------\n']
 # defaultsettings variables
 for v in sorted(p.settings.variables.keys()):
-    l.append(u"  - :attr:`~swimpy.defaultsettings.%s`" % v)
+    l.append(u"- :attr:`~swimpy.defaultsettings.%s`" % v)
 
+l.append('\nFunctions\n---------\n')
 # project functions
-for f in sorted(p.settings.functions.keys()):
+for f, o in sorted(p.settings.functions.items()):
     if len(f.split('.')) == 1 and f not in p.settings.plugins:
-        l.append(u"  - :meth:`~swimpy.project.Project.%s`" % f)
+        l.append(u"- :meth:`~swimpy.project.Project.%s`" % f)
 
+l.append('\nPlugins\n-------\n')
 # plugins
 for n, o in sorted(p.settings.plugins.items()):
     if len(n.split('.')) == 1:
         path = o.__module__+'.'+o.__name__
-        if n in p.settings.properties:
-            path += '.plugin'
-        l.append(u"  - :class:`%s <%s>`" % (n, path))
+        l.append(u"- :class:`%s <%s>`" % (n, path))
 
 with open(FILE, 'w') as f:
     f.write(TOP)
@@ -43,4 +43,3 @@ with open(FILE, 'w') as f:
 
 # clean
 p.browser.settings.unset()
-shutil.rmtree(p.resourcedir)
