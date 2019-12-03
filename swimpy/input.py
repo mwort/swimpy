@@ -379,7 +379,7 @@ class climate(object):
             return
 
 
-class StructureFile(ReadWriteDataFrame):
+class structure_file(ReadWriteDataFrame):
     """Read-Write plugin for the structure file.
 
     This is accessible via the ``hydroptes.attributes`` propertyplugin and

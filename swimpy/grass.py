@@ -30,7 +30,7 @@ import numpy as np
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins import grass as mmgrass
 
-from swimpy.input import StructureFile
+from swimpy.input import structure_file
 
 # enable from swimpy.grass import GrassAttributeTable for convenience
 GrassAttributeTable = mmgrass.GrassAttributeTable
@@ -199,7 +199,7 @@ class hydrotopes(mmgrass.GrassModulePlugin):
     subbasins = property(lambda self: self.project.subbasins.raster)
     hydrotopes = property(lambda self: self.raster)
     #: The structure file as a pandas.DataFrame
-    attributes = propertyplugin(StructureFile)
+    attributes = propertyplugin(structure_file)
     #: The structure file as a pandas.DataFrame (alias of attributes)
     structure = attributes
 
