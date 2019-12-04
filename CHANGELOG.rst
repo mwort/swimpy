@@ -2,11 +2,15 @@
 Change log
 ==========
 
-upcoming
---------
+0.5 (2019-12-02)
+----------------
 * MPI support to `cluster.run_parallel` and optional `jobs` or `mp` parallelism
+* Allow restarting optimization jobs
 * Record `run_time` in runs table
 * `basin_parameters.set_defaults` added
+* input and output interface plugins can now be instatiated by path without project
+* Generalisation of `hydro.gumbel_recurrence` to scipy distribution recurrence `dist_recurrence`
+* `grass.GrassAttributeTable` exposed from `modelmanager.plugins.grass`
 
 
 0.4 (2019-07-11)

@@ -57,10 +57,12 @@ Releasing
 
 A reminder for the maintainers on how to deploy:
 
-1. Add entry to ``CHANGELOG.rst`` for major and minor.
-2. Change version in ``swimpy.__init__.py``
+1. Pass tests with fresh environment created with ``pip install -e .`` and
+   update requirements (``pip freeze --exclude-editable > requirements.txt``)
+2. Add entry to ``CHANGELOG.rst`` for major and minor.
+3. Change version in ``swimpy.__init__.py`` and ``README.md``
    (`semanitc versioning <https://semver.org/>`_ major.minor.patch, no ``v``).
-3. Commit changes (e.g. ``$ git commit -m "Release 0.1.8"``).
-4. Tag commit with version number, e.g. `v1.2.0`
-5. Push commits and tags: ``$ git push ; git push --tags``
-6. Update docs: ``$ make servedocs``
+4. Commit changes (e.g. ``$ git commit -m "Release 0.1.8"``).
+5. Tag commit with version number, e.g. `v1.2.0`
+6. Push commits and tags: ``$ git push ; git push --tags``
+7. Update docs: ``$ make servedocs``

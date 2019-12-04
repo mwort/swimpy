@@ -5,6 +5,7 @@ SWIMpy
 A python package to interact and test the ecohydrological model SWIM.
 
 
+* Version: 0.5.0
 * Free software: MIT license
 * Documentation: http://www.pik-potsdam.de/~wortmann/swimpy
 
