@@ -185,6 +185,7 @@ class cluster(object):
             print('Would execute: %s' % (' '.join(submit)))
         return rid
 
+    @parse_settings
     def run_parallel(self, clones=None, args=None, time=None,
                      preprocess='basin_parameters', prefix='run_parallel',
                      parallelism='jobs', mpi_master=False, **runkw):

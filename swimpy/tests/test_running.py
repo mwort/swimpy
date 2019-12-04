@@ -1,5 +1,6 @@
 import os.path as osp
 import warnings
+from distutils.spawn import find_executable
 
 
 class Cluster:
@@ -30,10 +31,11 @@ class Cluster:
         self.project.config_parameters(nbyr=oyrs)
 
     def test_run_parallel_jobs(self):
-        try:
+        if find_executable('sbatch'):
             self.run_parallel('jobs')
-        except (OSError, RuntimeError):
-            warnings.warn('Looks like jobs cant be sumitted.')
+        else:
+            warnings.warn(
+                'Cant test cluster.run_parallel with jobs without sbatch.')
 
     def test_run_parallel_mp(self):
         self.run_parallel('mp')

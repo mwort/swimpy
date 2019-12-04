@@ -1,16 +1,9 @@
 from __future__ import print_function, absolute_import
-import os
 import os.path as osp
-import sys
-import subprocess
-import shutil
 import unittest
 import cProfile, pstats
 
-import pandas as pd
-
-from tests import ProjectTestCase, TEST_GRASSDB
-from swimpy.optimization import SMSEMOA
+from tests import ProjectTestCase
 
 
 OBJECTIVES = ['station_daily_discharge.rNSE.BLANKENSTEIN',
@@ -38,6 +31,8 @@ class TestEvoalgos(ProjectTestCase):
     @classmethod
     def setUpClass(self):
         super(TestEvoalgos, self).setUpClass()
+        # run with multiprocessing to also run on single machine
+        self.project.settings(cluster_run_parallel_parallelism='mp')
         self.output = osp.join(self.project.projectdir, self.outputfile)
         # only run algorithm if output doesnt exist to speed up output tests
         if not osp.exists(self.output):
