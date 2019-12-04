@@ -4,9 +4,7 @@
 Contributing
 ============
 
-Contributions are welcome, and they are greatly appreciated! Every little bit
-helps, and credit will always be given.
-
+Contributions are welcome, very little bit helps.
 You can contribute in many ways:
 
 Report Bugs

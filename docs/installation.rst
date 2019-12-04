@@ -25,16 +25,13 @@ Then create a new environment like this:
 
 .. code-block:: console
 
-    $ virtualenv -p python2.7 swimpyenv
+    $ virtualenv swimpyenv
 
 Then and every time before using SWIMpy, activate the environment like this:
 
 .. code-block:: console
 
     $ source swimpyenv/bin/activate
-
-Since GRASS does not fully support python3, it is recommended to use python2.7
-but SWIMpy also supports python3.
 
 To install any additional packages, install them like this inside the environment
 (e.g. the interactive python console ``ipython`` is highly recommended):
@@ -51,7 +48,7 @@ Create a new conda environment and install the large dependencies like this:
 
 .. code-block:: console
 
-    $ conda create -y -n swimpyenv python=2.7 pip matplotlib pandas ipython
+    $ conda create -y -n swimpyenv pip matplotlib pandas ipython
 
 Then and every time before using SWIMpy (or add this line to your ``.bashrc``
 file), activate the environment like this:

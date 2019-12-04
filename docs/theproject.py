@@ -9,8 +9,7 @@ The Project
 
 This is a list of registered attributes and methods of the
 :class:`~swimpy.project.Project` instance (with the
-:mod:`swimpy.defaultsettings`). Attributes dynamically added by
-plugins are not shown here.
+:mod:`swimpy.defaultsettings`).
 
 """
 
@@ -19,18 +18,23 @@ try:
 except ProjectDoesNotExist:
     raise IOError('Make sure test/project exists.')
 
-l = ['\nAttributes\n----------\n']
+l = ['\nAttributes\n----------']
 # defaultsettings variables
 for v in sorted(p.settings.variables.keys()):
     l.append(u"- :attr:`~swimpy.defaultsettings.%s`" % v)
 
-l.append('\nFunctions\n---------\n')
+l.append('\nFunctions\n---------')
 # project functions
 for f, o in sorted(p.settings.functions.items()):
     if len(f.split('.')) == 1 and f not in p.settings.plugins:
-        l.append(u"- :meth:`~swimpy.project.Project.%s`" % f)
+        obj = getattr(p, f)
+        if hasattr(obj, 'plugin'):
+            path = obj.__module__+'.'+f
+            l.append(u"- :class:`%s <%s>`" % (f, path))
+        else:
+            l.append(u"- :meth:`~swimpy.project.Project.%s`" % f)
 
-l.append('\nPlugins\n-------\n')
+l.append('\nPlugins and properties\n----------------------')
 # plugins
 for n, o in sorted(p.settings.plugins.items()):
     if len(n.split('.')) == 1:
