@@ -9,7 +9,8 @@ grass_location = "utm32n"
 grass_mapset = "swim"
 grass_setup = dict(elevation="elevation@PERMANENT",
                    stations="stations@PERMANENT",
-                   upthresh=40, lothresh=11,
+                   upthresh=50, lothresh=1.6, streamthresh=200,
+                   predefined="reservoirs@PERMANENT",
                    landuse="landuse@PERMANENT",
                    soil="soil@PERMANENT")
 
