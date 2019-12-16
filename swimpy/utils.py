@@ -395,7 +395,7 @@ class cluster(object):
         return r
 
     @parse_settings
-    def wait(self, jobs, timeout=None, interval=5):
+    def wait(self, jobs, timeout=None, interval=5, fail=False):
         """Wait until all jobs are COMPLETED as per job.state.
 
         Arguments
@@ -407,10 +407,14 @@ class cluster(object):
         timeout : dict or datetime.timedelta instance
             Raise RuntimeError after timeout is elapsed. Parse any keyword as
             dict to datetime.timedelta, e.g. hours, days, minutes, seconds.
+        fail: bool
+            Cancel all jobs if one has failed or timed out and raise
+            RuntimeError.
         """
         st = dt.datetime.now()
         # \u29D6 for hour glass removed
         ms = u"\r\033[KWaiting for %s runs (status: %s) for %s hh:mm:ss"
+        failed_status = ['FAILED', 'TIMEOUT']
         ndone = 0
         njobs = len(jobs)
         status = {}
@@ -425,9 +429,12 @@ class cluster(object):
             sys.stdout.flush()
             time.sleep(interval)
             status = self.aggregated_job_status(jobs)
-            if 'FAILED' in status or 'TIMEOUT' in status:
-                self._raise_failed(jobs)
-            ndone = status.get('COMPLETED', 0)
+            nfailed = 0
+            failedst = set(failed_status).intersection(status)
+            if failedst:
+                nfailed = (sum([status.get(s) for s in failedst])
+                           if not fail else self._raise_failed(jobs))
+            ndone = status.get('COMPLETED', 0) + nfailed
         # \u2713 for complete tick remove
         cmsg = u"\r\033[KCompleted %s runs in %s hh:mm:ss\n"
         sys.stdout.write(cmsg % (njobs, et))
