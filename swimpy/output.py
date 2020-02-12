@@ -245,9 +245,6 @@ class station_daily_discharge(ProjectOrRunData):
         # exclude warmup period
         sim = self[str(self.index[0].year+warmupyears):]
         obsa, sima = obs.align(sim, join='inner')
-        if len(obsa) == 0:
-            raise RuntimeError('No observed and simulated overlap:\n%s\n%s'
-                               % (obs, sim))
         return obsa, sima
 
     @property
