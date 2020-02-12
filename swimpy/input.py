@@ -6,6 +6,7 @@ import warnings
 import datetime as dt
 import inspect
 
+import numpy as np
 import pandas as pd
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.templates import TemplatesDict
@@ -156,7 +157,7 @@ class subcatch_definition(ReadWriteDataFrame):
 
     def subcatch_subbasin_ids(self, catchmentID):
         """Return all subbasinIDs of the subcatchment."""
-        return pd.Series(self.index, index=self.iloc[:, 0])[catchmentID].values
+        return self.index[self.catchmentID == catchmentID].values
 
     def catchment_subbasin_ids(self, catchmentID):
         """Return all subbasins of the catchment respecting the topology.
@@ -165,7 +166,9 @@ class subcatch_definition(ReadWriteDataFrame):
         topology of catchments/stations.
         """
         ft = self.project.stations['ds_stationID']
-        return self.subcatch_subbasin_ids(utils.upstream_ids(catchmentID, ft))
+        all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
+        ssid = self.subcatch_subbasin_ids
+        return np.concatenate([ssid(i) for i in all_catchments])
 
 
 class station_output(ReadWriteDataFrame):
