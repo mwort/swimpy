@@ -590,7 +590,7 @@ class gis_files(object):
         else:
             conf = self.project.config_parameters
             name = '%s:%s' % (conf.start_date, conf.end_date)
-            dat = pd.Series(dfrs[0, :], index=ids, name=name)
+            dat = pd.DataFrame(dfrs, columns=ids, index=[name])
         return dat
 
     def _guess_gis_file_index(self, nsteps):

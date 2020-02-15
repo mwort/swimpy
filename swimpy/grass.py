@@ -27,6 +27,7 @@ import os
 import os.path as osp
 
 import numpy as np
+import pandas as pd
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins import grass as mmgrass
 
@@ -273,6 +274,9 @@ def _subbasin_or_hydrotope_values_to_raster(
 
     Arguments
     ---------
+    values : pd.DataFrame | pd.Series
+        Values to reclass raster to with index of time intervals and columns
+        subbasins or hydrotopes.
     timestep : str | list or str, optional
         Select individual timestep (str) or several (list). Default is
         all timesteps.
@@ -287,6 +291,7 @@ def _subbasin_or_hydrotope_values_to_raster(
     mapset : str, optional
         Mapset to write to. Defaults to `grass_mapset`.
     """
+    values = values.to_frame().T if isinstance(values, pd.Series) else values
     # argument preparation
     prefix = prefix or values.__class__.__name__
     if timestep:
