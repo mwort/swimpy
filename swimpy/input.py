@@ -75,6 +75,17 @@ class config_parameters(TemplatesDict):
         path = osp.abspath(osp.join(self.project.projectdir, str(v)))
         return path if osp.exists(path) else v
 
+    def output_off(self, on=[]):
+        """Switch all output off and those in on on."""
+        sw = [i for i in self.keys()
+              if i.startswith('gis') or i.endswith('_print')]
+        sw += """iflom ifloa errlog allSubbasinsOut bCamaFlood
+                 bAllSubbasinsDaily bAllSubbasinsMonthly""".split()
+        non = [i for i in on if i not in sw]
+        assert len(non) == 0, '%r not in %r' % (non, sw)
+        self(**{k: (1 if k in on else 0) for k in sw})
+        return
+
 
 class subcatch_parameters(ReadWriteDataFrame):
     """
