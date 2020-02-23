@@ -20,8 +20,8 @@ Setup a Python environment
 --------------------------
 
 Before installing SWIMpy, it is highly advisable to first set up a virtual
-environment. Install `virtualenv`_ first, unless you are using Anaconda (see below).
-Then create a new environment like this:
+environment or a conda environment using Anaconda (see below). For the former,
+install `virtualenv`_ first. Then create a new environment like this:
 
 .. code-block:: console
 
