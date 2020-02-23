@@ -245,7 +245,9 @@ class station_daily_discharge(ProjectOrRunData):
         # exclude warmup period
         sim = self[str(self.index[0].year+warmupyears):]
         obsa, sima = obs.align(sim, join='inner')
-        return obsa, sima
+        # obsa can still have columns with only NAs
+        obsa.dropna(how='all', axis=1, inplace=True)
+        return obsa, sima[obsa.columns]
 
     @property
     def NSE(self):
