@@ -534,10 +534,11 @@ class subbasin_annual_crop_yield(ProjectOrRunData):
 class gis_files(object):
     """Management plugin to dynamically add GIS file propertyplugins."""
 
-    file_names = {'eva-gis': 'annual_evaporation_actual',
+    file_names = {'eva-gis': 'annual_evapotranspiration_actual',
                   'gwr-gis': 'annual_groundwater_recharge',
                   'pre-gis': 'annual_precipitation',
                   'run-gis': 'annual_runoff',
+                  'evamon-gis': "monthly_evapotranspiration_actual"
                   }
 
     class _gis_file(ProjectOrRunData):
@@ -551,11 +552,8 @@ class gis_files(object):
 
         def from_csv(self, path, **readkwargs):
             df = pd.read_csv(path, index_col=0, parse_dates=[0], **readkwargs)
-            if len(df.columns) == 1:
-                df.index = df.index.astype(int)
-                df = df.iloc[:, 0]
-            else:
-                df.columns = df.columns.astype(int)
+            df.columns = df.columns.astype(int)
+            if len(df.index) > 1:
                 df.index = df.index.to_period()
             return df
 
@@ -610,7 +608,9 @@ class gis_files(object):
         return ix
 
     def _create_propertyplugins(self):
-        files = glob(osp.join(self.gisdir, '*'))
+        defined = [osp.join(self.gisdir, f+'.out')
+                   for f in self.file_names.keys()]
+        files = set(glob(osp.join(self.gisdir, '*'))+defined)
         plugins = {}
         for f in files:
             class _gf(self._gis_file):
