@@ -237,7 +237,7 @@ class _EvoalgosSwimProblem(Problem):
               if mrt else None)
         # process clones and wait for runs
         runs = self.project.cluster.run_parallel(
-            self.clones, time=rt, indicators=self.indicators)
+            self.clones, time=rt, indicators=self.indicators, parameters=False)
         return runs
 
     def _create_clones(self):
@@ -291,7 +291,7 @@ class _EvoalgosSwimProblem(Problem):
                                self.start_population[0].genome))
             self.set_parameters(clone, params0)
             run = clone.run(indicators=self.indicators, quiet=quiet,
-                            tags='run_test '+clone.clonename)
+                            tags='run_test '+clone.clonename, parameters=False)
             assert run.indicators.all().count() == len(self.indicators)
             runqset = clone.browser.runs.filter(tags__contains=clone.clonename)
             assert runqset.count() == 1

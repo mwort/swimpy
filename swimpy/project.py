@@ -214,7 +214,7 @@ class Project(mm.Project):
             return oi
 
     @parse_settings
-    def save_run(self, indicators=None, files=None, parameters=None, **kw):
+    def save_run(self, indicators=None, files=None, parameters=True, **kw):
         """
         Save the current SWIM input/output as a run in the browser database.
 
@@ -229,8 +229,10 @@ class Project(mm.Project):
             method or attribute names that return any of file instance, a file
             path or a pandas.DataFrame/Series (will be converted to file via
             to_csv) or a dictionary of any of those.
-        parameters : list of dicts of parameter attributes
-            Defaults to the result of ``self.changed_parameters()``.
+        parameters : list of dicts | bool
+            Save parameter changes with the run. The dicts must contain the
+            parameter table attributes attributes. If True (default) use result
+            of ``self.changed_parameters()``, if False dont save any.
         **kw : optional
             Set fields of the run browser table. Default fields: notes, tags.
 
@@ -245,8 +247,12 @@ class Project(mm.Project):
         # config
         sty, nbyr = self.config_parameters('iyr', 'nbyr')
         run_kwargs = {'start': dt.date(sty, 1, 1),
-                      'end': dt.date(sty + nbyr - 1, 12, 31),
-                      'parameters': parameters or self.changed_parameters()}
+                      'end': dt.date(sty + nbyr - 1, 12, 31)}
+        if parameters:
+            if parameters is True:
+                parameters = self.changed_parameters()
+            run_kwargs['parameters'] = parameters
+
         run_kwargs.update(kw)
         # create run
         run = self.browser.insert('run', **run_kwargs)
