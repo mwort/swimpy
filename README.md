@@ -21,7 +21,7 @@ Quickstart
 4. Check the commandline help ``swimpy -h``, use your project in python
    scripts by importing ``swimpy`` and loading the project instance:
    ``project = swimpy.Project()`` or by starting the browser app
-   ``$ swimpy browser start`` and navigate your browser to ``http://localhost:8000/``
+   ``$ swimpy browser start`` and navigate your browser to [http://localhost:8000](http://localhost:8000)
 
 
 Features
