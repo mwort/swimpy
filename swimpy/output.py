@@ -47,6 +47,7 @@ class station_daily_discharge(ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
+        readkwargs.setdefault("skipinitialspace", True)
         df = pd.read_csv(path, **readkwargs)
         dtms = [dt.date(y, 1, 1) + dt.timedelta(d - 1)
                 for y, d in zip(df.pop('YEAR'), df.pop('DAY'))]
@@ -429,7 +430,8 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
 
     @staticmethod
     def from_project(path, **readkwargs):
-        df = pd.read_csv(path, index_col=[0, 1], parse_dates=[1], **readkwargs)
+        df = pd.read_csv(path, index_col=[0, 1], parse_dates=[1],
+                         skipinitialspace=True, **readkwargs)
         api = df.index.levels[1].to_period(freq='a')
         df.index.set_levels(api, level=1, inplace=True)
         return df
