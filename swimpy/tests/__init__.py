@@ -29,7 +29,8 @@ class test(object):
         self.test_methods = {}
         # add all test cases (mixin classes)
         testpaths = glob.glob(osp.join(osp.dirname(__file__), 'test_*.py'))
-        testpaths += glob.glob(osp.join(project.resourcedir, 'test_*.py'))
+        if project.resourcedir:
+            testpaths += glob.glob(osp.join(project.resourcedir, 'test_*.py'))
         for modpath in testpaths:
             testmodule = load_module_path(modpath)
             classes = self._get_classes(testmodule)

@@ -32,19 +32,20 @@ class Project(mm.Project):
     ----------
     projectdir : str path
         Absolute path to the project directory.
-    resourcedir : str path
-        Absoulte path to the swimpy resource directory.
-    project_name : str
-        Project name inferred from the ``input/*.cod`` file.
+    resourcedir : bool
+        Assume resourcedir to exist or load project without resources.
     settings : modelmanager.SettingsManager
         A manager object that is used to attach, record and check settings.
     """
 
-    def __init__(self, projectdir='.', **settings):
+    def __init__(self, projectdir='.', resourcedir=True, **settings):
         self.projectdir = osp.abspath(projectdir)
         self.settings = SettingsManager(self)
         # load default settings
         self.settings.defaults = mm.settings.load_settings(defaultsettings)
+        if not resourcedir:
+            for s in defaultsettings.plugins_require_resourcedir:
+                self.settings.defaults.pop(s, None)
         # load settings with overridden settings
         self.settings.load(defaults=self.settings.defaults, **settings)
         return

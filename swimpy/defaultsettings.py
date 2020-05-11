@@ -54,3 +54,14 @@ def project_name(self):
     from os import path
     ppn = glob(path.join(self.projectdir, 'input/*.cod'))
     return path.splitext(path.basename(ppn[0]))[0] if len(ppn) == 1 else None
+
+
+#: Plugins that require a resource dir to exist.
+#: Will not be loaded if resourcedir=False.
+plugins_require_resourcedir = [
+    'templates',
+    'stations',
+    'cluster',
+    'clone',
+    'browser'
+]
