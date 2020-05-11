@@ -47,7 +47,8 @@ class Project(mm.Project):
             for s in defaultsettings.plugins_require_resourcedir:
                 self.settings.defaults.pop(s, None)
         # load settings with overridden settings
-        self.settings.load(defaults=self.settings.defaults, **settings)
+        self.settings.load(defaults=self.settings.defaults, resourcedir=True,
+                           **settings)
         return
 
     @parse_settings
