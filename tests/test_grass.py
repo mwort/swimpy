@@ -36,13 +36,12 @@ class TestGrass(ProjectTestCase):
         with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:
             rasts = grass.list_strings('rast')
             vects = grass.list_strings('vect')
-        self.assertIn(self.project.grass_setup['landuse'].encode(), rasts)
-        self.assertIn(self.project.grass_setup['soil'].encode(), rasts)
-        self.assertIn(self.project.grass_setup['elevation'].encode(), rasts)
-        self.assertIn(self.project.grass_setup['stations'].encode(), vects)
+        self.assertIn(self.project.grass_setup['landuse'], rasts)
+        self.assertIn(self.project.grass_setup['soil'], rasts)
+        self.assertIn(self.project.grass_setup['elevation'], rasts)
+        self.assertIn(self.project.grass_setup['stations'], vects)
         return
 
-    @skip_if_py3
     def test_mswim_setup(self):
         files_created = [osp.join(self.project.projectdir, 'input', p)
                          for p in self.files_created]
@@ -61,9 +60,8 @@ class TestGrass(ProjectTestCase):
         self.project.grassattrtbl.read()
         self.assertEqual(self.project.grassattrtbl['new'].mean(), 1000)
 
-    @skip_if_py3
     def test_to_raster(self):
-        hyd_file = 'hydrotope_annual_evaporation_actual'
+        hyd_file = 'hydrotope_annual_evapotranspiration_actual'
         sub_file = 'subbasin_daily_waterbalance'
         with mmgrass.GrassOverwrite(verbose=False):
             getattr(self.project, hyd_file).to_raster(mapset=hyd_file)

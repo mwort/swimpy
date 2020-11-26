@@ -124,6 +124,7 @@ class routing(mmgrass.GrassModulePlugin):
     module = 'm.swim.routing'
     # default module arguments
     accumulation = 'accumulation'
+    drainage = 'drainage'
     #: Project settings with arguments
     argument_setting = 'grass_setup'
     # get subbasins raster name from Subbasins instance
