@@ -90,3 +90,12 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+docker_build:
+	make -C dependencies/m.swim/test clean
+	make -C dependencies/swim/project clean
+	make -C tests/ clean
+	docker build -t mwort/swim:latest .
+
+docker_push:
+	docker push mwort/swim:latest
