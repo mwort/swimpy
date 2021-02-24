@@ -64,8 +64,8 @@ class test(object):
             suite = loader.loadTestsFromTestCase(TestCase)
             if list:
                 for e in suite:
-                    print(e._testMethodName[len('test_'):] + ' : ', end='')
-                    print(e._testMethodDoc or '')
+                    ln = e._testMethodName[len('test_'):] + ' : '
+                    print(ln + e._testMethodDoc or '')
                 return
             if test == "all":
                 return unittest.TextTestRunner().run(suite)
