@@ -29,7 +29,8 @@ class test(object):
         self.test_methods = {}
         # add all test cases (mixin classes)
         testpaths = glob.glob(osp.join(osp.dirname(__file__), 'test_*.py'))
-        testpaths += glob.glob(osp.join(project.resourcedir, 'test_*.py'))
+        if project.resourcedir:
+            testpaths += glob.glob(osp.join(project.resourcedir, 'test_*.py'))
         for modpath in testpaths:
             testmodule = load_module_path(modpath)
             classes = self._get_classes(testmodule)
@@ -49,12 +50,33 @@ class test(object):
         class TestCase(unittest.TestCase, testcaseclass):
             project = PROJECT
 
-        def test_function(self):
+        def test_function(self, test='all', list=False):
+            """
+            Arguments
+            ---------
+            test : string | 'all'
+                Only run specific test method (without test_ prefix)
+                if not all.
+            list : bool
+                List all test methods with doc strings and exit.
+            """
             loader = unittest.TestLoader()
             suite = loader.loadTestsFromTestCase(TestCase)
-            return unittest.TextTestRunner().run(suite)
+            if list:
+                for e in suite:
+                    print(e._testMethodName[len('test_'):] + ' : ', end='')
+                    print(e._testMethodDoc or '')
+                return
+            if test == "all":
+                return unittest.TextTestRunner().run(suite)
+            else:
+                methods = {e._testMethodName[len('test_'):]: e for e in suite}
+                assert test in methods, "Not a valid test name: %s" % test
+                return unittest.TextTestRunner().run(methods[test])
 
         test_function.__name__ = name
+        test_function.__doc__ = ((testcaseclass.__doc__ or 'SWIM tests\n') +
+                                 test_function.__doc__)
         test_method = types.MethodType(test_function, self)
         # attach function to Tests class
         setattr(self, name, test_method)

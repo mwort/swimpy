@@ -124,6 +124,7 @@ class routing(mmgrass.GrassModulePlugin):
     module = 'm.swim.routing'
     # default module arguments
     accumulation = 'accumulation'
+    drainage = 'drainage'
     #: Project settings with arguments
     argument_setting = 'grass_setup'
     # get subbasins raster name from Subbasins instance
@@ -231,7 +232,8 @@ class hydrotopes(mmgrass.GrassModulePlugin):
         return
 
 
-def reclass_raster(project, inrast, outrast, values, mapset=None):
+def reclass_raster(project, inrast, outrast, values, mapset=None,
+        float_precision=6):
     """Reclass inrast with int/float 'values' to outrast.
 
     Arguments
@@ -248,18 +250,29 @@ def reclass_raster(project, inrast, outrast, values, mapset=None):
         assumed to be ``range(1, len(values)+1)``.
     mapset : str, optional
         Different than the default `grass_mapset` mapset to write to.
+    precision : int
+        Decimal places converted to raster if values are floats.
     """
     from pandas import Series
     if isinstance(values, Series):
         ix = values.index
     else:
         ix = range(1, len(values)+1)
-    columns = np.column_stack([ix, ix, values, values])
+    # Convert to ints to work with r.reclass
+    if not (hasattr(values, 'dtype') and values.dtype == int):
+        values = (values*10**float_precision).astype(int)
+        outrast += '__int'
+    columns = np.column_stack([ix, values])
     mapset = mapset or project.grass_mapset
     with mmgrass.GrassSession(project, mapset=mapset) as grass:
         tf = grass.tempfile()
-        np.savetxt(tf, columns, delimiter=':')
-        grass.run_command('r.recode', input=inrast, output=outrast, rules=tf)
+        np.savetxt(tf, columns, delimiter='=', fmt="%i")
+        grass.run_command('r.reclass', input=inrast, output=outrast, rules=tf)
+        if outrast.endswith('__int'):
+            grass.mapcalc("'%s'=float('%s')/%i" % (
+                outrast[:-5], outrast, 10**float_precision))
+            grass.run_command('g.remove', type='raster', name=outrast,
+                flags='f')
     os.remove(tf)
     return 0
 

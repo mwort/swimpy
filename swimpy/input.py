@@ -358,6 +358,94 @@ class climate(object):
             return bars
 
     @propertyplugin
+    class netcdf_inputdata(object):
+        variables = ['tmean', 'tmin', 'tmax',
+                     'precipitation', 'radiation', 'humidity']
+
+        def __init__(self, project):
+            self.project = project
+            self.path = project.config_parameters['climatedir']
+            self.parameters = self.project.climate.config_parameters
+            return
+
+        @property
+        def grid_mapping(self):
+            pth = self.parameters["ncgrid"]
+            with open(osp.join(self.path, pth)) as f:
+                head = f.readline().replace("#", "").split()
+                grid = pd.read_csv(f, delim_whitespace=True, index_col=0,
+                                   header=None, names=head)
+            return grid
+
+        def read_gridded(self, variable, time=None, subbasins=None):
+            """Read a variable from the netcdf files and return as grid.
+
+            Arguments
+            ---------
+            variable : str
+                Qualified name of climate variable (cf. self.variables)
+            time : <any pandas time index> | (from, to), optional
+                A time slice to read. Use a tuple of (from, to) for slicing,
+                including None for open sides. Default: read all.
+            subbasins : list-like, optional
+                Only read for a subset of subbasins.
+            """
+            import netCDF4 as nc
+            msg = variable+" not in %r" % self.variables
+            assert variable in self.variables, msg
+            vfn = zip(self.parameters["vnames"], self.parameters["fnames"])
+            vname, file_path = dict(zip(self.variables, vfn))[variable]
+            ds = nc.Dataset(osp.join(self.path, file_path))
+            # get space indeces
+            lon = ds[self.parameters["lon_vname"]][:]
+            lat = ds[self.parameters["lat_vname"]][:]
+            grid = self.grid_mapping
+            if subbasins:
+                grid = grid.loc[subbasins]
+            lons = slice(np.where(lon == grid["lon"].min())[0][0],
+                         np.where(lon == grid["lon"].max())[0][0] + 1)
+            lats = slice(np.where(lat == grid["lat"].min())[0][0],
+                         np.where(lat == grid["lat"].max())[0][0] + 1)
+            cl = pd.MultiIndex.from_product((list(lat[lats]), list(lon[lons])))
+            # get space indeces
+            st = pd.Period(str(self.parameters["ref_year"]), freq="d")
+            timeint = np.array(ds[self.parameters["time_vname"]][:], dtype=int)
+            pix = st + self.parameters["offset_days"] + timeint
+            tix = pd.Series(range(len(timeint)), index=pix)
+            # get time indeces
+            if time and type(time) == tuple and len(time) == 2:
+                tix = tix[time[0]:time[1]]
+            elif time:
+                tix = tix[time]
+            # read data
+            data = ds[vname][tix.values, lats, lons].reshape(-1, len(cl))
+            df = pd.DataFrame(data, columns=cl, index=tix.index)
+            return df
+
+        def read(self, variable, time=None, subbasins=None):
+            """Return climate variable as subbasin weighted means."""
+            grid = self.grid_mapping
+            if subbasins:
+                grid = grid.loc[subbasins]
+            ggb = grid.groupby(grid.index)
+            gridded = self.read_gridded(variable, time=time)
+            # single value or weighted means (trade-off btw speed & memory)
+            cnt = ggb.weight.count()
+            c1 = cnt[cnt == 1].index
+            cix = [(la, lo) for la, lo in grid.loc[c1, ["lat", "lon"]].values]
+            values = gridded[cix]
+            values.columns = c1
+            for s in cnt[cnt > 1].index:
+                c = [(la, lo) for la, lo in grid.loc[s, ["lat", "lon"]].values]
+                wght = grid.loc[s, 'weight']/grid.loc[s, 'weight'].sum()
+                values.insert(0, s, gridded[c].mul(wght.values).sum(axis=1))
+            return values.sort_index(axis=1)
+        read.__doc__ += read_gridded.__doc__[58:]
+
+        def __getitem__(self, variable):
+            return self.read(variable)
+
+    @propertyplugin
     class config_parameters(f90nml.Namelist):
         path = 'ncinfo.nml'
         _nml = None

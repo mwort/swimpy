@@ -203,7 +203,7 @@ def peak_over_threshold(q, percentile=1, threshold=None, maxgap=None):
 def gumbel_recurrence(q, recurrence):
     """Deprecated! Use dist_recurrence(..., dist='gumbel_r')."""
     warnings.warn(gumbel_recurrence.__doc__, DeprecationWarning)
-    return dist_recurrence(q, recurrence, dist='gumble_r')
+    return dist_recurrence(q, recurrence, dist='gumbel_r')
 
 
 def dist_recurrence(q, recurrence, dist='genextreme', shape=None):

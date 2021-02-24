@@ -164,6 +164,15 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         self.project.station_output.update(stations=['HOF'])
         self.assertEqual(self.project.station_output.index.tolist(), ['HOF'])
 
+    def test_netcdf_inputdata(self):
+        import datetime as dt
+        kw = dict(time=("1993", "1994-12-31"), subbasins=[1, 2, 3])
+        p = self.project.climate.netcdf_inputdata.read("precipitation", **kw)
+        self.assertEqual(p.shape, (365*2, 3))
+        p = self.project.climate.netcdf_inputdata['tmean']
+        nd = dt.date(2000, 12, 31)-dt.date(1990, 12, 31)
+        self.assertEqual(p.shape, (nd.days, 11))
+
 
 class TestProcessing(ProjectTestCase, test_running.Cluster):
 

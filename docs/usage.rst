@@ -81,7 +81,7 @@ Start the browser interface from the commandline:
 
   $ swimpy browser start
 
-Now navigate with your browser of choice to: ``http://localhost:8000``
+Now navigate with your browser of choice to: `http://localhost:8000 <http://localhost:8000>`_
 
 .. image:: _static/img/browser_home_screenshot.png
 
