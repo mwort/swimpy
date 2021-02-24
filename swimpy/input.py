@@ -435,11 +435,14 @@ class climate(object):
             cix = [(la, lo) for la, lo in grid.loc[c1, ["lat", "lon"]].values]
             values = gridded[cix]
             values.columns = c1
+            wm = {}
+            dt = gridded.dtypes.mode()[0]
             for s in cnt[cnt > 1].index:
                 c = [(la, lo) for la, lo in grid.loc[s, ["lat", "lon"]].values]
                 wght = grid.loc[s, 'weight']/grid.loc[s, 'weight'].sum()
-                values.insert(0, s, gridded[c].mul(wght.values).sum(axis=1))
-            return values.sort_index(axis=1)
+                wm[s] = gridded[c].mul(wght.values).sum(axis=1).astype(dt)
+            dat = pd.concat([pd.DataFrame(wm), values], axis=1)
+            return dat.sort_index(axis=1)
         read.__doc__ += read_gridded.__doc__[58:]
 
         def __getitem__(self, variable):
