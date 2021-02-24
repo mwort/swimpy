@@ -206,7 +206,7 @@ def gumbel_recurrence(q, recurrence):
     return dist_recurrence(q, recurrence, dist='gumbel_r')
 
 
-def dist_recurrence(q, recurrence, dist='genextreme', shape=None):
+def dist_recurrence(q, recurrence, dist='genextreme', shape=None, **fitkwargs):
     """Estimate values of given recurrence via any scipy distribution.
 
     Requires the `scipy` package to be installed.
@@ -224,11 +224,13 @@ def dist_recurrence(q, recurrence, dist='genextreme', shape=None):
     shape : float | None
         Fit distribution with fixed shape parameter or not if None. Only valid
         if dist actually has a shape parameter.
+    fitkwargs :
+        Keywords passed to the dist.fit method.
     """
     from scipy import stats
     assert hasattr(stats, dist), '%s is not a valid scipy distribution.' % dist
     df = getattr(stats, dist)
-    kw = {}
+    kw = fitkwargs
     if shape and df.shapes:
         kw['fix_'+df.shapes] = shape
     # Estimate distribution parameters
