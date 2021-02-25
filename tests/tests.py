@@ -172,6 +172,9 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         p = self.project.climate.netcdf_inputdata['tmean']
         nd = dt.date(2000, 12, 31)-dt.date(1990, 12, 31)
         self.assertEqual(p.shape, (nd.days, 11))
+        clim = self.project.climate.netcdf_inputdata[["tmean", "tmin", "tmax"]]
+        self.assertEqual(clim.shape, (nd.days, 11*3))
+        self.assertEqual(len(clim.columns.levels), 2)
 
 
 class TestProcessing(ProjectTestCase, test_running.Cluster):

@@ -398,15 +398,15 @@ class climate(object):
             ds = nc.Dataset(osp.join(self.path, file_path))
             # get space indeces
             lon = ds[self.parameters["lon_vname"]][:]
+            lonix = pd.Series(range(len(lon)), index=lon)
             lat = ds[self.parameters["lat_vname"]][:]
+            latix = pd.Series(range(len(lat)), index=lat)
             grid = self.grid_mapping
             if subbasins:
                 grid = grid.loc[subbasins]
-            lons = slice(np.where(lon == grid["lon"].min())[0][0],
-                         np.where(lon == grid["lon"].max())[0][0] + 1)
-            lats = slice(np.where(lat == grid["lat"].min())[0][0],
-                         np.where(lat == grid["lat"].max())[0][0] + 1)
-            cl = pd.MultiIndex.from_product((list(lat[lats]), list(lon[lons])))
+            lons = lonix[grid.lon.unique()].sort_values()
+            lats = latix[grid.lat.unique()].sort_values()
+            cl = pd.MultiIndex.from_product((lats.index, lons.index))
             # get space indeces
             st = pd.Period(str(self.parameters["ref_year"]), freq="d")
             timeint = np.array(ds[self.parameters["time_vname"]][:], dtype=int)
@@ -418,7 +418,8 @@ class climate(object):
             elif time:
                 tix = tix[time]
             # read data
-            data = ds[vname][tix.values, lats, lons].reshape(-1, len(cl))
+            data = (ds[vname][tix.values, lats.values, lons.values]
+                    .reshape(-1, len(cl)))
             df = pd.DataFrame(data, columns=cl, index=tix.index)
             return df
 
@@ -446,8 +447,13 @@ class climate(object):
             return data
         read.__doc__ += read_gridded.__doc__[58:]
 
-        def __getitem__(self, variable):
-            return self.read(variable)
+        def __getitem__(self, key):
+            if hasattr(key, "__iter__"):
+                return pd.concat([self.read(k) for k in key], axis=1, keys=key)
+            elif type(key) == str:
+                return self.read(key)
+            else:
+                raise KeyError("%s not in %r" % (key, self.variables))
 
     @propertyplugin
     class config_parameters(f90nml.Namelist):
