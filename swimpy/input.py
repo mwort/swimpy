@@ -429,20 +429,21 @@ class climate(object):
                 grid = grid.loc[subbasins]
             ggb = grid.groupby(grid.index)
             gridded = self.read_gridded(variable, time=time)
-            # single value or weighted means (trade-off btw speed & memory)
+            dt = gridded.dtypes.mode()[0]
+            # single value and weighted means separately
+            # (trade-off btw speed & memory)
             cnt = ggb.weight.count()
+            data = pd.DataFrame(
+                dtype=dt, columns=cnt.index, index=gridded.index)
             c1 = cnt[cnt == 1].index
             cix = [(la, lo) for la, lo in grid.loc[c1, ["lat", "lon"]].values]
-            values = gridded[cix]
-            values.columns = c1
-            wm = {}
-            dt = gridded.dtypes.mode()[0]
+            data[c1] = gridded[cix].values
+            # weighted means looped to avoid large copied array
             for s in cnt[cnt > 1].index:
                 c = [(la, lo) for la, lo in grid.loc[s, ["lat", "lon"]].values]
                 wght = grid.loc[s, 'weight']/grid.loc[s, 'weight'].sum()
-                wm[s] = gridded[c].mul(wght.values).sum(axis=1).astype(dt)
-            dat = pd.concat([pd.DataFrame(wm), values], axis=1)
-            return dat.sort_index(axis=1)
+                data[s] = gridded[c].mul(wght.values).sum(axis=1).astype(dt)
+            return data
         read.__doc__ += read_gridded.__doc__[58:]
 
         def __getitem__(self, variable):
