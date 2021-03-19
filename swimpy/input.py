@@ -31,7 +31,7 @@ class basin_parameters(TemplatesDict):
         'bResModule': 0,    'ialpha': 0,        'smrate': 0.5,
         'bRunoffDat': 0,    'ibeta': 0,         'snow1': 0.0,
         'bSnowModule': 1,   'icn': 0,           'spcon': 0.0,
-        'bff': 1.0,         'idlef': 0,         'spexp': 1.0,
+        'bff': 0.,          'idlef': 0,         'spexp': 1.0,
         'chcc0': 1.0,       'idvwk': 0,         'stinco': 0.0,
         'chnnc0': 1.0,      'iemeth': 0,        'storc1': 0.0,
         'chwc0': 1.0,       'intercep': 1,      'subcatch': 0,
@@ -553,7 +553,7 @@ class station_daily_discharge_observed(ReadWriteDataFrame):
         skiphead = 1
         # subbasins are given if all are ints and they are all in the subbasins
         try:
-            si = pd.Series(subids, dtype=int, index=colnames)
+            si = pd.Series(subids, index=colnames).astype(int)
             if list(si.iloc[1:3]) == [0, 0]:
                 self.subbasins = si.iloc[3:]
                 skiphead += 1
