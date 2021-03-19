@@ -3,6 +3,10 @@ from modelmanager import project, settings, commandline
 from swimpy.project import Project, setup
 import swimpy
 
-description = 'SWIMpy commandline interface\n\nDocumentation: %s' % swimpy.__docs__
+description = (
+    'SWIMpy commandline interface\n\nDocumentation: %s' % swimpy.__docs__
+)
 
-commandline.CommandlineInterface(Project, description=description, setup=setup).run()
+if __name__ == '__main__':
+    commandline.CommandlineInterface(
+        Project, description=description, setup=setup).run()
