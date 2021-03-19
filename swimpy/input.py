@@ -421,6 +421,7 @@ class climate(object):
             data = (ds[vname][tix.values, lats.values, lons.values]
                     .reshape(-1, len(cl)))
             df = pd.DataFrame(data, columns=cl, index=tix.index)
+            ds.close()
             return df
 
         def read(self, variable, time=None, subbasins=None):
@@ -448,10 +449,10 @@ class climate(object):
         read.__doc__ += read_gridded.__doc__[58:]
 
         def __getitem__(self, key):
-            if hasattr(key, "__iter__"):
-                return pd.concat([self.read(k) for k in key], axis=1, keys=key)
-            elif type(key) == str:
+            if type(key) == str:
                 return self.read(key)
+            elif hasattr(key, "__iter__"):
+                return pd.concat([self.read(k) for k in key], axis=1, keys=key)
             else:
                 raise KeyError("%s not in %r" % (key, self.variables))
 
