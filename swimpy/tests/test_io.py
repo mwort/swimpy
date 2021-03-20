@@ -53,7 +53,8 @@ class Output:
             df_run = getattr(run, r)
             self.assertTrue(all(df_project.index == df_run.index), r)
             self.assertTrue(all(df_project.columns == df_run.columns), r)
-            self.assertAlmostEqual((df_project-df_run).sum().sum(), 0, msg=r)
+            sud = (df_project.copy()-df_run.copy()).sum().sum()
+            self.assertAlmostEqual(sud, 0, msg=r)
 
 
 class output_sums:

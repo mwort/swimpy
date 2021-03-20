@@ -433,14 +433,14 @@ class subcatch_annual_waterbalance(ProjectOrRunData):
         df = pd.read_csv(path, index_col=[0, 1], parse_dates=[1],
                          skipinitialspace=True, **readkwargs)
         api = df.index.levels[1].to_period(freq='a')
-        df.index.set_levels(api, level=1, inplace=True)
+        df.index = df.index.set_levels(api, level=1)
         return df
 
     @staticmethod
     def from_csv(path, **readkwargs):
         df = pd.read_csv(path, index_col=[0, 1], parse_dates=[1], **readkwargs)
         api = df.index.levels[1].to_period(freq='a')
-        df.index.set_levels(api, level=1, inplace=True)
+        df.index = df.index.set_levels(api, level=1)
         return df
 
     @property
@@ -467,15 +467,15 @@ class hydrotope_daily_waterbalance(ProjectOrRunData):
             date_parser=lambda y, d: dt.datetime.strptime(y+'-'+d, '%Y-%j'))
         args.update(readkwargs)
         htp = pd.read_csv(path, **args)
-        htp.index.set_levels(htp.index.levels[0].to_period(), 0, inplace=True)
-        htp.index = htp.index.reorder_levels([1, 2, 0])
+        htp.index = (htp.index.set_levels(htp.index.levels[0].to_period(), 0)
+                              .reorder_levels([1, 2, 0]))
         htp.index.names = ['subbasinID', 'hydrotope', 'time']
         return htp
 
     @staticmethod
     def from_csv(path, **readkw):
         df = pd.read_csv(path, index_col=[0, 1, 2], parse_dates=[2], **readkw)
-        df.index.set_levels(df.index.levels[2].to_period(), 2, inplace=True)
+        df.index = df.index.set_levels(df.index.levels[2].to_period(), 2)
         return df
 
 

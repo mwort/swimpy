@@ -113,7 +113,7 @@ class TestParameters(ProjectTestCase, test_io.Parameters):
         # write entire DataFrame
         self.project.subcatch_parameters(sbc.copy())
         nsbc = self.project.subcatch_parameters
-        self.assertTrue((nsbc == sbc).all().all())
+        self.assertTrue((nsbc.copy() == sbc.copy()).all().all())
 
     def test_subcatch_definition(self):
         scdef = self.project.subcatch_definition
