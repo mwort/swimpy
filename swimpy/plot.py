@@ -23,9 +23,9 @@ import numpy as np
 import pandas as pd
 from modelmanager.settings import FunctionInfo, parse_settings
 import matplotlib as mpl
-# needed to use matplotlib in django browser
-if len(sys.argv) > 1 and sys.argv[1] == 'browser':
-    mpl.use('Agg')
+# needed to prevent pyplot from picking a fancy backend that messes with
+# django and plotly/dash. Does not affect interactive plotting in ipython
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 
