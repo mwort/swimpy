@@ -75,4 +75,13 @@ setup(
     test_suite='tests',
     tests_require=requirements_dev,
     setup_requires=requirements,
+    extra_requires={
+        "dashboard": [
+            "dash",
+            "dash_bootstrap_components",
+            "diskcache",
+            "psutil",
+            "multiprocess",
+        ]
+    }
 )
