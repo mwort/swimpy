@@ -18,6 +18,9 @@ from swimpy.utils import cluster
 from swimpy.plot import plot_summary
 from swimpy.optimization import SMSEMOA, CommaEA, NSGA2b, CMSAES
 
+#: interactive output visualisation
+from swimpy.dashboard.graphs import plotly_station_daily_discharge
+
 #: SWIM executable
 swim = './swim'
 

@@ -22,6 +22,16 @@ def station_daily_discharge(station_daily_discharge, start, end):
     return [graph]
 
 
+def plotly_station_daily_discharge(project):
+    q = project.station_daily_discharge
+    graph = station_daily_discharge(
+        q,
+        project.config_parameters.start_date,
+        project.config_parameters.end_date,
+    )
+    return graph[0]
+
+
 def basin_daily_weather(project):
     bm = project.climate.inputdata.mean(axis=1, level=0)
     vars = bm.columns
