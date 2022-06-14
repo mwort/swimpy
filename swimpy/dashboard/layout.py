@@ -26,7 +26,7 @@ class Layout:
         {"basin_parameters": "ecal"}
     ]
     
-    tab_labels = ["Run", "Parameters"] + list(output_tabs_functions.keys())
+    tab_labels = ["Main", "Parameters"] + list(output_tabs_functions.keys())
 
     callbacks = {
         "render_content": {
@@ -71,7 +71,7 @@ class Layout:
         self.project = project
         self.tabs_content = {
             "tab-parameters": self.parameters_tab(),
-            "tab-run": self.run_model_tab(),
+            "tab-main": self.run_model_tab(),
             }
         self.tabs_content.update(self.output_tabs())
         return
@@ -92,7 +92,7 @@ class Layout:
                         dcc.Tabs(
                             id="tabs-header",
                             className="w-100",
-                            value='tab-run',
+                            value='tab-main',
                             children=[
                                 dcc.Tab(label=l, value='tab-'+l.lower().replace(" ", "-"))
                                 for l in self.tab_labels
