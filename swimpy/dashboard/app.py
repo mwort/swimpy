@@ -21,7 +21,7 @@ class App:
     def __init__(self, project, **overwrite):
         self.project = project
         self.cache = diskcache.Cache("./cache")
-        self.app = Dash("SWIM dashboard",
+        self.app = Dash(__name__,
             long_callback_manager=DiskcacheLongCallbackManager(self.cache),
             external_stylesheets=[dbc.themes.BOOTSTRAP],
         )
@@ -39,7 +39,7 @@ class App:
 
         return
 
-    def start(self, port=8054, debug=False):
+    def start(self, port=8054, debug=True):
         self.app.run_server(
             debug=debug,
             port=port,
