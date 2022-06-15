@@ -83,7 +83,7 @@ release: clean ## package and upload a release
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
 
-dist: clean ## builds source and wheel package
+dist: clean pyinstaller dist/swim ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
@@ -99,3 +99,26 @@ docker_build:
 
 docker_push:
 	docker push mwort/swim:latest
+
+# Creates a single executable for a given platform, using swimpy/scripts/swimpy as the entrypoint
+# Meant to be ran in a venv or docker container
+pyinstaller: ## build single executable for swimpy
+	pip install pyinstaller
+	pip install -e .
+	pip install -r requirements_dev.txt
+	pyinstaller \
+		-p dependencies/modelmanager \
+		-p dependencies/m.swim \
+		-p . \
+		-F \
+		--collect-submodules dependencies \
+		-d noarchive \
+		--add-data dependencies/modelmanager/modelmanager/:modelmanager \
+		swimpy/scripts/swimpy
+
+dependencies/swim/code/swim:
+	make -C dependencies/swim/code
+
+dist/swim: dependencies/swim/code/swim
+	mkdir -p dist/
+	cp dependencies/swim/code/swim dist/swim
