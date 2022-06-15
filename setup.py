@@ -9,10 +9,10 @@ import codecs
 from setuptools import setup, find_packages
 
 requirements = [
-    "pandas>=0.23.4",
-    "django>=1.11.20, >=3.0",
-    "parse>=1.9, <2.0",
-    "matplotlib>=2.2.3",
+    "pandas>=1.0, <2",
+    "django>=1.11.20, <2",
+    "parse>=1.8, <2.0",
+    "matplotlib>=3.0, <4",
     "model-manager>=0.7",
     "f90nml>=1.0.2",
     "evoalgos>=1.0"
