@@ -49,6 +49,5 @@ RUN make -C tests
 
 # clean up
 WORKDIR /data
-RUN rm -r /code/swimpy
 
 
