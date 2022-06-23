@@ -115,7 +115,7 @@ class Layout:
                     children=[dbc.Col(
                         className="mt-3",
                         children=[
-                            html.P("%s" % (params['config_parameters']), style={"fontSize": 16, "marginBottom": 4}),
+                            html.P("%s" % (params['config_parameters']), style={"fontSize": 16}),
                             dbc.Input(
                                 id="input-%s" % (params["config_parameters"]),
                                 type="number",
@@ -134,7 +134,7 @@ class Layout:
                         dbc.Col(
                             className="col-6 mt-2",
                             children=[
-                                html.P("%s :" % params["basin_parameters"], style={"fontSize": 14, "margin": 0}),
+                                html.P("%s :" % params["basin_parameters"], style={"fontSize": 14}),
                                 dbc.Input(
                                     step="0.1",
                                     id="input-%s" % (params["basin_parameters"]),
@@ -166,7 +166,7 @@ class Layout:
             dbc.Col(
                 className="col-3 mt-3",
                 children=[
-                    html.P("%s: " % (key), style={"fontSize": '14px', "marginBottom": "4px"}),
+                    html.P("%s: " % (key), style={"fontSize": 14}),
                     dbc.Input(type="number", step="0.1", id="input-parameter-%s" % (key), value="%d" % (value))
                 ]
             )
@@ -178,12 +178,12 @@ class Layout:
             dbc.Col(
                 className="col-4",
                 children=[
-                    html.P("Config parameters: ", style={"fontSize": '24px'}),
+                    html.P("Config parameters: ", style={"fontSize": 24}),
                     html.Div(
                         children=[html.Div(
                             className='mt-3',
                             children=[
-                                html.P("%s" % (params['config_parameters']), style={"fontSize": '16px', "marginBottom": 4}),
+                                html.P("%s" % (params['config_parameters']), style={"fontSize": 16}),
                                 dbc.Input(
                                     id="input-%s" % (params['config_parameters']), 
                                     placeholder="years",
@@ -200,7 +200,7 @@ class Layout:
             dbc.Col(
                 className="col-8", 
                 children=[
-                    html.P("Basin parameters:", style={"fontSize": '24px'}),
+                    html.P("Basin parameters:", style={"fontSize": 24}),
                     c
                 ]
             ),

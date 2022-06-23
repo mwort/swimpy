@@ -44,3 +44,7 @@ button:focus {
   height: 300px;
   margin-top: 40px;
 }
+
+p {
+  margin-bottom: 4px;
+}
