@@ -75,7 +75,7 @@ setup(
     test_suite='tests',
     tests_require=requirements_dev,
     setup_requires=requirements,
-    extra_requires={
+    extras_require={
         "dashboard": [
             "dash",
             "dash_bootstrap_components",
