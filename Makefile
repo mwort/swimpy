@@ -27,6 +27,12 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
+ifeq ($(OS),Windows_NT)
+	FILE_SEP=";"
+else
+	FILE_SEP=":"
+endif
+
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
@@ -113,7 +119,7 @@ pyinstaller: ## build single executable for swimpy
 		-F \
 		--collect-submodules dependencies \
 		-d noarchive \
-		--add-data dependencies/modelmanager/modelmanager/:modelmanager \
+		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
 		swimpy/scripts/swimpy
 
 dependencies/swim/code/swim:
