@@ -124,7 +124,7 @@ dist/swimpy: ## build single executable for swimpy
 
 # Creates a single executable for a given platform, using swimpy/scripts/swimpy-dashboard as the entrypoint
 # Meant to be created in a venv or docker container
-dist/swimpy-dashboard: ## build single executable for `swimpy dashboard start`
+dist/swimpy-dashboard: dependencies/swim/code/swim ## build single executable for `swimpy dashboard start`
 	pip install pyinstaller
 	pip install -e .[dashboard]
 	pip install -r requirements_dev.txt
