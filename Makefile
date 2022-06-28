@@ -89,7 +89,7 @@ release: clean ## package and upload a release
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
 
-dist: clean pyinstaller dist/swim ## builds source and wheel package
+dist: clean dist/swimpy dist/swim dist/swimpy-dashboard ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
@@ -108,7 +108,7 @@ docker_push:
 
 # Creates a single executable for a given platform, using swimpy/scripts/swimpy as the entrypoint
 # Meant to be ran in a venv or docker container
-pyinstaller: ## build single executable for swimpy
+dist/swimpy: ## build single executable for swimpy
 	pip install pyinstaller
 	pip install -e .
 	pip install -r requirements_dev.txt
@@ -121,6 +121,25 @@ pyinstaller: ## build single executable for swimpy
 		-d noarchive \
 		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
 		swimpy/scripts/swimpy
+
+# Creates a single executable for a given platform, using swimpy/scripts/swimpy-dashboard as the entrypoint
+# Meant to be created in a venv or docker container
+dist/swimpy-dashboard: ## build single executable for `swimpy dashboard start`
+	pip install pyinstaller
+	pip install -e .[dashboard]
+	pip install -r requirements_dev.txt
+	pyinstaller \
+		-p dependencies/modelmanager \
+		-p dependencies/m.swim \
+		-p . \
+		-F \
+		--collect-submodules dependencies \
+		-d noarchive \
+		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
+		--add-data swimpy/$(FILE_SEP)swimpy/ \
+		--add-data dependencies/swim/$(FILE_SEP)dependencie/swim/ \
+		swimpy/scripts/swimpy-dashboard
+
 
 dependencies/swim/code/swim:
 	make -C dependencies/swim/code
