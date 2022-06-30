@@ -27,6 +27,12 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
+ifeq ($(OS),Windows_NT)
+	FILE_SEP=";"
+else
+	FILE_SEP=":"
+endif
+
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
@@ -83,7 +89,7 @@ release: clean ## package and upload a release
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
 
-dist: clean ## builds source and wheel package
+dist: clean dist/swimpy dist/swim dist/swimpy-dashboard ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
@@ -99,3 +105,45 @@ docker_build:
 
 docker_push:
 	docker push mwort/swim:latest
+
+# Creates a single executable for a given platform, using swimpy/scripts/swimpy as the entrypoint
+# Meant to be ran in a venv or docker container
+dist/swimpy: ## build single executable for swimpy
+	pip install pyinstaller
+	pip install -e .
+	pip install -r requirements_dev.txt
+	pyinstaller \
+		-p dependencies/modelmanager \
+		-p dependencies/m.swim \
+		-p . \
+		-F \
+		--collect-submodules dependencies \
+		-d noarchive \
+		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
+		swimpy/scripts/swimpy
+
+# Creates a single executable for a given platform, using swimpy/scripts/swimpy-dashboard as the entrypoint
+# Meant to be created in a venv or docker container
+dist/swimpy-dashboard: dependencies/swim/code/swim ## build single executable for `swimpy dashboard start`
+	pip install pyinstaller
+	pip install -e .[dashboard]
+	pip install -r requirements_dev.txt
+	pyinstaller \
+		-p dependencies/modelmanager \
+		-p dependencies/m.swim \
+		-p . \
+		-F \
+		--collect-submodules dependencies \
+		-d noarchive \
+		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
+		--add-data swimpy/$(FILE_SEP)swimpy/ \
+		--add-data dependencies/swim/$(FILE_SEP)dependencie/swim/ \
+		swimpy/scripts/swimpy-dashboard
+
+
+dependencies/swim/code/swim:
+	make -C dependencies/swim/code
+
+dist/swim: dependencies/swim/code/swim
+	mkdir -p dist/
+	cp dependencies/swim/code/swim dist/swim

@@ -9,10 +9,10 @@ import codecs
 from setuptools import setup, find_packages
 
 requirements = [
-    "pandas>=0.23.4",
-    "django>=1.11.20, >=3.0",
-    "parse>=1.9, <2.0",
-    "matplotlib>=2.2.3",
+    "pandas>=1.0, <2",
+    "django>=1.11.20, <2",
+    "parse>=1.8, <2.0",
+    "matplotlib>=3.0, <4",
     "model-manager>=0.7",
     "f90nml>=1.0.2",
     "evoalgos>=1.0"
@@ -71,11 +71,11 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
-    scripts=['swimpy/scripts/swimpy'],
+    scripts=['swimpy/scripts/swimpy', 'swimpy/scripts/swimpy-dashboard'],
     test_suite='tests',
     tests_require=requirements_dev,
     setup_requires=requirements,
-    extra_requires={
+    extras_require={
         "dashboard": [
             "dash",
             "dash_bootstrap_components",

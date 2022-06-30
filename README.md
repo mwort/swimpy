@@ -13,12 +13,13 @@ A python package to interact and test the ecohydrological model SWIM.
 Quickstart
 ----------
 
-1. Setup python environment ``$ virtualenv swimpyenv`` and activate it
+1. [Install Python](./docs/install-python.md)
+2. Setup python environment ``$ virtualenv swimpyenv`` and activate it
    ``$ source swimpyenv/bin/activate``
-2. Download and install SWIMpy:
+3. Download and install SWIMpy:
    ``$ pip install git+https://gitlab.pik-potsdam.de/wortmann/swimpy.git``
-3. Setup your project in your model directory: ``$ swimpy setup``
-4. Check the commandline help ``swimpy -h``, use your project in python
+4. Setup your project in your model directory: ``$ swimpy setup``
+5. Check the commandline help ``swimpy -h``, use your project in python
    scripts by importing ``swimpy`` and loading the project instance:
    ``project = swimpy.Project()`` or by starting the browser app
    ``$ swimpy browser start`` and navigate your browser to [http://localhost:8000](http://localhost:8000)
@@ -36,6 +37,6 @@ Features
 * Easy parameter reading/setting and output file reading
 * Result visualisation with reusable matplotlib plot functions
 * Interface to GRASS database
-* Linking to the 
+* Linking to the
   [evoalgos](https://ls11-www.cs.tu-dortmund.de/people/swessing/evoalgos/doc/index.html)
   multiobjective evolutionary optimization package
