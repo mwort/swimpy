@@ -29,8 +29,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
 ifeq ($(OS),Windows_NT)
 	FILE_SEP=";"
+	SPLASH=--splash swimpy/dashboard/static/img/swim_logo_trans.png
 else
 	FILE_SEP=":"
+	SPLASH=
 endif
 
 help:
@@ -124,21 +126,30 @@ dist/swimpy: ## build single executable for swimpy
 
 # Creates a single executable for a given platform, using swimpy/scripts/swimpy-dashboard as the entrypoint
 # Meant to be created in a venv or docker container
-dist/swimpy-dashboard: dependencies/swim/code/swim ## build single executable for `swimpy dashboard start`
+dash_leaflet := $(shell python -c "import dash_leaflet; import os.path as osp; print(osp.dirname(dash_leaflet.__file__))")
+
+dist/swim-dashboard: dependencies/swim/code/swim ## build single executable for `swimpy dashboard start`
 	pip install pyinstaller
 	pip install -e .[dashboard]
 	pip install -r requirements_dev.txt
+	mkdir -p $@
+	cp -r dependencies/swim/project/* $@
+	cp dependencies/swim/code/swim $@
+	unzip -o dashboard_resources/dashboard-swimpy-resources.zip -d dist/swim-dashboard/
 	pyinstaller \
+		--distpath $@ \
 		-p dependencies/modelmanager \
 		-p dependencies/m.swim \
 		-p . \
 		-F \
+		--windowed \
 		--collect-submodules dependencies \
 		-d noarchive \
 		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
 		--add-data swimpy/$(FILE_SEP)swimpy/ \
-		--add-data dependencies/swim/$(FILE_SEP)dependencies/swim/ \
-		swimpy/scripts/swimpy-dashboard
+		--add-data $(dash_leaflet)$(FILE_SEP)dash_leaflet \
+		$(SPLASH) \
+		swimpy/scripts/swim-dashboard
 
 
 dependencies/swim/code/swim:

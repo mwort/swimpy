@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+import swimpy
+
+
+if __name__ == '__main__':
+    swimpy.Project().dashboard.start()
