@@ -9,6 +9,7 @@ Plotly Dash callback functions with access to the swimpy project and the Dash la
 
 from dash import html
 import dash_bootstrap_components as dbc
+import datetime as dt
 
 from . import graphs
 
@@ -22,12 +23,11 @@ class Callbacks:
     def render_content(self, tab):
         return html.Div(self.layout.tabs_content[tab])
 
-    def run_model(self, set_progress, n_clicks, tags, notes):
+    def run_model(self, set_progress, n_clicks, years, year):
         import time
         from subprocess import PIPE, Popen
-        sim_start = self.project.config_parameters.start_date
-        sim_end = self.project.config_parameters.end_date
-
+        sim_start = dt.date(int(year), 1, 1)
+        sim_end = dt.date(int(year)+int(years)-1, 12, 31)
         ndays = (sim_end - sim_start).days
 
         swimcommand = [self.project.swim, self.project.projectdir+'/']
@@ -47,7 +47,7 @@ class Callbacks:
             set_progress((str(prog), str(ndays), "%1.0f%%" % (prog*100/ndays), qgraph))
         # make sure progress bar and graph are complete
         set_progress((str(ndays-1), str(ndays), "Saving...", qgraph))
-        run = self.project.save_run(tags=tags or "", notes=notes or "")
+        # run = self.project.save_run(tags=tags or "", notes=notes or "")
         qgraph = graphs.station_daily_discharge(self.project.station_daily_discharge, sim_start, sim_end)
         stdoutdata, stderrdata = process.communicate()
-        return [stdoutdata.decode(), qgraph]
+        return ["", qgraph]

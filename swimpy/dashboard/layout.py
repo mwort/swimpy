@@ -14,17 +14,19 @@ class Layout:
 
     output_tabs_functions = {
         "Climate": [[graphs.basin_daily_weather]],
-        "Maps": [[]],
-        "Statistics": [[]],
+        "Discharge": [[graphs.plotly_station_daily_discharge]],
+        "Maps": [[graphs.basin_daily_weather]],
+        "Statistics": [[graphs.basin_daily_weather]],
     }
 
-    parameter_groups = {
-        "Evapotranspiration": ["basin:ecal", "basin:thc"],
-        "Routing": ["basin:roc2", "basin:roc4"],
-        "Snow": ["basin:tsnfall", "basin:tmeld", "basin:smrate"],
-    }
+    highlighted_parameters = [
+        {"config_parameters": "iyr"},
+        {"config_parameters": "nbyr"},
+        {"basin_parameters": "sccor"},
+        {"basin_parameters": "ecal"}
+    ]
     
-    tab_labels = ["Run", "Parameters"] + list(output_tabs_functions.keys())
+    tab_labels = ["Main", "Parameters"] + list(output_tabs_functions.keys())
 
     callbacks = {
         "render_content": {
@@ -41,8 +43,8 @@ class Layout:
                 ],
             "inputs": Input("btn-run", "n_clicks"),
             "state": [
-                State("input-tags", "value"),
-                State("input-notes", "value"),
+                State("input-nbyr", "value"),
+                State("input-iyr", "value"),
             ],
             "running": [
                 (Output("btn-run", "disabled"), True, False),
@@ -69,20 +71,36 @@ class Layout:
         self.project = project
         self.tabs_content = {
             "tab-parameters": self.parameters_tab(),
-            "tab-run": self.run_model_tab(),
+            "tab-main": self.run_model_tab(),
             }
         self.tabs_content.update(self.output_tabs())
         return
 
     def base(self):
-        c = dbc.Container([
-            dbc.Row([
-                html.Div(local_img(static_path("img/swim_logo_trans.png"), width="200px")),
-                dcc.Tabs(id="tabs-header", value='tab-run',
-                    children=[dcc.Tab(label=l, value='tab-'+l.lower().replace(" ", "-"))
-                              for l in self.tab_labels])
-                ]),
-            dbc.Row(id='tabs-content'),
+        c = dbc.Container(
+            className="p-4 mt-5",
+            children=[
+                dbc.Col(
+                    className="d-flex",
+                    children=[
+                        html.Div(
+                            className="w-50",
+                            children=[
+                                html.Div(local_img(static_path("img/swim_logo_trans.png"), width="100%"))
+                            ]
+                        ),
+                        dcc.Tabs(
+                            id="tabs-header",
+                            className="w-100",
+                            value='tab-main',
+                            children=[
+                                dcc.Tab(label=l, value='tab-'+l.lower().replace(" ", "-"))
+                                for l in self.tab_labels
+                            ]
+                        )
+                    ]
+                ),
+                dbc.Row(id='tabs-content'),
         ])
         return c
 
@@ -92,41 +110,102 @@ class Layout:
 
         r = dbc.Row([
             dbc.Col([
-                html.P("Save run parameters", style={"margin": 20}),
-                dbc.InputGroup([
-                    dbc.InputGroupText("Notes"),
-                    dbc.Textarea(id="input-notes"),],
-                    className="mb-3",
+                html.P("Config Parameters", style={"marginTop": 20, "fontSize": 24}),
+                dbc.Col(
+                    children=[dbc.Col(
+                        className="mt-3",
+                        children=[
+                            html.P("%s" % (params['config_parameters']), style={"fontSize": 16}),
+                            dbc.Input(
+                                id="input-%s" % (params["config_parameters"]),
+                                type="number",
+                                value="%d" % (self.project.config_parameters[params["config_parameters"]]),
+                                className="w-75"
+                            )
+                        ]
+                    )
+                    for params in self.highlighted_parameters if "config_parameters" in params.keys()  
+                    ]
                 ),
-                dbc.InputGroup([
-                    dbc.InputGroupText("Tags"),
-                    dbc.Input(id="input-tags", placeholder="tag1 tag2 ..."),
-                    ],
-                    className="mb-3"),
-                dbc.Button("Run model", id="btn-run", style={"margin": 20}),
-                dbc.Button("Cancel", id="btn-cancel-run", style={"margin": 20}),
-                dbc.Progress(id="progress_bar", animated=True, striped=True, style={"margin": 20}),
+                html.P("Basin parameters", style={"fontSize": 24}, className="mt-5"),
+                dbc.Row(
+                    className="w-75",
+                    children=[
+                        dbc.Col(
+                            className="col-6 mt-2",
+                            children=[
+                                html.P("%s :" % params["basin_parameters"], style={"fontSize": 14}),
+                                dbc.Input(
+                                    step="0.1",
+                                    id="input-%s" % (params["basin_parameters"]),
+                                    type="number"
+                                )
+                            ]
+                        )
+                        for params in self.highlighted_parameters if "basin_parameters" in params.keys()
+                    ]
+                ),
+                dbc.Col(
+                    className="d-flex gap-3 mt-5",
+                    children=[
+                        dbc.Button("Run model", id="btn-run"),
+                        dbc.Button("Cancel", id="btn-cancel-run"),
+                    ]
+                ),
+                dbc.Progress(id="progress_bar", animated=True, striped=True, className="mt-3"),
                 html.P(id="paragraph_id", children=["Not run"]),
-            ], className="col-3"),
+            ], className="col-lg-4 col-md-12 order-md-2 order-lg-first"),
             dbc.Col(graphs.station_daily_discharge(self.project.station_daily_discharge, sim_start, sim_end),
-                    id="hydro_graph", className="col-9"),
-            dbc.Col(id="hydro_graph_progress", className="col-9")
+                    id="hydro_graph", className="col-8"),
+            dbc.Col(id="hydro_graph_progress", className="col-lg-8 col-md-12")
         ])
         return r
 
     def parameters_tab(self):
         items = [
-            dbc.AccordionItem([
-                dbc.InputGroup([
-                    dbc.InputGroupText(i.split(":")[1]),
-                    dbc.Input(id="input-parameter-%s" % (i.title()))],
-                    className="mb-3")
-                for i in pars
-            ], title=t)
-            for t, pars in self.parameter_groups.items()
+            dbc.Col(
+                className="col-3 mt-3",
+                children=[
+                    html.P("%s: " % (key), style={"fontSize": 14}),
+                    dbc.Input(type="number", step="0.1", id="input-parameter-%s" % (key), value="%d" % (value))
+                ]
+            )
+            for key, value in self.project.basin_parameters.items()
         ]
-        c = dbc.Accordion(items)
-        return c
+        c = dbc.Row(children=items)
+
+        r = dbc.Row(style={"marginTop": 40}, children=[
+            dbc.Col(
+                className="col-4",
+                children=[
+                    html.P("Config parameters: ", style={"fontSize": 24}),
+                    html.Div(
+                        children=[html.Div(
+                            className='mt-3',
+                            children=[
+                                html.P("%s" % (params['config_parameters']), style={"fontSize": 16}),
+                                dbc.Input(
+                                    id="input-%s" % (params['config_parameters']), 
+                                    placeholder="years",
+                                    type="number",
+                                    value="%d" % (self.project.config_parameters[params['config_parameters']]),
+                                    style={"width": "60%"}),
+                            ]
+                        )
+                        for params in self.highlighted_parameters if 'config_parameters' in params.keys()
+                        ]
+                    ),
+                ]
+            ),
+            dbc.Col(
+                className="col-8", 
+                children=[
+                    html.P("Basin parameters:", style={"fontSize": 24}),
+                    c
+                ]
+            ),
+        ])
+        return r 
 
     def output_tabs(self) -> dict:
         output_tab_labs = ['tab-'+l.lower().replace(" ", "-")
