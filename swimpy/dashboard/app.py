@@ -39,7 +39,7 @@ class App:
 
         return
 
-    def start(self, port=8054, debug=True):
+    def start(self, port=8054, debug=False):
         self.app.run_server(
             debug=debug,
             port=port,

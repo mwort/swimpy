@@ -13,17 +13,25 @@ from .utils import local_img, static_path
 class Layout:
 
     output_tabs_functions = {
-        "Climate": [[graphs.basin_daily_weather]],
-        "Discharge": [[graphs.plotly_station_daily_discharge]],
-        "Maps": [[graphs.basin_daily_weather]],
-        "Statistics": [[graphs.basin_daily_weather]],
+        "Climate": [[graphs.plotly_basin_daily_weather]],
+        "Discharge": [[graphs.plotly_station_daily_and_regime_discharge],
+                      [graphs.plotly_station_daily_and_regime_discharge_component],
+                    ],
+        "Maps": [[graphs.map_hydrotope_means("hydrotope_evapmean_gis")],
+                 [graphs.map_hydrotope_means("hydrotope_gwrmean_gis")],
+                 [graphs.map_hydrotope_means("hydrotope_pcpmean_gis")]],
+        "Statistics": [[graphs.table_catchment_annual_waterbalance],
+                       [graphs.table_daily_discharge_performance],
+                    ],
     }
 
     highlighted_parameters = [
         {"config_parameters": "iyr"},
         {"config_parameters": "nbyr"},
         {"basin_parameters": "sccor"},
-        {"basin_parameters": "ecal"}
+        {"basin_parameters": "ecal"},
+        {"basin_parameters": "bResModule"},
+        {"basin_parameters": "bSnowModule"},
     ]
     
     tab_labels = ["Main", "Parameters"] + list(output_tabs_functions.keys())
@@ -78,13 +86,14 @@ class Layout:
 
     def base(self):
         c = dbc.Container(
-            className="p-4 mt-5",
+            className="p-5",
+            fluid=True,
             children=[
                 dbc.Col(
                     className="d-flex",
                     children=[
                         html.Div(
-                            className="w-50",
+                            className="w-25",
                             children=[
                                 html.Div(local_img(static_path("img/swim_logo_trans.png"), width="100%"))
                             ]
@@ -138,6 +147,7 @@ class Layout:
                                 dbc.Input(
                                     step="0.1",
                                     id="input-%s" % (params["basin_parameters"]),
+                                    value="%d" % (self.project.basin_parameters[params['basin_parameters']]),
                                     type="number"
                                 )
                             ]

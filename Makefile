@@ -137,7 +137,7 @@ dist/swimpy-dashboard: dependencies/swim/code/swim ## build single executable fo
 		-d noarchive \
 		--add-data dependencies/modelmanager/modelmanager/$(FILE_SEP)modelmanager \
 		--add-data swimpy/$(FILE_SEP)swimpy/ \
-		--add-data dependencies/swim/$(FILE_SEP)dependencie/swim/ \
+		--add-data dependencies/swim/$(FILE_SEP)dependencies/swim/ \
 		swimpy/scripts/swimpy-dashboard
 
 
