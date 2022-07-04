@@ -2,7 +2,7 @@
 
 The App class is the swimpy plugin that should be imported in the settings.
 """
-
+import os
 # dash
 from dash import Dash, html
 from dash.long_callback import DiskcacheLongCallbackManager
@@ -15,6 +15,9 @@ from .layout import Layout
 from .callbacks import Callbacks
 
 
+DASHBOARD_BASE_URL = os.environ.get("DASHBOARD_BASE_URL", "/swim-dashboard/")
+
+
 @propertyplugin
 class App:
 
@@ -22,6 +25,10 @@ class App:
         self.project = project
         self.cache = diskcache.Cache("./cache")
         self.app = Dash(__name__,
+            title="SWIM",
+            url_base_pathname=DASHBOARD_BASE_URL,
+            serve_locally=False,
+            prevent_initial_callbacks=False,
             long_callback_manager=DiskcacheLongCallbackManager(self.cache),
             external_stylesheets=[dbc.themes.BOOTSTRAP],
         )
