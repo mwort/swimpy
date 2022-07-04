@@ -21,14 +21,49 @@ class Callbacks:
         self.layout = layout
 
     def render_content(self, tab):
-        return html.Div(self.layout.tabs_content[tab])
 
-    def run_model(self, set_progress, n_clicks, years, year):
+        isoutput = tab.replace("-tab", "").replace("-", " ").title()
+        if isoutput in self.layout.output_tabs_functions.keys():
+            cont = self.layout.output_tab(isoutput)
+        else:
+            tab_method = tab.replace("-", "_")
+            cont = getattr(self.layout, tab_method)()
+        return html.Div(cont)
+
+
+    def store_parameters(self, n_clicks, **parameter_values):
+        for l, d, params in self.layout.parameter_groups:
+            accessor = getattr(self.project, d)
+            stparams = {
+                k: type(accessor[k])(parameter_values[k])
+                for k in params
+            }
+            accessor(**stparams)
+        return ["Saved!"]
+
+
+    def run_model(self, set_progress, n_clicks, *parameter_values):
         import time
         from subprocess import PIPE, Popen
-        sim_start = dt.date(int(year), 1, 1)
-        sim_end = dt.date(int(year)+int(years)-1, 12, 31)
+
+        # unpack parameters
+        params = {pgn: v for pgn, v in
+                  zip(self.layout.highlighted_parameters, parameter_values)}
+        sim_start = dt.date(int(params[("config_parameters", "iyr")]), 1, 1)
+        sim_end = dt.date(sim_start.year + int(params[("config_parameters", "nbyr")])-1, 12, 31)
         ndays = (sim_end - sim_start).days
+        # set parameters in swim
+        cfparams = self.project.config_parameters
+        self.project.config_parameters(
+            **{k: type(cfparams[k])(v) for (g, k), v in params.items()
+            if g == "config_parameters"}
+        )
+        bsnparams = self.project.basin_parameters
+        self.project.basin_parameters(
+            **{k: type(bsnparams[k])(v) for (g, k), v in params.items()
+            if g == "basin_parameters"}
+        )
+
 
         swimcommand = [self.project.swim, self.project.projectdir+'/']
         process = Popen(swimcommand, stdout=PIPE, stderr=PIPE)

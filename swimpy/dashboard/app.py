@@ -27,15 +27,17 @@ class App:
         self.app = Dash(__name__,
             title="SWIM",
             url_base_pathname=DASHBOARD_BASE_URL,
-            serve_locally=False,
+            serve_locally=True,
             prevent_initial_callbacks=False,
             long_callback_manager=DiskcacheLongCallbackManager(self.cache),
             external_stylesheets=[dbc.themes.BOOTSTRAP],
+            suppress_callback_exceptions=False,
         )
         self.layout = Layout(project)
         self.app.layout = self.layout.base()
+        # needed for initialisation of buttons and js libs
         self.app.validation_layout = html.Div(
-            [self.app.layout]+list(self.layout.tabs_content.values()))
+             [self.app.layout]+list(self.layout.tabs_init_content.values()))
 
         # add callbacks
         callbacks = Callbacks(self.project, self.layout)
