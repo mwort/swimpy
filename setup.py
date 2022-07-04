@@ -79,6 +79,7 @@ setup(
         "dashboard": [
             "dash",
             "dash_bootstrap_components",
+            "dash-leaflet",
             "diskcache",
             "psutil",
             "multiprocess",
