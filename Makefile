@@ -126,16 +126,14 @@ dist/swimpy: ## build single executable for swimpy
 
 # Creates a single executable for a given platform, using swimpy/scripts/swimpy-dashboard as the entrypoint
 # Meant to be created in a venv or docker container
-dash_leaflet := $(shell python -c "import dash_leaflet; import os.path as osp; print(osp.dirname(dash_leaflet.__file__))")
-
 dist/swim-dashboard: dependencies/swim/code/swim ## build single executable for `swimpy dashboard start`
 	pip install pyinstaller
 	pip install -e .[dashboard]
 	pip install -r requirements_dev.txt
+	dash_leaflet="$(shell python -c 'import dash_leaflet; import os.path as osp; print(osp.dirname(dash_leaflet.__file__))')"
 	mkdir -p $@
 	cp -r dependencies/swim/project/* $@
 	cp dependencies/swim/code/swim $@
-	unzip -o dashboard_resources/dashboard-swimpy-resources.zip -d dist/swim-dashboard/
 	pyinstaller \
 		--distpath $@ \
 		-p dependencies/modelmanager \
