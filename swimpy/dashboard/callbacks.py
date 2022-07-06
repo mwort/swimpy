@@ -49,7 +49,7 @@ class Callbacks:
         # unpack parameters
         params = {pgn: v for pgn, v in
                   zip(self.layout.highlighted_parameters, parameter_values)}
-        sim_start = dt.date(int(params[("config_parameters", "iyr")]), 1, 1)
+        sim_start = self.project.config_parameters.start_date
         sim_end = dt.date(sim_start.year + int(params[("config_parameters", "nbyr")])-1, 12, 31)
         ndays = (sim_end - sim_start).days
         # set parameters in swim
@@ -69,20 +69,28 @@ class Callbacks:
         process = Popen(swimcommand, stdout=PIPE, stderr=PIPE)
 
         prog = 0
-        q = None
         while process.poll() is None:
             time.sleep(1)
+            q = None
+            hydv = None
             # reading discharge might fail due to incomplete lines
             try:
                 q = self.project.station_daily_discharge
+                hydv = self.project.hydrotope_daily_waterbalance
                 prog = len(q)
             except Exception:
                 pass
-            qgraph = graphs.station_daily_discharge(q, sim_start, sim_end)
+            qgraph = [
+                graphs.station_daily_discharge(q, sim_start, sim_end),
+                #graphs.hydrotopes_daily_waterbalance(hydv, sim_start, sim_end),
+            ]
             set_progress((str(prog), str(ndays), "%1.0f%%" % (prog*100/ndays), qgraph))
         # make sure progress bar and graph are complete
         set_progress((str(ndays-1), str(ndays), "Saving...", qgraph))
         # run = self.project.save_run(tags=tags or "", notes=notes or "")
-        qgraph = graphs.station_daily_discharge(self.project.station_daily_discharge, sim_start, sim_end)
+        qgraph = [
+            graphs.station_daily_discharge(self.project.station_daily_discharge, sim_start, sim_end),
+            #graphs.hydrotopes_daily_waterbalance(self.project.hydrotope_daily_waterbalance, sim_start, sim_end),
+        ]
         stdoutdata, stderrdata = process.communicate()
         return ["", qgraph]

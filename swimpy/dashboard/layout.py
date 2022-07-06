@@ -17,9 +17,11 @@ class Layout:
         "Discharge": [[graphs.plotly_station_daily_and_regime_discharge],
                       [graphs.plotly_station_daily_and_regime_discharge_component],
                     ],
+        "Hydrotope": [[graphs.plotly_hydrotopes_daily_waterbalance]],
         "Maps": [[graphs.map_hydrotope_means("hydrotope_evapmean_gis")],
                  [graphs.map_hydrotope_means("hydrotope_gwrmean_gis")],
                  [graphs.map_hydrotope_means("hydrotope_pcpmean_gis")]],
+        "Reservoirs": [[graphs.plotly_reservoir]],
         "Statistics": [[graphs.table_catchment_annual_waterbalance],
                        [graphs.table_daily_discharge_performance],
                     ],
@@ -27,6 +29,7 @@ class Layout:
 
     parameter_groups = [
             ("Run parameters", "config_parameters", "nbyr  iyr".split()),
+            ("Reservoir parameters", "reservoir_parameters", ['caphpp', 'rsveff', 'rsvevapc']),
             ("Output parameters", "config_parameters", "isu1  isu2  isu3  isu4  isu5 is1   ih1   is2   ih2   is3   ih3   is4   ih4   is5   ih5   is6   ih6   is7   ih7".split()),
             ("Switches", "basin_parameters", "isc icn idlef intercep iemeth idvwk subcatch bResModule bWAM_Module bSnowModule radiation bDormancy".split()),
             ("Evaporation parameters", "basin_parameters", "ecal      thc       epco      ec1".split()),
@@ -38,7 +41,6 @@ class Layout:
             ("Transmission loss parameters", "basin_parameters", "tlrch     evrch     tlgw maxup".split()),
         ]
     highlighted_parameters = [
-        ("config_parameters", "iyr"),
         ("config_parameters", "nbyr"),
         ("basin_parameters", "sccor"),
         ("basin_parameters", "ecal"),
@@ -162,9 +164,9 @@ class Layout:
 
         r = dbc.Row([
             dbc.Col([
-                html.H3("Run parameters", className="pt-4"),
+                html.H3("Main parameters", className="pt-4"),
                 dbc.Col(children=config_parameter_inputs),
-                html.H3("Main model parameters", className="pt-4"),
+                #html.H3("Main model parameters", className="pt-4"),
                 dbc.Row(className="w-75", children=basin_parameter_inputs),
                 dbc.Col(
                     className="d-flex gap-3 mt-5",
@@ -177,7 +179,10 @@ class Layout:
                 html.P(id="paragraph_id", children=["Not run"]),
             ], className="col-lg-4 col-md-12 order-md-2 order-lg-first"),
 
-            dbc.Col(graphs.station_daily_discharge(self.project.station_daily_discharge, sim_start, sim_end),
+            dbc.Col([
+                graphs.station_daily_discharge(self.project.station_daily_discharge, sim_start, sim_end),
+                #graphs.hydrotopes_daily_waterbalance(self.project.hydrotope_daily_waterbalance, sim_start, sim_end),
+                ],
                     id="hydro_graph", className="col-8"),
             dbc.Col(id="hydro_graph_progress", className="col-lg-8 col-md-12")
         ])
