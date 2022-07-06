@@ -6,7 +6,7 @@ docker build -t mwort/swim-dashboard -f Dockerfile_swim_dashboard .
 # push to docker Hub
 docker push mwort/swim-dashboard
 
-n=5
+n=15
 container_id_file="swim_dashboard_containers.txt"
 random_strings_file="random_strings.txt"
 
