@@ -9,6 +9,10 @@ A python package to interact and test the ecohydrological model SWIM.
 * Free software: MIT license
 * Documentation: http://www.pik-potsdam.de/~wortmann/swimpy
 
+This is the branch where the SWIM-Dashboard is developed. Here is a screenshot of the running dashboard and model:
+
+![alt text](docs/_static/img/swim_dashboard_run_model.png)
+
 
 Quickstart
 ----------

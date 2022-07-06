@@ -57,7 +57,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=requirements,
-    data_files=package_files('swimpy/resources'),
+    data_files=(
+        package_files('swimpy/resources') +
+        package_files('swimpy/dashboard/assets') +
+        package_files('swimpy/dashboard/static')
+    ),
     license="MIT license",
     zip_safe=False,
     keywords='swimpy',
