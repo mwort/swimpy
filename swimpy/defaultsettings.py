@@ -5,6 +5,11 @@ They can be overriden in the `settings.py` file or temporarily when
 instantiating a project using `p = Project(setting=value)`.
 """
 
+# import inspect
+# from modelmanager.utils import propertyplugin as _propertyplugin
+# from modelmanager.plugins.templates import TemplatesDict as _TemplatesDict
+# from modelmanager.plugins.pandas import ReadWriteDataFrame as _ReadWriteDataFrame
+
 # plugins
 from modelmanager.plugins.browser import browser
 from modelmanager.plugins import clone
@@ -45,15 +50,17 @@ plot_summary_functions = ['station_daily_discharge.plot',
 globals().update(input.PLUGINS)
 globals().update(output.PLUGINS)
 
+# for n, p in input.__dict__.items():
+#     if inspect.isclass(p) and set([_ReadWriteDataFrame, _TemplatesDict]) & set(p.__mro__[1:]):
+#         globals().update({n: _propertyplugin(p)})
+# globals().update({n: input.__dict__[n] for n in ['climate']})
+
 
 # put here to enable overriding
 @property
 def project_name(self):
-    """Short SWIM project name inferred from .cod file."""
-    from glob import glob
-    from os import path
-    ppn = glob(path.join(self.projectdir, 'input/*.cod'))
-    return path.splitext(path.basename(ppn[0]))[0] if len(ppn) == 1 else None
+    """Short SWIM project name inferred from *.nml file."""
+    return self.parfile.replace('.nml', '')
 
 
 #: Plugins that require a resource dir to exist.

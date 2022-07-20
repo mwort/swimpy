@@ -7,7 +7,7 @@ from __future__ import absolute_import, print_function
 import os
 import os.path as osp
 import sys
-import glob
+from glob import glob
 import shutil
 import datetime as dt
 import subprocess
@@ -16,6 +16,7 @@ from decimal import Decimal
 
 import modelmanager as mm
 from modelmanager.settings import SettingsManager, parse_settings
+from modelmanager.project import ProjectDoesNotExist
 
 from swimpy import defaultsettings
 
@@ -31,7 +32,7 @@ class Project(mm.Project):
     Attributes
     ----------
     projectdir : str path
-        Absolute path to the project directory.
+        Absolute path to the project directory or <parameters>.nml.
     resourcedir : bool
         Assume resourcedir to exist or load project without resources.
     settings : modelmanager.SettingsManager
@@ -39,7 +40,19 @@ class Project(mm.Project):
     """
 
     def __init__(self, projectdir='.', resourcedir=True, **settings):
-        self.projectdir = osp.abspath(projectdir)
+        if osp.isdir(projectdir):
+            self.projectdir = osp.abspath(projectdir)
+            parfile = glob(osp.join(self.projectdir, '*.nml'))
+            if len(parfile) == 0:
+                raise ProjectDoesNotExist("Could not find a parameter file *.nml in given directory!")
+            if len(parfile) > 1:
+                raise ProjectDoesNotExist('Found more than one *.nml in given directory. Please specify a single *.nml!')
+            self.parfile = osp.basename(parfile[0])
+        elif osp.isfile(projectdir):
+            self.parfile = osp.basename(projectdir)
+            self.projectdir = osp.abspath(osp.dirname(projectdir))
+        else:
+            raise ProjectDoesNotExist('Input projectdir must be a directory or file path!')
         self.settings = SettingsManager(self)
         # load default settings
         self.settings.defaults = mm.settings.load_settings(defaultsettings)
@@ -79,7 +92,8 @@ class Project(mm.Project):
             kw.update({'functionname': 'run', 'save': save, 'quiet': quiet})
             return self.cluster(cluster, **kw)
 
-        swimcommand = [self.swim, self.projectdir+'/']
+        ppn = glob(osp.join(self.projectdir, self.parfile))
+        swimcommand = [self.swim, ppn]
         # silence output
         sof = quiet if type(quiet) == str else os.devnull
         stdout = open(sof, 'w') if quiet else None
@@ -325,7 +339,7 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
     projectdir : str path
         Project directory. Will be created if not existing.
     name : str
-        Name of the new project, if input directory doesnt exists.
+        Name of the new project, if input directory does not exist.
     gitrepo : str
         URL or path to the SWIM repository. If a URL is given, the repository
         is cloned into the resourcedir. (Defaults to swimpy.swim_url)
@@ -339,7 +353,7 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
     # defaults
     import swimpy
     swim_url = swimpy.swim_url
-    dirs = ['input', 'output/Res', 'output/GIS', 'output/Flo']
+    dirs = ['input', 'output']
 
     mmproject = mm.project.setup(projectdir, resourcedir)
     # swim specific customisation of resourcedir
@@ -370,24 +384,12 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
         testinputpath = osp.join(repopath, 'project', 'input')
         print('Copying all SWIM default input files from: %s' % testinputpath)
         mm.utils.copy_resources(testinputpath, osp.join(projectdir, 'input'))
-        for f in glob.glob(osp.join(projectdir, 'input', '*blank*')):
-            newf = osp.basename(f).replace('blank', name)
-            os.rename(f, osp.join(osp.dirname(f), newf))
-        # link swim exe and conf
-        os.symlink(osp.join(repopath, 'code', 'swim'),
-                   osp.join(projectdir, 'swim'))
-        shutil.copy(osp.join(repopath, 'project', 'swim.conf'), projectdir)
-        # change input names in file.cio
-        with open(osp.join(projectdir, 'input', 'file.cio')) as f:
-            cio = f.read().replace('blank', name)
-        with open(osp.join(projectdir, 'input', 'file.cio'), 'w') as f:
-            f.write(cio.replace('blank', name))
-    # rename templates with project name in filename
-    for fp in ['cod', 'bsn']:
-        ppn = mm.utils.get_paths_pattern('input/*.' + fp, projectdir)
-        tp = osp.join(mmproject.resourcedir, 'templates')
-        if len(ppn) > 0:
-            os.rename(osp.join(tp, 'input/%s.txt' % fp), osp.join(tp, ppn[0]))
+        # link swim exe
+        os.symlink(osp.abspath(osp.join(repopath, 'code', 'swim')),
+                   osp.abspath(osp.join(projectdir, 'swim')))
+        # default parameters .nml
+        shutil.copyfile(osp.join(repopath, 'project/blankenstein_parameters.nml'),
+                        osp.join(projectdir, name+'.nml'))
     # load as a swim project
     project = Project(projectdir)
     return project

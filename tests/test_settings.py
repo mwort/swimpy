@@ -18,12 +18,9 @@ cluster_slurmargs = dict(qos='priority')
 
 
 def _read_q():
-    cols = ['y', 'm', 'd', 'BLANKENSTEIN']
-    path = osp.join(osp.dirname(__file__), '../input/runoff.dat')
-    q = pd.read_csv(path, skiprows=2, header=None, delim_whitespace=True,
-                    index_col=0, parse_dates=[[0, 1, 2]], names=cols,
-                    na_values=[-9999])
-    q.index = q.index.to_period()
+    path = osp.join(osp.dirname(__file__), '../input/discharge.csv')
+    q = pd.read_csv(path, index_col=0, parse_dates=[0], na_values=[-9999])
+    #q.index = q.index.to_period() # needed?!
     q['HOF'] = q['BLANKENSTEIN']*0.5
     return q
 

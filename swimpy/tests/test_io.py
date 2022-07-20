@@ -6,19 +6,38 @@ import pandas as pd
 
 class Parameters:
 
-    def test_basin_parameters(self):
-        bsn = self.project.basin_parameters
-        self.assertGreater(len(bsn), 0)
-        for k, v in bsn.items():
-            self.assertEqual(self.project.basin_parameters(k)[0], v)
-
     def test_config_parameters(self):
         cod = self.project.config_parameters
         self.assertGreater(len(cod), 0)
         for k in cod:
             self.assertEqual(self.project.config_parameters(k)[0],
                              self.project.config_parameters[k])
-
+        self.assertEqual(self.project.config_parameters('iyr'),
+                         self.project.time_parameters('iyr'))
+        self.project.config_parameters['iyr'] += 1
+        self.assertEqual(self.project.config_parameters('iyr'),
+                         self.project.time_parameters('iyr'))
+        self.project.time_parameters(iyr=1996)
+        self.assertEqual(self.project.config_parameters('iyr'),
+                         self.project.time_parameters('iyr'))
+        # test that set_default() works
+        for gr in self.project.config_parameters.keys():
+            for nl in self.project.config_parameters[gr].keys():
+                if self.project.config_parameters[gr][nl] != self.project.config_parameters.defaults[gr][nl]:
+                    self.project.config_parameters.set_default(nl)
+                    self.assertEqual(self.project.config_parameters(nl)[0],
+                                     self.project.config_parameters.defaults[gr][nl])
+                    break
+        # behaviour for not implemented parameters
+        self.assertRaises(KeyError, self.project.time_parameters, 'bla')
+        self.assertRaises(KeyError, self.project.time_parameters, bla=5)
+        with self.assertRaises(KeyError):
+            self.project.config_parameters['bla']
+        with self.assertRaises(KeyError):
+            self.project.config_parameters['bla'] = 5
+        self.assertRaises(KeyError, self.project.config_parameters,
+                          bla_parameters={'bla1': 1995, 'bla2': True})
+        
 
 class Input:
 
