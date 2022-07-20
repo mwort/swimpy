@@ -616,13 +616,10 @@ class structure_file(ReadWriteDataFrame):
     This is accessible via the ``hydroptes.attributes`` propertyplugin and
     placed here for consistency and reuse.
     """
-    file_columns = ['subbasinID', 'landuseID', 'soilID', 'management',
-                    'wetland', 'elevation', 'glacier', 'area', 'cells',
-                    'irrigation']
 
     @property
     def path(self):
-        relpath = 'input/%s.str' % self.project.project_name
+        relpath = osp.join(self.project.inputpath, 'hydrotope.csv')
         return self._path if hasattr(self, '_path') else relpath
 
     @path.setter
@@ -631,29 +628,13 @@ class structure_file(ReadWriteDataFrame):
         return
 
     def read(self, **kwargs):
-        df = pd.read_csv(self.path, delim_whitespace=True)
-        # pandas issues UserWarning if attribute is set with Series-like
-        warnings.simplefilter('ignore', UserWarning)
-        self.file_header = list(df.columns)
-        warnings.resetwarnings()
-
-        nstr, nexp = len(df.columns), len(self.file_columns)
-        if nexp == nstr:
-            df.columns = self.file_columns
-        else:
-            msg = ('Non-standard column names: Found different number of '
-                   'columns in .str file, expecting %i, got %i: %s')
-            warnings.warn(msg % (nexp, nstr, ', '.join(df.columns)))
-        # get rid of last 0 line
-        if df.iloc[-1, :].sum() == 0:
-            df = df.iloc[:-1, :]
-        df.index = list(range(1, len(df)+1))
+        df = pd.read_csv(self.path, skipinitialspace=True)
+        df.set_index('hydrotope_id', inplace=True)
         return df
 
     def write(self, **kwargs):
-        with open(self.path, 'w') as f:
-            self.to_string(f, index=False, header=self.file_header)
-            f.write('\n'+' '.join(['0 ']*len(self.file_header)))
+        self['hydrotope_id'] = self.index
+        self.to_csv(self.path, index = False)
         return
 
 

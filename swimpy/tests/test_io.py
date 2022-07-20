@@ -41,13 +41,6 @@ class Parameters:
 
 class Input:
 
-    def test_structure_file(self):
-        strf = self.project.hydrotopes.attributes
-        akm = strf.area.sum()*1e-6
-        self.assertAlmostEqual(akm, self.project.basin_parameters['da'], 1)
-        cod_mb = self.project.config_parameters['mb']
-        self.assertEqual(strf.subbasinID.max(), cod_mb)
-
     def test_station_daily_discharge_observed(self):
         ro = self.project.station_daily_discharge_observed
         if len(ro.subbasins):

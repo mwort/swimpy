@@ -19,7 +19,7 @@ class WaterBalance:
 
     @cached
     def subbasin_area(self):
-        sba = self.project.hydrotopes.attributes.groupby('subbasinID')['area']
+        sba = self.project.hydrotopes.attributes.groupby('subbasin_id')['area']
         return sba.sum()
 
     @cached
