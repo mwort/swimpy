@@ -63,6 +63,26 @@ class Project(mm.Project):
         self.settings.load(defaults=self.settings.defaults, resourcedir=True,
                            **settings)
         return
+    
+    @property
+    def inputpath(self):
+        relpath = self.config_parameters['input_dir']
+        return self._path if hasattr(self, '_path') else relpath
+
+    @inputpath.setter
+    def inputpath(self, value):
+        self._path = value
+        return
+
+    @property
+    def outputpath(self):
+        relpath = self.config_parameters['output_dir']
+        return self._path if hasattr(self, '_path') else relpath
+
+    @outputpath.setter
+    def outputpath(self, value):
+        self._path = value
+        return
 
     @parse_settings
     def run(self, save=True, cluster=None, quiet=False, **kw):
@@ -353,7 +373,6 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
     # defaults
     import swimpy
     swim_url = swimpy.swim_url
-    dirs = ['input', 'output']
 
     mmproject = mm.project.setup(projectdir, resourcedir)
     # swim specific customisation of resourcedir
@@ -372,12 +391,6 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
             subprocess.check_call(['git', 'clone', '-q', gitrepo, repopath])
     else:
         repopath = None
-
-    # create empty directories as needed
-    for d in dirs:
-        dp = osp.join(projectdir, d)
-        if not osp.exists(dp):
-            os.makedirs(dp)
 
     # copy test project files
     if repopath:
