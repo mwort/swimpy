@@ -198,35 +198,42 @@ class config_parameters(f90nml.Namelist):
         return rpr + pargrp + ')'
 
 
-# class subcatch_parameters(ReadWriteDataFrame):
-#     """
-#     Read or write parameters in the subcatch.prm file.
-#     """
-#     path = 'input/subcatch.prm'
-#     index_name = 'catchmentID'
-#     force_dtype = {index_name: int}
+class subcatch_parameters(ReadWriteDataFrame):
+    """
+    Read or write parameters in the catchment.csv file.
+    """
+    index_name = 'catchment_id'
+    force_dtype = {index_name: int}
 
-#     def read(self, **kwargs):
-#         bsn = pd.read_csv(self.path, delim_whitespace=True,
-#                           dtype=self.force_dtype)
-#         stn = 'stationID' if 'stationID' in bsn.columns else 'station'
-#         bsn.set_index(stn, inplace=True)
-#         return bsn
+    @property
+    def path(self):
+        relpath = osp.join(self.project.inputpath, 'catchment.csv')
+        return self._path if hasattr(self, '_path') else relpath
 
-#     def write(self, **kwargs):
-#         # make sure catchmentID is first column
-#         if self.columns[0] != self.index_name:
-#             if self.index_name in self.columns:
-#                 cid = self.pop(self.index_name)
-#             else:
-#                 cid = self.project.stations.loc[self.index, 'stationID']
-#             self.insert(0, self.index_name, cid)
-#         bsn = self.sort_values(self.index_name)
-#         bsn['stationID'] = bsn.index
-#         strtbl = bsn.to_string(index=False, index_names=False)
-#         with open(self.path, 'w') as f:
-#             f.write(strtbl)
-#         return
+    @path.setter
+    def path(self, value):
+        self._path = value
+        return
+    
+    def read(self, **kwargs):
+        bsn = pd.read_csv(self.path, dtype=self.force_dtype, skipinitialspace=True)
+        stn = 'station_id' if 'station_id' in bsn.columns else 'station'
+        bsn.set_index(stn, inplace=True)
+        return bsn
+
+    def write(self, **kwargs):
+        # make sure catchment_id is first column
+        # TODO: still necessary?
+        if self.columns[0] != self.index_name:
+            if self.index_name in self.columns:
+                cid = self.pop(self.index_name)
+            else:
+                cid = self.project.stations.loc[self.index, 'station_id']
+            self.insert(0, self.index_name, cid)
+        bsn = self.sort_values(self.index_name)
+        bsn['station_id'] = bsn.index
+        bsn.to_csv(self.path, index = False)
+        return
 
 
 # class subcatch_definition(ReadWriteDataFrame):

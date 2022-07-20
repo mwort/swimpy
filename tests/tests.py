@@ -85,34 +85,34 @@ class ProjectTestCase(unittest.TestCase):
         shutil.rmtree(TEST_GRASSDB)
 
 
-# class TestParameters(ProjectTestCase, test_io.Parameters):
+class TestParameters(ProjectTestCase, test_io.Parameters):
 
-#     def test_subcatch_parameters(self):
-#         from swimpy.input import subcatch_parameters as SubcatchParameters
-#         # read
-#         sbc = self.project.subcatch_parameters
-#         self.assertIsInstance(sbc, SubcatchParameters)
-#         BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN']
-#         self.assertIsInstance(BLKS, pd.Series)
-#         roc2 = self.project.subcatch_parameters['roc2']
-#         self.assertIsInstance(roc2, pd.Series)
-#         # write
-#         self.project.subcatch_parameters(roc2=1)
-#         self.assertEqual(self.project.subcatch_parameters['roc2'].mean(), 1)
-#         self.project.subcatch_parameters(BLANKENSTEIN=2)
-#         BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN'].mean()
-#         self.assertEqual(BLKS, 2)
-#         HOF = self.project.subcatch_parameters.loc['HOF']
-#         newparamdict = {'roc2': 3.0, 'roc4': 10.0}
-#         self.project.subcatch_parameters(HOF=newparamdict)
-#         for k, v in newparamdict.items():
-#             HOF[k] = v
-#         self.assertTrue((self.project.subcatch_parameters.loc['HOF'] ==
-#                          HOF).all())
-#         # write entire DataFrame
-#         self.project.subcatch_parameters(sbc.copy())
-#         nsbc = self.project.subcatch_parameters
-#         self.assertTrue((nsbc.copy() == sbc.copy()).all().all())
+    def test_subcatch_parameters(self):
+        from swimpy.input import subcatch_parameters as SubcatchParameters
+        # read
+        sbc = self.project.subcatch_parameters
+        self.assertIsInstance(sbc, SubcatchParameters)
+        BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN']
+        self.assertIsInstance(BLKS, pd.Series)
+        roc2 = self.project.subcatch_parameters['roc2']
+        self.assertIsInstance(roc2, pd.Series)
+        # write
+        self.project.subcatch_parameters(roc2=1)
+        self.assertEqual(self.project.subcatch_parameters['roc2'].mean(), 1)
+        self.project.subcatch_parameters(BLANKENSTEIN=2)
+        BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN'].mean()
+        self.assertEqual(BLKS, 2)
+        HOF = self.project.subcatch_parameters.loc['HOF']
+        newparamdict = {'roc2': 3.0, 'roc4': 10.0}
+        self.project.subcatch_parameters(HOF=newparamdict)
+        for k, v in newparamdict.items():
+            HOF[k] = v
+        self.assertTrue((self.project.subcatch_parameters.loc['HOF'] ==
+                         HOF).all())
+        # write entire DataFrame
+        self.project.subcatch_parameters(sbc.copy())
+        nsbc = self.project.subcatch_parameters
+        self.assertTrue((nsbc.copy() == sbc.copy()).all().all())
 
 #     def test_subcatch_definition(self):
 #         scdef = self.project.subcatch_definition
