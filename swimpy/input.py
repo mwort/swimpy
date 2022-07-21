@@ -333,281 +333,220 @@ class subcatch_parameters(ReadWriteDataFrame):
 #         return
 
 
-# class climate(object):
-#     """All climate input related functionality."""
+class climate(object):
+    """All climate input related functionality."""
 
-#     def __init__(self, project):
-#         self.project = project
-#         return
+    def __init__(self, project):
+        self.project = project
+        return
 
-#     @propertyplugin
-#     class inputdata(ReadWriteDataFrame):
-#         """A lazy DataFrame representation of the two 'clim'-files.
+    @propertyplugin
+    class inputdata(ReadWriteDataFrame):
+        """A lazy DataFrame representation of climate.csv.
 
-#         Rather than being read on instantiation, .read() and .write() need to
-#         be called explicitly since both operations are commonly time-consuming.
-#         """
-#         namepattern = 'clim%i.dat'
-#         variables = ['radiation', 'humidity', 'precipitation',
-#                      'tmin', 'tmax', 'tmean']
-#         clim_variables = {1: variables[:3], 2: variables[3:]}
-#         column_levels = ['variable', 'subbasinID']
-#         plugin = ['print_stats', 'plot_temperature', 'plot_precipitation']
+        Rather than being read on instantiation, .read() and .write() need to
+        be called explicitly since both operations are commonly time-consuming.
+        """
+        plugin = ['print_stats', 'plot_temperature', 'plot_precipitation']
 
-#         def __init__(self, project):
-#             pd.DataFrame.__init__(self)
-#             self.project = project
-#             self.path = project.config_parameters['climatedir']
-#             ReadWriteDataFrame.__init__(self, project)
-#             return
+        def __init__(self, project):
+            pd.DataFrame.__init__(self)
+            self.project = project
+            ReadWriteDataFrame.__init__(self, project)
+            return
 
-#         def read(self, climdir=None, **kw):
-#             startyr = self.project.config_parameters['iyr']
-#             path = osp.join(climdir or self.path, self.namepattern)
-#             dfs = pd.concat([self.read_clim(path % i, startyr, vs, **kw)
-#                              for i, vs in self.clim_variables.items()], axis=1)
-#             dfs.sort_index(axis=1, inplace=True)
-#             return dfs
+        @property
+        def path(self):
+            relpath = osp.join(self.project.inputpath, 'climate.csv')
+            return self._path if hasattr(self, '_path') else relpath
 
-#         @classmethod
-#         def read_clim(cls, path, startyear, variables, **readkwargs):
-#             """Read single clim file and return DataFrame with index and
-#             columns.
-#             """
-#             assert len(variables) == 3
-#             readargs = dict(delim_whitespace=True, header=None, skiprows=1)
-#             readargs.update(readkwargs)
-#             df = pd.read_csv(path, **readargs)
-#             df.index = pd.period_range(start=str(startyear), periods=len(df),
-#                                        freq='d', name='time')
-#             nsub = int(len(df.columns)/3)
-#             df.columns = cls._create_columns(nsub, variables)
-#             return df
+        @path.setter
+        def path(self, value):
+            self._path = value
+            return
 
-#         @classmethod
-#         def _create_columns(cls, nsubbasins, variables):
-#             v = [range(1, nsubbasins+1), variables]
-#             ix = pd.MultiIndex.from_product(v, names=cls.column_levels[::-1])
-#             return ix.swaplevel()
+        def read(self):
+            df = pd.read_csv(self.path, skipinitialspace=True,
+                             parse_dates=['time'], index_col='time')
+            # multi-index columns
+            df = pd.pivot_table(df, index='time', columns=['subbasin_id'])
+            df.columns.names = ['variable', 'subbasin_id']
+            return df
 
-#         def write(self, outdir=None, **writekw):
-#             path = osp.join(outdir or self.path, self.namepattern)
-#             for i, vs in self.clim_variables.items():
-#                 # enforce initial column order
-#                 df = self[self._create_columns(int(len(self.columns)/6), vs)]
-#                 header = ['%s_%s' % (v[:4], s) for v, s in df.columns]
-#                 writeargs = dict(index=False, header=header)
-#                 writeargs.update(writekw)
-#                 with open(path % i, 'w') as f:
-#                     df.to_string(f, **writeargs)
-#             return
+        def write(self):
+            self.to_csv(self.path)
+            return
 
-#         def print_stats(self):
-#             """Print statistics for all variables."""
-#             stats = self.mean(axis=1, level=0).describe().round(2).to_string()
-#             print(stats)
-#             return stats
+        def print_stats(self):
+            """Print statistics for all variables."""
+            stats = self.mean(axis=1, level=0).describe().round(2).to_string()
+            print(stats)
+            return stats
 
-#         def aggregate(self, variables=[], **kw):
-#             """Mean data over all subbasins and optionally subset and aggregate
-#             to a frequency or regime.
+        def aggregate(self, variables=[], **kw):
+            """Mean data over all subbasins and optionally subset and aggregate
+            to a frequency or regime.
 
-#             Arguments
-#             ---------
-#             variables : list
-#                 Subset variables. If empty or None, return all.
-#             **kw :
-#                 Keywords to utils.aggregate_time.
-#             """
-#             vars = variables or self.variables
-#             subs = self[vars].mean(axis=1, level='variable')
-#             aggm = {v: 'sum' if v == 'precipitation' else 'mean' for v in vars}
-#             aggregated = utils.aggregate_time(subs, resample_method=aggm, **kw)
-#             return aggregated
+            Arguments
+            ---------
+            variables : list
+                Subset variables. If empty or None, return all.
+            **kw :
+                Keywords to utils.aggregate_time.
+            """
+            vars = variables or self.columns.levels[0].tolist()
+            subs = self[vars].mean(axis=1, level='variable')
+            aggm = {v: 'sum' if v == 'precipitation' else 'mean' for v in vars}
+            aggregated = utils.aggregate_time(subs, resample_method=aggm, **kw)
+            return aggregated
 
-#         @plot.plot_function
-#         def plot_temperature(self, regime=False, freq='d', minmax=True,
-#                              ax=None, runs=None, output=None, **linekw):
-#             """Line plot of mean catchment temperature.
+        @plot.plot_function
+        def plot_temperature(self, regime=False, freq='d', minmax=True,
+                             ax=None, runs=None, output=None, **linekw):
+            """Line plot of mean catchment temperature.
 
-#             Arguments
-#             ---------
-#             regime : bool
-#                 Plot regime. freq must be 'd' or 'm'.
-#             freq : <pandas frequency>
-#                 Any pandas frequency to aggregate to.
-#             minmax : bool
-#                 Show min-max range.
-#             **kw :
-#                 Parse any keyword to the tmean line plot function.
-#             """
-#             ax = ax or plt.gca()
-#             clim = self.aggregate(variables=['tmean', 'tmin', 'tmax'],
-#                                   freq=freq, regime=regime)
-#             minmax = [clim.tmin, clim.tmax] if minmax else []
-#             line = plot.plot_temperature_range(clim.tmean, ax, minmax=minmax,
-#                                                **linekw)
-#             if regime:
-#                 xlabs = {'d': 'Day of year', 'm': 'Month'}
-#                 ax.set_xlabel(xlabs[freq])
-#             return line
+            Arguments
+            ---------
+            regime : bool
+                Plot regime. freq must be 'd' or 'm'.
+            freq : <pandas frequency>
+                Any pandas frequency to aggregate to.
+            minmax : bool
+                Show min-max range.
+            **kw :
+                Parse any keyword to the tmean line plot function.
+            """
+            ax = ax or plt.gca()
+            clim = self.aggregate(variables=['tmean', 'tmin', 'tmax'],
+                                  freq=freq, regime=regime)
+            minmax = [clim.tmin, clim.tmax] if minmax else []
+            line = plot.plot_temperature_range(clim.tmean, ax, minmax=minmax,
+                                               **linekw)
+            if regime:
+                xlabs = {'d': 'Day of year', 'm': 'Month'}
+                ax.set_xlabel(xlabs[freq])
+            return line
 
-#         @plot.plot_function
-#         def plot_precipitation(self, regime=False, freq='d',
-#                                ax=None, runs=None, output=None, **barkwargs):
-#             """Bar plot of mean catchment precipitation.
+        @plot.plot_function
+        def plot_precipitation(self, regime=False, freq='d',
+                               ax=None, runs=None, output=None, **barkwargs):
+            """Bar plot of mean catchment precipitation.
 
-#             Arguments
-#             ---------
-#             regime : bool
-#                 Plot regime. freq must be 'd' or 'm'.
-#             freq : <pandas frequency>
-#                 Any pandas frequency to aggregate to.
-#             **barkwargs :
-#                 Parse any keyword to the bar plot function.
-#             """
-#             ax = ax or plt.gca()
-#             clim = self.aggregate(variables=['precipitation'],
-#                                   freq=freq, regime=regime)['precipitation']
-#             bars = plot.plot_precipitation_bars(clim, ax, **barkwargs)
-#             if regime:
-#                 xlabs = {'d': 'Day of year', 'm': 'Month'}
-#                 ax.set_xlabel(xlabs[freq])
-#             return bars
+            Arguments
+            ---------
+            regime : bool
+                Plot regime. freq must be 'd' or 'm'.
+            freq : <pandas frequency>
+                Any pandas frequency to aggregate to.
+            **barkwargs :
+                Parse any keyword to the bar plot function.
+            """
+            ax = ax or plt.gca()
+            clim = self.aggregate(variables=['precipitation'],
+                                  freq=freq, regime=regime)['precipitation']
+            bars = plot.plot_precipitation_bars(clim, ax, **barkwargs)
+            if regime:
+                xlabs = {'d': 'Day of year', 'm': 'Month'}
+                ax.set_xlabel(xlabs[freq])
+            return bars
 
-#     @propertyplugin
-#     class netcdf_inputdata(object):
-#         variables = ['tmean', 'tmin', 'tmax',
-#                      'precipitation', 'radiation', 'humidity']
+    @propertyplugin
+    class netcdf_inputdata(object):
+        variables = ['tmean', 'tmin', 'tmax', 'precipitation',
+                     'radiation', 'humidity']
 
-#         def __init__(self, project):
-#             self.project = project
-#             self.path = project.config_parameters['climatedir']
-#             self.parameters = self.project.climate.config_parameters
-#             return
+        def __init__(self, project):
+            self.project = project
+            self.path = project.inputpath
+            self.parameters = project.nc_climate_parameters
+            return
 
-#         @property
-#         def grid_mapping(self):
-#             pth = self.parameters["ncgrid"]
-#             with open(osp.join(self.path, pth)) as f:
-#                 head = f.readline().replace("#", "").split()
-#                 grid = pd.read_csv(f, delim_whitespace=True, index_col=0,
-#                                    header=None, names=head)
-#             return grid
+        @property
+        def grid_mapping(self):
+            pth = osp.join(self.path,
+                           self.parameters["nc_grid"])
+            grid = pd.read_csv(pth, skipinitialspace=True,
+                               index_col='subbasinID')
+            return grid
 
-#         def read_gridded(self, variable, time=None, subbasins=None):
-#             """Read a variable from the netcdf files and return as grid.
+        def read_gridded(self, variable, time=None, subbasins=None):
+            """Read a variable from the netcdf files and return as grid.
 
-#             Arguments
-#             ---------
-#             variable : str
-#                 Qualified name of climate variable (cf. self.variables)
-#             time : <any pandas time index> | (from, to), optional
-#                 A time slice to read. Use a tuple of (from, to) for slicing,
-#                 including None for open sides. Default: read all.
-#             subbasins : list-like, optional
-#                 Only read for a subset of subbasins.
-#             """
-#             import netCDF4 as nc
-#             msg = variable+" not in %r" % self.variables
-#             assert variable in self.variables, msg
-#             vfn = zip(self.parameters["vnames"], self.parameters["fnames"])
-#             vname, file_path = dict(zip(self.variables, vfn))[variable]
-#             ds = nc.Dataset(osp.join(self.path, file_path))
-#             # get space indeces
-#             lon = ds[self.parameters["lon_vname"]][:]
-#             lonix = pd.Series(range(len(lon)), index=lon)
-#             lat = ds[self.parameters["lat_vname"]][:]
-#             latix = pd.Series(range(len(lat)), index=lat)
-#             grid = self.grid_mapping
-#             if subbasins:
-#                 grid = grid.loc[subbasins]
-#             lons = lonix[grid.lon.unique()].sort_values()
-#             lats = latix[grid.lat.unique()].sort_values()
-#             cl = pd.MultiIndex.from_product((lats.index, lons.index))
-#             # get space indeces
-#             st = pd.Period(str(self.parameters["ref_year"]), freq="d")
-#             timeint = np.array(ds[self.parameters["time_vname"]][:], dtype=int)
-#             pix = st + self.parameters["offset_days"] + timeint
-#             tix = pd.Series(range(len(timeint)), index=pix)
-#             # get time indeces
-#             if time and type(time) == tuple and len(time) == 2:
-#                 tix = tix[time[0]:time[1]]
-#             elif time:
-#                 tix = tix[time]
-#             # read data
-#             data = (ds[vname][tix.values, lats.values, lons.values]
-#                     .reshape(-1, len(cl)))
-#             df = pd.DataFrame(data, columns=cl, index=tix.index)
-#             ds.close()
-#             return df
+            Arguments
+            ---------
+            variable : str
+                Qualified name of climate variable (cf. self.variables)
+            time : <any pandas time index> | (from, to), optional
+                A time slice to read. Use a tuple of (from, to) for slicing,
+                including None for open sides. Default: read all.
+            subbasins : list-like, optional
+                Only read for a subset of subbasins.
+            """
+            import netCDF4 as nc
+            msg = variable+" not in %r" % self.variables
+            assert variable in self.variables, msg
+            vfn = zip(self.parameters["nc_vnames"], self.parameters["nc_fnames"])
+            vname, file_path = dict(zip(self.variables, vfn))[variable]
+            ds = nc.Dataset(osp.join(self.path, file_path))
+            # get space indeces
+            lon = ds[self.parameters["nc_lon_vname"]][:]
+            lonix = pd.Series(range(len(lon)), index=lon)
+            lat = ds[self.parameters["nc_lat_vname"]][:]
+            latix = pd.Series(range(len(lat)), index=lat)
+            grid = self.grid_mapping
+            if subbasins:
+                grid = grid.loc[subbasins]
+            lons = lonix[grid.lon.unique()].sort_values()
+            lats = latix[grid.lat.unique()].sort_values()
+            cl = pd.MultiIndex.from_product((lats.index, lons.index))
+            # get space indeces
+            st = pd.Period(str(self.parameters["nc_ref_year"]), freq="d")
+            timeint = np.array(ds[self.parameters["nc_time_vname"]][:], dtype=int)
+            pix = st + self.parameters["nc_offset_days"] + timeint
+            tix = pd.Series(range(len(timeint)), index=pix)
+            # get time indeces
+            if time and type(time) == tuple and len(time) == 2:
+                tix = tix[time[0]:time[1]]
+            elif time:
+                tix = tix[time]
+            # read data
+            data = (ds[vname][tix.values, lats.values, lons.values]
+                    .reshape(-1, len(cl)))
+            df = pd.DataFrame(data, columns=cl, index=tix.index)
+            ds.close()
+            return df
 
-#         def read(self, variable, time=None, subbasins=None):
-#             """Return climate variable as subbasin weighted means."""
-#             grid = self.grid_mapping
-#             if subbasins:
-#                 grid = grid.loc[subbasins]
-#             ggb = grid.groupby(grid.index)
-#             gridded = self.read_gridded(variable, time=time)
-#             dt = gridded.dtypes.mode()[0]
-#             # single value and weighted means separately
-#             # (trade-off btw speed & memory)
-#             cnt = ggb.weight.count()
-#             data = pd.DataFrame(
-#                 dtype=dt, columns=cnt.index, index=gridded.index)
-#             c1 = cnt[cnt == 1].index
-#             cix = [(la, lo) for la, lo in grid.loc[c1, ["lat", "lon"]].values]
-#             data[c1] = gridded[cix].values
-#             # weighted means looped to avoid large copied array
-#             for s in cnt[cnt > 1].index:
-#                 c = [(la, lo) for la, lo in grid.loc[s, ["lat", "lon"]].values]
-#                 wght = grid.loc[s, 'weight']/grid.loc[s, 'weight'].sum()
-#                 data[s] = gridded[c].mul(wght.values).sum(axis=1).astype(dt)
-#             return data
-#         read.__doc__ += read_gridded.__doc__[58:]
+        def read(self, variable, time=None, subbasins=None):
+            """Return climate variable as subbasin weighted means."""
+            grid = self.grid_mapping
+            if subbasins:
+                grid = grid.loc[subbasins]
+            ggb = grid.groupby(grid.index)
+            gridded = self.read_gridded(variable, time=time)
+            dt = gridded.dtypes.mode()[0]
+            # single value and weighted means separately
+            # (trade-off btw speed & memory)
+            cnt = ggb.weight.count()
+            data = pd.DataFrame(
+                dtype=dt, columns=cnt.index, index=gridded.index)
+            c1 = cnt[cnt == 1].index
+            cix = [(la, lo) for la, lo in grid.loc[c1, ["lat", "lon"]].values]
+            data[c1] = gridded[cix].values
+            # weighted means looped to avoid large copied array
+            for s in cnt[cnt > 1].index:
+                c = [(la, lo) for la, lo in grid.loc[s, ["lat", "lon"]].values]
+                wght = grid.loc[s, 'weight']/grid.loc[s, 'weight'].sum()
+                data[s] = gridded[c].mul(wght.values).sum(axis=1).astype(dt)
+            return data
+        read.__doc__ += read_gridded.__doc__[58:]
 
-#         def __getitem__(self, key):
-#             if type(key) == str:
-#                 return self.read(key)
-#             elif hasattr(key, "__iter__"):
-#                 return pd.concat([self.read(k) for k in key], axis=1, keys=key)
-#             else:
-#                 raise KeyError("%s not in %r" % (key, self.variables))
-
-#     @propertyplugin
-#     class config_parameters(f90nml.Namelist):
-#         path = 'ncinfo.nml'
-#         _nml = None
-#         plugin = ['__call__']
-
-#         def __init__(self, project):
-#             self.path = osp.join(project.projectdir,
-#                                  project.config_parameters['climatedir'],
-#                                  self.path)
-#             f90nml.Namelist.__init__(self)
-#             nml = f90nml.read(self.path)
-#             self.update(nml['nc_parameters'])
-#             self._nml = nml
-#             return
-
-#         def write(self, path=None):
-#             self._nml["nc_parameters"].update(self)
-#             self._nml.write(path or self.path, force=True)
-#             return
-
-#         def __setitem__(self, key, value):
-#             f90nml.Namelist.__setitem__(self, key, value)
-#             if self._nml:
-#                 self.write()
-#             return
-
-#         def __call__(self, *get, **set):
-#             assert get or set
-#             if set:
-#                 self.update(set)
-#             if get:
-#                 return [self[k] for k in get]
-#             return
+        def __getitem__(self, key):
+            if type(key) == str:
+                return self.read(key)
+            elif hasattr(key, "__iter__"):
+                return pd.concat([self.read(k) for k in key], axis=1, keys=key)
+            else:
+                raise KeyError("%s not in %r" % (key, self.variables))
 
 
 class structure_file(ReadWriteDataFrame):
@@ -742,4 +681,4 @@ class structure_file(ReadWriteDataFrame):
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
            if inspect.isclass(p) and
            set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__[1:])}
-PLUGINS.update({n: globals()[n] for n in ['config_parameters']})
+PLUGINS.update({n: globals()[n] for n in ['climate', 'config_parameters']})
