@@ -66,8 +66,9 @@ class Project(mm.Project):
     
     @property
     def inputpath(self):
-        relpath = self.config_parameters['input_dir']
-        return self._path if hasattr(self, '_path') else relpath
+        path = osp.join(self.projectdir,
+                        self.config_parameters['input_dir'])
+        return self._path if hasattr(self, '_path') else path
 
     @inputpath.setter
     def inputpath(self, value):
@@ -76,8 +77,9 @@ class Project(mm.Project):
 
     @property
     def outputpath(self):
-        relpath = self.config_parameters['output_dir']
-        return self._path if hasattr(self, '_path') else relpath
+        path = osp.join(self.projectdir,
+                        self.config_parameters['output_dir'])
+        return self._path if hasattr(self, '_path') else path
 
     @outputpath.setter
     def outputpath(self, value):
