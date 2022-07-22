@@ -2,7 +2,7 @@
 SWIM input functionality.
 """
 import os.path as osp
-import warnings
+from warnings import warn
 import datetime as dt
 import subprocess
 import inspect
@@ -198,139 +198,77 @@ class config_parameters(f90nml.Namelist):
         return rpr + pargrp + ')'
 
 
-class subcatch_parameters(ReadWriteDataFrame):
+class inputFile(ReadWriteDataFrame):
     """
-    Read or write parameters in the catchment.csv file.
+    Abstract class for generic input file handling. No project attribute.
     """
-    index_name = 'catchment_id'
-    force_dtype = {index_name: int}
-
+    
     @property
     def path(self):
-        relpath = osp.join(self.project.inputpath, 'catchment.csv')
+        relpath = osp.join(self.project.inputpath, self.file)
         return self._path if hasattr(self, '_path') else relpath
 
     @path.setter
     def path(self, value):
         self._path = value
         return
-    
+
     def read(self, **kwargs):
-        bsn = pd.read_csv(self.path, dtype=self.force_dtype, skipinitialspace=True)
-        stn = 'station_id' if 'station_id' in bsn.columns else 'station'
-        bsn.set_index(stn, inplace=True)
-        return bsn
+        """Read input file. Result object inherits from pandas.DataFrame. 
+
+        Arguments
+        ---------
+        **kwargs :
+            Keywords to pandas.read_csv.
+        """
+        na_values = ['NA', 'NaN', -999, -999.9, -9999]
+        df = pd.read_csv(self.path, skipinitialspace=True,
+                         index_col=self.index_name, na_values=na_values,
+                         **kwargs)
+        return df
 
     def write(self, **kwargs):
-        # make sure catchment_id is first column
-        # TODO: still necessary?
-        if self.columns[0] != self.index_name:
-            if self.index_name in self.columns:
-                cid = self.pop(self.index_name)
-            else:
-                cid = self.project.stations.loc[self.index, 'station_id']
-            self.insert(0, self.index_name, cid)
-        bsn = self.sort_values(self.index_name)
-        bsn['station_id'] = bsn.index
-        bsn.to_csv(self.path, index = False)
+        """Write to csv file.
+
+        Arguments
+        ---------
+        **kwargs :
+            Keywords to pandas.to_csv.
+        """
+        self.to_csv(self.path, index = True, na_rep='-9999', **kwargs)
         return
 
 
-# class subcatch_definition(ReadWriteDataFrame):
-#     """
-#     Interface to the subcatchment definition file from DataFrame or grass.
-#     """
-#     path = 'input/subcatch.def'
-#     plugin = ['update']
+class hydrotope(inputFile):
+    """
+    Read or write hydrotope.csv
+    """
+    file = 'hydrotope.csv'
+    index_name = 'hydrotope_id'
 
-#     def read(self, **kwargs):
-#         scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=0)
-#         return scdef
+class structure_file(hydrotope):
 
-#     def write(self, **kwargs):
-#         tbl = self.copy()
-#         tbl.insert(0, 'subbasinID', tbl.index)
-#         tblstr = tbl.to_string(index=False, index_names=False)
-#         with open(self.path, 'w') as f:
-#             f.write(tblstr)
-#         return
-
-#     def update(self, catchments=None, subbasins=None):
-#         """Write the definition file from the subbasins grass table.
-
-#         Arguments
-#         ---------
-#         catchments : list-like
-#             Catchment ids to subset the table to. Takes precedence over
-#             subbasins argument.
-#         subbasins : list-like
-#             Subbasin ids to subset the table to.
-#         """
-#         from modelmanager.plugins.grass import GrassAttributeTable
-
-#         cols = ['subbasinID', 'catchmentID']
-#         tbl = GrassAttributeTable(self.project, subset_columns=cols,
-#                                   vector=self.project.subbasins.vector)
-#         # optionally filter
-#         if catchments is not None:
-#             tbl = tbl[[i in catchments for i in tbl.catchmentID]]
-#         elif subbasins is not None:
-#             tbl = tbl.filter(items=subbasins, axis=0)
-#         # add stationID
-#         scp = {v: k for k, v in
-#                self.project.subcatch_parameters['catchmentID'].items()}
-#         tbl['stationID'] = [scp[i] for i in tbl['catchmentID']]
-#         # save and write
-#         self.__call__(tbl)
-#         return
-
-#     def subcatch_subbasin_ids(self, catchmentID):
-#         """Return all subbasinIDs of the subcatchment."""
-#         return self.index[self.catchmentID == catchmentID].values
-
-#     def catchment_subbasin_ids(self, catchmentID):
-#         """Return all subbasins of the catchment respecting the topology.
-
-#         The `project.stations` "ds_stationID" column needs to give the from-to
-#         topology of catchments/stations.
-#         """
-#         ft = self.project.stations['ds_stationID']
-#         all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
-#         ssid = self.subcatch_subbasin_ids
-#         return np.concatenate([ssid(i) for i in all_catchments])
+    def __init__(self, *args, **kwargs):
+        warn(f'{self.__class__.__name__} is deprecated and will be removed in '
+             'a future version. Use project.hydrotope instead.',
+             FutureWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
-# class station_output(ReadWriteDataFrame):
-#     """
-#     Interface to the station output file.
-#     """
-#     path = 'input/gauges.output'
-#     plugin = ['update']
+class catchment(inputFile):
+    """
+    Read or write catchment.csv
+    """
+    file = 'catchment.csv'
+    index_name = 'station_id'
 
-#     def read(self, **kwargs):
-#         scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=1)
-#         return scdef
+class subcatch_parameters(catchment):
 
-#     def write(self, **kwargs):
-#         tbl = self.copy()
-#         tbl.insert(1, 'stationID', tbl.index)
-#         tblstr = tbl.to_string(index=False, index_names=False)
-#         with open(self.path, 'w') as f:
-#             f.write(tblstr)
-#         return
-
-#     def update(self, stations=None):
-#         """Write the definition file from project.stations table.
-
-#         Arguments
-#         ---------
-#         stations : list-like
-#             Station ids to subset the table to. Default is all stations.
-#         """
-#         t = self.project.stations.loc[stations or slice(None), ['subbasinID']]
-#         # save and write
-#         self.__call__(t)
-#         return
+    def __init__(self, *args, **kwargs):
+        warn(f'{self.__class__.__name__} is deprecated and will be removed in '
+             'a future version. Use project.catchment instead.',
+             FutureWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
 class climate(object):
@@ -341,29 +279,14 @@ class climate(object):
         return
 
     @propertyplugin
-    class inputdata(ReadWriteDataFrame):
+    class inputdata(inputFile):
         """A lazy DataFrame representation of climate.csv.
 
         Rather than being read on instantiation, .read() and .write() need to
         be called explicitly since both operations are commonly time-consuming.
         """
+        file = 'climate.csv'
         plugin = ['print_stats', 'plot_temperature', 'plot_precipitation']
-
-        def __init__(self, project):
-            pd.DataFrame.__init__(self)
-            self.project = project
-            ReadWriteDataFrame.__init__(self, project)
-            return
-
-        @property
-        def path(self):
-            relpath = osp.join(self.project.inputpath, 'climate.csv')
-            return self._path if hasattr(self, '_path') else relpath
-
-        @path.setter
-        def path(self, value):
-            self._path = value
-            return
 
         def read(self):
             df = pd.read_csv(self.path, skipinitialspace=True,
@@ -372,10 +295,6 @@ class climate(object):
             df = pd.pivot_table(df, index='time', columns=['subbasin_id'])
             df.columns.names = ['variable', 'subbasin_id']
             return df
-
-        def write(self):
-            self.to_csv(self.path)
-            return
 
         def print_stats(self):
             """Print statistics for all variables."""
@@ -549,136 +468,194 @@ class climate(object):
                 raise KeyError("%s not in %r" % (key, self.variables))
 
 
-class structure_file(ReadWriteDataFrame):
-    """Read-Write plugin for the structure file.
-
-    This is accessible via the ``hydroptes.attributes`` propertyplugin and
-    placed here for consistency and reuse.
+class discharge(inputFile):
     """
+    Read and write discharge.csv.
+    """
+    file = 'discharge.csv'
+    index_name = 'time'
+    subbasins = []  #: Holds subbasinIDs if the file has them
+    outlet_station = None  #: Name of the first column which is always written
 
     @property
-    def path(self):
-        relpath = osp.join(self.project.inputpath, 'hydrotope.csv')
-        return self._path if hasattr(self, '_path') else relpath
+    def outlet_station(self):
+        stat = self.columns[0]
+        return self._outlet_station if hasattr(self, '_outlet_station') else stat
 
-    @path.setter
-    def path(self, value):
-        self._path = value
+    @outlet_station.setter
+    def outlet_station(self, value):
+        self._outlet_station = value
         return
-
+    
     def read(self, **kwargs):
-        df = pd.read_csv(self.path, skipinitialspace=True)
-        df.set_index('hydrotope_id', inplace=True)
+        df = super().read(parse_dates=True, **kwargs)
+        df.index = df.index.to_period()
         return df
 
-    def write(self, **kwargs):
-        self['hydrotope_id'] = self.index
-        self.to_csv(self.path, index = False)
-        return
+    def __call__(self, data=None, stations=[], start=None, end=None):
+        """Write daily_discharge_observed from stations with their subbasinIDs.
+
+        Arguments
+        ---------
+        data : pd.DataFrame
+            DataFrame to write with stationID columns. Takes presence over
+            stations and may or may not include outlet_station.
+        stations : list-like, optional
+            Stations to write to file. self.outlet_station will always be
+            written as the first column.
+        start, end : datetime-like, optional
+            Start and end to write to. Defaults to
+            project.config_parameters.start_date/end_date.
+        """
+        if data is None:
+            data = self._get_observed_discharge(stations=stations, start=start,
+                                                end=end)
+        elif self.outlet_station not in data.columns:
+            start, end = data.index[[0, -1]].astype(str)
+            osq = self._get_observed_discharge(start=start, end=end)
+            data.insert(0, self.outlet_station, osq[self.outlet_station])
+
+        # update subbasins
+        self.subbasins = self.project.stations.loc[data.columns, 'subbasinID']
+        # assign to self
+        pd.DataFrame.__init__(self, data)
+        self.write()
+        return self
+
+    def _get_observed_discharge(self, stations=[], start=None, end=None):
+        """Get daily_discharge_observed from stations and their subbasinIDs.
+
+        Arguments
+        ---------
+        stations : list-like, optional
+            Stations to write to file. self.outlet_station will always be
+            written as the first column.
+        start, end : datetime-like, optional
+            Start and end to write to. Defaults to
+            project.config_parameters.start_date/end_date.
+        """
+        stat = [self.outlet_station]
+        stat += [s for s in stations if s != self.outlet_station]
+        # unpack series from dataframe, in right order!
+        stationsq = self.project.stations.daily_discharge_observed
+        si = [s for s in stat if s not in stationsq.columns]
+        assert not si, ('%s not found in stations.daily_discharge_observed: %s'
+                        % (si, stationsq.columns))
+        q = stationsq[stat]
+        # change start/end
+        conf = self.project.config_parameters
+        q = q.truncate(before=start or conf.start_date,
+                       after=end or conf.end_date)
+        return q
+
+class station_daily_discharge_observed(discharge):
+
+    def __init__(self, *args, **kwargs):
+        warn(f'{self.__class__.__name__} is deprecated and will be removed in '
+             'a future version. Use project.discharge instead.',
+             FutureWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
-# class station_daily_discharge_observed(ReadWriteDataFrame):
-#     path = 'input/runoff.dat'
-#     subbasins = []  #: Holds subbasinIDs if the file has them
-#     outlet_station = None  #: Name of the first column which is always written
+# class subcatch_definition(ReadWriteDataFrame):
+#     """
+#     Interface to the subcatchment definition file from DataFrame or grass.
+#     """
+#     path = 'input/subcatch.def'
+#     plugin = ['update']
 
-#     def read(self, path=None, **kwargs):
-#         path = path or self.path
-#         na_values = ['NA', 'NaN', -999, -999.9, -9999]
-#         # first read header
-#         with open(path, 'r') as fi:
-#             colnames = fi.readline().strip().split()
-#             subids = fi.readline().strip().split()
-#         skiphead = 1
-#         # subbasins are given if all are ints and they are all in the subbasins
-#         try:
-#             si = pd.Series(subids, index=colnames).astype(int)
-#             if list(si.iloc[1:3]) == [0, 0]:
-#                 self.subbasins = si.iloc[3:]
-#                 skiphead += 1
-#         except ValueError:
-#             warnings.warn('No subbasinIDs given in second row of %s' % path)
-#         # read entire file
-#         rodata = pd.read_csv(path, skiprows=skiphead, header=None, index_col=0,
-#                              delim_whitespace=True, parse_dates=[[0, 1, 2]],
-#                              names=colnames, na_values=na_values)
-#         rodata.index = rodata.index.to_period()
-#         self.outlet_station = rodata.columns[0]
-#         return rodata
+#     def read(self, **kwargs):
+#         scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=0)
+#         return scdef
 
 #     def write(self, **kwargs):
-#         head = 'YYYY  MM  DD  ' + '  '.join(self.columns.astype(str)) + '\n'
-#         if len(self.subbasins) > 0:
-#             sbids = '  '.join(self.subbasins.astype(str))
-#             head += '%s  0  0  ' % len(self.columns) + sbids + '\n'
-#         # write out
-#         out = [self.index.year, self.index.month, self.index.day]
-#         out += [self[s] for s in self.columns]
-#         out = pd.DataFrame(list(zip(*out)))
-#         with open(self.path, 'w') as fo:
-#             fo.write(head)
-#             out.to_string(fo, na_rep='-9999', header=False, index=False)
+#         tbl = self.copy()
+#         tbl.insert(0, 'subbasinID', tbl.index)
+#         tblstr = tbl.to_string(index=False, index_names=False)
+#         with open(self.path, 'w') as f:
+#             f.write(tblstr)
 #         return
 
-#     def __call__(self, data=None, stations=[], start=None, end=None):
-#         """Write daily_discharge_observed from stations with their subbasinIDs.
+#     def update(self, catchments=None, subbasins=None):
+#         """Write the definition file from the subbasins grass table.
 
 #         Arguments
 #         ---------
-#         data : pd.DataFrame
-#             DataFrame to write with stationID columns. Takes presence over
-#             stations and may or may not include outlet_station.
-#         stations : list-like, optional
-#             Stations to write to file. self.outlet_station will always be
-#             written as the first column.
-#         start, end : datetime-like, optional
-#             Start and end to write to. Defaults to
-#             project.config_parameters.start_date/end_date.
+#         catchments : list-like
+#             Catchment ids to subset the table to. Takes precedence over
+#             subbasins argument.
+#         subbasins : list-like
+#             Subbasin ids to subset the table to.
 #         """
-#         if data is None:
-#             data = self._get_observed_discharge(stations=stations, start=start,
-#                                                 end=end)
-#         elif self.outlet_station not in data.columns:
-#             start, end = data.index[[0, -1]].astype(str)
-#             osq = self._get_observed_discharge(start=start, end=end)
-#             data.insert(0, self.outlet_station, osq[self.outlet_station])
+#         from modelmanager.plugins.grass import GrassAttributeTable
 
-#         # update subbasins
-#         self.subbasins = self.project.stations.loc[data.columns, 'subbasinID']
-#         # assign to self
-#         pd.DataFrame.__init__(self, data)
-#         self.write()
-#         return self
+#         cols = ['subbasinID', 'catchmentID']
+#         tbl = GrassAttributeTable(self.project, subset_columns=cols,
+#                                   vector=self.project.subbasins.vector)
+#         # optionally filter
+#         if catchments is not None:
+#             tbl = tbl[[i in catchments for i in tbl.catchmentID]]
+#         elif subbasins is not None:
+#             tbl = tbl.filter(items=subbasins, axis=0)
+#         # add stationID
+#         scp = {v: k for k, v in
+#                self.project.subcatch_parameters['catchmentID'].items()}
+#         tbl['stationID'] = [scp[i] for i in tbl['catchmentID']]
+#         # save and write
+#         self.__call__(tbl)
+#         return
 
-#     def _get_observed_discharge(self, stations=[], start=None, end=None):
-#         """Get daily_discharge_observed from stations and their subbasinIDs.
+#     def subcatch_subbasin_ids(self, catchmentID):
+#         """Return all subbasinIDs of the subcatchment."""
+#         return self.index[self.catchmentID == catchmentID].values
+
+#     def catchment_subbasin_ids(self, catchmentID):
+#         """Return all subbasins of the catchment respecting the topology.
+
+#         The `project.stations` "ds_stationID" column needs to give the from-to
+#         topology of catchments/stations.
+#         """
+#         ft = self.project.stations['ds_stationID']
+#         all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
+#         ssid = self.subcatch_subbasin_ids
+#         return np.concatenate([ssid(i) for i in all_catchments])
+
+
+# class station_output(ReadWriteDataFrame):
+#     """
+#     Interface to the station output file.
+#     """
+#     path = 'input/gauges.output'
+#     plugin = ['update']
+
+#     def read(self, **kwargs):
+#         scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=1)
+#         return scdef
+
+#     def write(self, **kwargs):
+#         tbl = self.copy()
+#         tbl.insert(1, 'stationID', tbl.index)
+#         tblstr = tbl.to_string(index=False, index_names=False)
+#         with open(self.path, 'w') as f:
+#             f.write(tblstr)
+#         return
+
+#     def update(self, stations=None):
+#         """Write the definition file from project.stations table.
 
 #         Arguments
 #         ---------
-#         stations : list-like, optional
-#             Stations to write to file. self.outlet_station will always be
-#             written as the first column.
-#         start, end : datetime-like, optional
-#             Start and end to write to. Defaults to
-#             project.config_parameters.start_date/end_date.
+#         stations : list-like
+#             Station ids to subset the table to. Default is all stations.
 #         """
-#         stat = [self.outlet_station]
-#         stat += [s for s in stations if s != self.outlet_station]
-#         # unpack series from dataframe, in right order!
-#         stationsq = self.project.stations.daily_discharge_observed
-#         si = [s for s in stat if s not in stationsq.columns]
-#         assert not si, ('%s not found in stations.daily_discharge_observed: %s'
-#                         % (si, stationsq.columns))
-#         q = stationsq[stat]
-#         # change start/end
-#         conf = self.project.config_parameters
-#         q = q.truncate(before=start or conf.start_date,
-#                        after=end or conf.end_date)
-#         return q
+#         t = self.project.stations.loc[stations or slice(None), ['subbasinID']]
+#         # save and write
+#         self.__call__(t)
+#         return
 
 
 # classes attached to project in defaultsettings
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
-           if inspect.isclass(p) and
+           if inspect.isclass(p) and n != 'inputFile' and
            set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__[1:])}
 PLUGINS.update({n: globals()[n] for n in ['climate', 'config_parameters']})

@@ -41,8 +41,8 @@ class Parameters:
 
 class Input:
 
-    def test_station_daily_discharge_observed(self):
-        ro = self.project.station_daily_discharge_observed
+    def test_discharge(self):
+        ro = self.project.discharge
         if len(ro.subbasins):
             sbattr = self.project.subbasins.attributes
         for n in ro.columns:

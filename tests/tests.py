@@ -87,31 +87,31 @@ class ProjectTestCase(unittest.TestCase):
 
 class TestParameters(ProjectTestCase, test_io.Parameters):
 
-    def test_subcatch_parameters(self):
-        from swimpy.input import subcatch_parameters as SubcatchParameters
+    def test_catchment(self):
+        from swimpy.input import catchment as SubcatchParameters
         # read
-        sbc = self.project.subcatch_parameters
+        sbc = self.project.catchment
         self.assertIsInstance(sbc, SubcatchParameters)
-        BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN']
+        BLKS = self.project.catchment.loc['BLANKENSTEIN']
         self.assertIsInstance(BLKS, pd.Series)
-        roc2 = self.project.subcatch_parameters['roc2']
+        roc2 = self.project.catchment['roc2']
         self.assertIsInstance(roc2, pd.Series)
         # write
-        self.project.subcatch_parameters(roc2=1)
-        self.assertEqual(self.project.subcatch_parameters['roc2'].mean(), 1)
-        self.project.subcatch_parameters(BLANKENSTEIN=2)
-        BLKS = self.project.subcatch_parameters.loc['BLANKENSTEIN'].mean()
+        self.project.catchment(roc2=1)
+        self.assertEqual(self.project.catchment['roc2'].mean(), 1)
+        self.project.catchment(BLANKENSTEIN=2)
+        BLKS = self.project.catchment.loc['BLANKENSTEIN'].mean()
         self.assertEqual(BLKS, 2)
-        HOF = self.project.subcatch_parameters.loc['HOF']
+        HOF = self.project.catchment.loc['HOF']
         newparamdict = {'roc2': 3.0, 'roc4': 10.0}
-        self.project.subcatch_parameters(HOF=newparamdict)
+        self.project.catchment(HOF=newparamdict)
         for k, v in newparamdict.items():
             HOF[k] = v
-        self.assertTrue((self.project.subcatch_parameters.loc['HOF'] ==
+        self.assertTrue((self.project.catchment.loc['HOF'] ==
                          HOF).all())
         # write entire DataFrame
-        self.project.subcatch_parameters(sbc.copy())
-        nsbc = self.project.subcatch_parameters
+        self.project.catchment(sbc.copy())
+        nsbc = self.project.catchment
         self.assertTrue((nsbc.copy() == sbc.copy()).all().all())
 
 #     def test_subcatch_definition(self):
@@ -130,7 +130,7 @@ class TestParameters(ProjectTestCase, test_io.Parameters):
 #         from random import random
 #         original = self.project.changed_parameters(verbose=verbose)
 #         bsn = self.project.basin_parameters
-#         scp = self.project.subcatch_parameters.T.stack().to_dict()
+#         scp = self.project.catchment.T.stack().to_dict()
 #         nametags = [(k, None) for k in bsn] + list(scp.keys())
 #         nametags_original = [(e['name'], e['tags']) for e in original]
 #         for nt in nametags:
@@ -143,21 +143,21 @@ class TestParameters(ProjectTestCase, test_io.Parameters):
 #         self.assertEqual(sorted([e['name'] for e in changed]), ['da', 'roc4'])
 #         self.project.basin_parameters(**bsn)
 #         self.assertEqual(self.project.changed_parameters(verbose=verbose), [])
-#         self.project.subcatch_parameters(roc4=random())
+#         self.project.catchment(roc4=random())
 #         changed = self.project.changed_parameters(verbose=verbose)
 #         expresult = [('roc4', 'BLANKENSTEIN'), ('roc4', 'HOF')]
 #         nametags = sorted([(e['name'], e['tags']) for e in changed])
 #         self.assertEqual(nametags, expresult)
 
 
-class TestInput(ProjectTestCase):# , test_io.Input, test_swimpy_config.Stations):
+class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
 
-    # def test_station_daily_discharge_observed_write(self):
-    #     self.project.station_daily_discharge_observed(stations=['HOF'])
-    #     ro = self.project.station_daily_discharge_observed
-    #     self.assertEqual(len(ro.columns), 2)
-    #     self.assertIn('HOF', ro.columns)
-    #     ro(stations=['BLANKENSTEIN'])
+    def test_discharge_write(self):
+        self.project.discharge(stations=['HOF'])
+        ro = self.project.discharge
+        self.assertEqual(len(ro.columns), 2)
+        self.assertIn('HOF', ro.columns)
+        ro(stations=['BLANKENSTEIN'])
 
     # def test_station_output(self):
     #     self.project.station_output.update(stations=['HOF'])
