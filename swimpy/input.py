@@ -62,6 +62,7 @@ class ParamGroupNamelist(f90nml.Namelist):
         assert get or set
         if set:
             self.update(set)
+            self.project.config_parameters.write()
         if get:
             return [self[k] for k in get]
         return
@@ -149,6 +150,7 @@ class config_parameters(f90nml.Namelist):
                 # k is a specific parameter
                 else:
                     self.__setitem__(k, v)
+                self.write()
         if get:
             return [self[k] for k in get]
         return

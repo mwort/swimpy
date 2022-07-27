@@ -7,6 +7,7 @@ import pandas as pd
 class Parameters:
 
     def test_config_parameters(self):
+        import f90nml
         cod = self.project.config_parameters
         self.assertGreater(len(cod), 0)
         for k in cod:
@@ -20,6 +21,9 @@ class Parameters:
         self.project.time_parameters(iyr=1996)
         self.assertEqual(self.project.config_parameters('iyr'),
                          self.project.time_parameters('iyr'))
+        nml = f90nml.read(self.project.parfile)
+        self.assertEqual(self.project.time_parameters['iyr'],
+                         nml['time_parameters']['iyr'])
         # test that set_default() works
         for gr in self.project.config_parameters.keys():
             for nl in self.project.config_parameters[gr].keys():
@@ -27,6 +31,9 @@ class Parameters:
                     self.project.config_parameters.set_default(nl)
                     self.assertEqual(self.project.config_parameters(nl)[0],
                                      self.project.config_parameters.defaults[gr][nl])
+                    nml = f90nml.read(self.project.parfile)
+                    self.assertEqual(self.project.config_parameters(nl)[0],
+                                     nml[gr][nl])
                     break
         # behaviour for not implemented parameters
         self.assertRaises(KeyError, self.project.time_parameters, 'bla')
