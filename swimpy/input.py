@@ -200,6 +200,97 @@ class config_parameters(f90nml.Namelist):
         return rpr + pargrp + ')'
 
 
+class output_files(dict):
+    """
+    Set or get values from output.nml.
+
+    Get: output_files(<filename>)
+
+    Set: output_files(<filename>=[var1, var2])
+         where <filename> has to follow SWIM <space>_<time>_<name> convention
+         for output files and [var1, var2] must be valid variable names. File
+         ending is determined automatically and must not be given.
+    """
+
+    def __init__(self, project):
+        self.project = project
+        self.read()
+        return
+
+    @property
+    def path(self):
+        relpath = osp.join(self.project.inputpath, 'output.nml')
+        return self._path if hasattr(self, '_path') else relpath
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+        return
+    
+    def __call__(self, *get, **set):
+        assert get or set
+        if set:
+            new = {k: v for k, v in set.items()}
+            self.update(new)
+            self.write()
+        if get:
+            return [self[k] for k in get]
+        return
+    
+    def read(self, path=None):
+        """
+        Read output file definitions from project.output_files.path or a different new .nml file.
+
+        Args:
+            path: (Optional) A file name from which output definitions are read.
+        """
+        path = path or self.path
+        nml = f90nml.read(path)
+        nml = {'_'.join([v['space'], v['time'], v['name']]): v['variables'] for v in nml.values()}
+        self.clear() # make sure self is fully (re-)initialised
+        return super().__init__(nml)
+    
+    def write(self, path=None):
+        """
+        Write output file definitions into project.output_files.path or a new .nml file.
+
+        Args:
+            path: (Optional) A file name into which output definitions are written.
+        """
+        path = path or self.path
+        # order of ospace is important for checks below!
+        ospace = ('hydrotope_label', 'hydrotope',
+                  'subbasin_label', 'subbasin', 'catchment')
+        otime = ('daily', 'monthly', 'annual')
+        nml = []
+        for k, v in self.items():
+            ksplt = k.split('_')
+            space = '_'.join(ksplt[0:2]) if ksplt[1] == 'label' else ksplt[0]
+            if space not in ospace:
+                raise KeyError("Invalid file name '{}'; unsupported space attribute (first element)!".format(k))
+            time = ksplt[2] if ksplt[1] == 'label' else ksplt[1]
+            if time not in otime:
+                raise KeyError("Invalid file name '{}'; unsupported time attribute (second element)!".format(k))
+            name = '_'.join(ksplt[3:]) if ksplt[1] == 'label' else '_'.join(ksplt[2:])
+            knml = f90nml.Namelist({'file': {'name': name, 'space': space, 'time': time, 'variables': v}})
+            nml.append(knml)
+        with open(path, "w") as f:
+            for fe in nml:
+                fe.write(f)
+        return
+    
+    def __repr__(self) -> str:
+        rpr = '<{}: {}>\n'.format(self.__class__.__name__,
+                                  osp.relpath(self.path, self.project.projectdir))
+        odir = "Files with variables in directory '{}':\n".format(self.project.output_parameters['output_dir'])
+        files = 'dict {\n'
+        for f, v in self.items():
+            #flename = '_'.join([fle['space'], fle['time'], fle['name']])
+            vars = ', '.join(v) if isinstance(v, list) else v
+            files += f + ': [' + vars + ']\n'
+        return rpr + odir + files + '}'
+
+
 class inputFile(ReadWriteDataFrame):
     """
     Abstract class for generic input file handling. No project attribute.
@@ -274,7 +365,11 @@ class subcatch_parameters(catchment):
 
 
 class climate(object):
-    """All climate input related functionality."""
+    """
+    All climate input related functionality.
+    
+    TODO: Give warning if both climate.csv and netcdf climate input are found
+    """
 
     def __init__(self, project):
         self.project = project
@@ -660,4 +755,4 @@ class station_daily_discharge_observed(discharge):
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
            if inspect.isclass(p) and n != 'inputFile' and
            set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__[1:])}
-PLUGINS.update({n: globals()[n] for n in ['climate', 'config_parameters']})
+PLUGINS.update({n: globals()[n] for n in ['climate', 'config_parameters', 'output_files']})

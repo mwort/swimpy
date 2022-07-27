@@ -21,7 +21,7 @@ class Parameters:
         self.project.time_parameters(iyr=1996)
         self.assertEqual(self.project.config_parameters('iyr'),
                          self.project.time_parameters('iyr'))
-        nml = f90nml.read(self.project.parfile)
+        nml = f90nml.read(osp.join(self.project.projectdir, self.project.parfile))
         self.assertEqual(self.project.time_parameters['iyr'],
                          nml['time_parameters']['iyr'])
         # test that set_default() works
@@ -31,7 +31,7 @@ class Parameters:
                     self.project.config_parameters.set_default(nl)
                     self.assertEqual(self.project.config_parameters(nl)[0],
                                      self.project.config_parameters.defaults[gr][nl])
-                    nml = f90nml.read(self.project.parfile)
+                    nml = f90nml.read(osp.join(self.project.projectdir, self.project.parfile))
                     self.assertEqual(self.project.config_parameters(nl)[0],
                                      nml[gr][nl])
                     break
@@ -44,7 +44,18 @@ class Parameters:
             self.project.config_parameters['bla'] = 5
         self.assertRaises(KeyError, self.project.config_parameters,
                           bla_parameters={'bla1': 1995, 'bla2': True})
-        
+
+    def test_output_files(self):
+        self.assertIsInstance(self.project.output_files('hydrotope_label_daily_crop_out', 'hydrotope_label_daily_htp_prn'),
+                              list)
+        self.project.output_files.write('outsave.nml')
+        self.project.output_files(hydrotope_monthly_testevap=['etp', 'eta'])
+        self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        self.project.output_files.read()
+        self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        self.project.output_files.read('outsave.nml')
+        self.assertFalse('hydrotope_monthly_testevap' in self.project.output_files.keys())
+          
 
 class Input:
 
