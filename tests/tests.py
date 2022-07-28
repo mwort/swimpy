@@ -86,33 +86,7 @@ class ProjectTestCase(unittest.TestCase):
 
 
 class TestParameters(ProjectTestCase, test_io.Parameters):
-
-    def test_catchment(self):
-        from swimpy.input import catchment as SubcatchParameters
-        # read
-        sbc = self.project.catchment
-        self.assertIsInstance(sbc, SubcatchParameters)
-        BLKS = self.project.catchment.loc['BLANKENSTEIN']
-        self.assertIsInstance(BLKS, pd.Series)
-        roc2 = self.project.catchment['roc2']
-        self.assertIsInstance(roc2, pd.Series)
-        # write
-        self.project.catchment(roc2=1)
-        self.assertEqual(self.project.catchment['roc2'].mean(), 1)
-        self.project.catchment(BLANKENSTEIN=2)
-        BLKS = self.project.catchment.loc['BLANKENSTEIN'].mean()
-        self.assertEqual(BLKS, 2)
-        HOF = self.project.catchment.loc['HOF']
-        newparamdict = {'roc2': 3.0, 'roc4': 10.0}
-        self.project.catchment(HOF=newparamdict)
-        for k, v in newparamdict.items():
-            HOF[k] = v
-        self.assertTrue((self.project.catchment.loc['HOF'] ==
-                         HOF).all())
-        # write entire DataFrame
-        self.project.catchment(sbc.copy())
-        nsbc = self.project.catchment
-        self.assertTrue((nsbc.copy() == sbc.copy()).all().all())
+    pass
 
 #     def test_subcatch_definition(self):
 #         scdef = self.project.subcatch_definition
@@ -151,6 +125,33 @@ class TestParameters(ProjectTestCase, test_io.Parameters):
 
 
 class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
+
+    def test_catchment(self):
+        from swimpy.input import catchment as SubcatchParameters
+        # read
+        sbc = self.project.catchment
+        self.assertIsInstance(sbc, SubcatchParameters)
+        BLKS = self.project.catchment.loc['BLANKENSTEIN']
+        self.assertIsInstance(BLKS, pd.Series)
+        roc2 = self.project.catchment['roc2']
+        self.assertIsInstance(roc2, pd.Series)
+        # write
+        self.project.catchment(roc2=1)
+        self.assertEqual(self.project.catchment['roc2'].mean(), 1)
+        self.project.catchment(BLANKENSTEIN=2)
+        BLKS = self.project.catchment.loc['BLANKENSTEIN'].mean()
+        self.assertEqual(BLKS, 2)
+        HOF = self.project.catchment.loc['HOF']
+        newparamdict = {'roc2': 3.0, 'roc4': 10.0}
+        self.project.catchment(HOF=newparamdict)
+        for k, v in newparamdict.items():
+            HOF[k] = v
+        self.assertTrue((self.project.catchment.loc['HOF'] ==
+                         HOF).all())
+        # write entire DataFrame
+        self.project.catchment(sbc.copy())
+        nsbc = self.project.catchment
+        self.assertTrue((nsbc.copy() == sbc.copy()).all().all())
 
     def test_discharge_write(self):
         self.project.discharge(stations=['HOF'])
@@ -280,8 +281,31 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
 #         return
 
 
-# class TestOutput(ProjectTestCase, test_io.Output):
-#     pass
+class TestOutput(ProjectTestCase, test_io.Output):
+    
+    def test_output_attributes(self):
+        outf = osp.join(self.project.output_files.path)
+        outf_save = osp.join(self.project.inputpath, 'output_save.nml')
+        shutil.copy(outf, outf_save)
+        # all defined output files are project attributes
+        from swimpy.output import outputFile as ofileclass
+        for k in self.project.output_files.keys():
+            self.assertTrue(hasattr(self.project, k))
+            self.assertIsInstance(getattr(self.project, k),
+                                  ofileclass)
+        # new output that does not yet exist
+        self.project.output_files(hydrotope_monthly_testevap=['etp', 'eta'])
+        self.assertTrue(hasattr(self.project, 'hydrotope_monthly_testevap'))
+        testevap = self.project.hydrotope_monthly_testevap
+        self.assertIsInstance(testevap, ofileclass)
+        self.assertEqual(repr(testevap),
+                         '<File output/hydrotope_monthly_testevap.csv does not yet exist. You need to run SWIM first.>')
+        # get / indexing methods (format of underlying pd.DataFrame)
+        self.assertEqual(len(self.project.subbasin_daily_river_discharge.loc['2000-12-27']['river_runoff']), 11)
+        self.assertAlmostEqual(self.project.subbasin_label_daily_selected_stations_discharge.loc['1991-01-01']['discharge']['HOF'], 5.187)
+        self.assertEqual(self.project.hydrotope_annual_gis.loc[[1991]]['surface_runoff'].size, 182)
+        # clean up
+        shutil.move(outf_save, outf)
 
 
 # class TestWaterBalance(ProjectTestCase, test_waterbalance.WaterBalance):

@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+import shutil
 
 import pandas as pd
 
@@ -44,17 +45,6 @@ class Parameters:
             self.project.config_parameters['bla'] = 5
         self.assertRaises(KeyError, self.project.config_parameters,
                           bla_parameters={'bla1': 1995, 'bla2': True})
-
-    def test_output_files(self):
-        self.assertIsInstance(self.project.output_files('hydrotope_label_daily_crop_out', 'hydrotope_label_daily_htp_prn'),
-                              list)
-        self.project.output_files.write('outsave.nml')
-        self.project.output_files(hydrotope_monthly_testevap=['etp', 'eta'])
-        self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
-        self.project.output_files.read()
-        self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
-        self.project.output_files.read('outsave.nml')
-        self.assertFalse('hydrotope_monthly_testevap' in self.project.output_files.keys())
           
 
 class Input:
@@ -70,21 +60,38 @@ class Input:
 
 
 class Output:
-    def test_read_save_output(self):
-        """Read, save and retrieve all output interfaces."""
-        resultproperties = [
-            rf for rf in self.project.output_interfaces
-            if self.project.settings.properties[rf].plugin.path]
-        self.assertGreater(len(resultproperties), 0)
-        run = self.project.save_run(files=resultproperties)
-        for r in sorted(resultproperties):
-            print(r)
-            df_project = getattr(self.project, r)
-            df_run = getattr(run, r)
-            self.assertTrue(all(df_project.index == df_run.index), r)
-            self.assertTrue(all(df_project.columns == df_run.columns), r)
-            sud = (df_project.copy()-df_run.copy()).sum().sum()
-            self.assertAlmostEqual(sud, 0, msg=r)
+
+    def test_output_files(self):
+        outf = osp.join(self.project.output_files.path)
+        outf_save = osp.join(self.project.inputpath, 'output_save.nml')
+        shutil.copy(outf, outf_save)
+        self.assertIsInstance(self.project.output_files('hydrotope_label_daily_crop_out', 'hydrotope_label_daily_htp_prn'),
+                              list)
+        self.project.output_files.write('outtest.nml')
+        self.project.output_files(hydrotope_monthly_testevap=['etp', 'eta'])
+        self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        self.project.output_files.read()
+        self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        self.project.output_files.read(outf_save)
+        self.assertFalse('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        os.remove('outtest.nml')
+        shutil.move(outf_save, outf)
+
+    # def test_read_save_output(self):
+    #     """Read, save and retrieve all output interfaces."""
+    #     resultproperties = [
+    #         rf for rf in self.project.output_interfaces
+    #         if self.project.settings.properties[rf].plugin.path]
+    #     self.assertGreater(len(resultproperties), 0)
+    #     run = self.project.save_run(files=resultproperties)
+    #     for r in sorted(resultproperties):
+    #         print(r)
+    #         df_project = getattr(self.project, r)
+    #         df_run = getattr(run, r)
+    #         self.assertTrue(all(df_project.index == df_run.index), r)
+    #         self.assertTrue(all(df_project.columns == df_run.columns), r)
+    #         sud = (df_project.copy()-df_run.copy()).sum().sum()
+    #         self.assertAlmostEqual(sud, 0, msg=r)
 
 
 class output_sums:
