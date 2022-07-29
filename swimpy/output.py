@@ -27,6 +27,8 @@ import inspect
 import numpy as np
 import pandas as pd
 import f90nml
+import matplotlib.pyplot as plt
+from matplotlib import cm
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.pandas import ProjectOrRunData, ReadWriteDataFrame
 
@@ -62,6 +64,16 @@ class outputFile(ReadWriteDataFrame):
     def _exists(self):
         return osp.exists(self.path)
     
+    @property
+    def _space(self):
+        fsplt = self.file.split('_')
+        return '_'.join(fsplt[0:2]) if fsplt[1] == 'label' else fsplt[0]
+
+    @property
+    def _time(self):
+        fsplt = self.file.split('_')
+        return fsplt[2] if fsplt[1] == 'label' else fsplt[1]
+    
     def read(self, **kwargs):
         """Read output file. Result object inherits from pandas.DataFrame. 
 
@@ -73,11 +85,11 @@ class outputFile(ReadWriteDataFrame):
         if self._exists:
             na_values = ['NA', 'NaN', -999, -999.9, -9999]
             df = pd.read_csv(self.path, skipinitialspace=True,
-                            index_col='time', na_values=na_values,
-                            **kwargs)
+                            index_col='time', parse_dates=True,
+                            na_values=na_values, **kwargs)
+            df.index = df.index.to_period(freq=self._time[0])
             # multi-index columns
-            fsplt = self.file.split('_')
-            spcol = '_'.join(fsplt[0:2]) if fsplt[1] == 'label' else fsplt[0]
+            spcol = self._space
             df = pd.pivot_table(df, index='time', columns=[spcol])
             df.columns.names = ['variable', spcol]
         else:
@@ -96,6 +108,65 @@ class outputFile(ReadWriteDataFrame):
             self.to_csv(self.path, index = True, na_rep='-9999', **kwargs)
         return
     
+    # TODO: revise! Works but maybe not as it should (returns no ax object etc.)
+    def plot(self, times=None, variables=None, stations=None, subplt=None,
+             regime=False, agg_regime='mean', freq=None, agg_freq='mean'):
+        """Line plot of selected variable.
+
+        Arguments
+        ---------
+        times : pandas.PeriodIndex
+            Selection of times to plot, e.g. pd.period_range(start='1992-01-01', end='1996-12-31').
+            Default: all times.
+        variables : list
+            Selection of variables for plotting. Default: all variables.
+        stations : list
+            Selection of catchments / subbasins / hydrotopes top plot.
+            Default: all stations.
+        subplt : None | 'variables' | 'stations'
+            Create subplots per 'variables', per 'stations' or all into one
+            plot (default).
+        regime : bool
+            Plot regime, i.e. day-in-year or month-in-year aggregation.
+        agg_regime : 
+            Method of regime aggregation. See DataFrame.groupby.agg.
+        freq : <pandas frequency>
+            Any pandas frequency to aggregate to. Can only aggregate to a
+            frequency lower than in the data! Default: as given in file.
+        agg_freq : 
+            Method of frequency aggregation. See DataFrame.groupby.agg.
+        minmax : bool
+            Show min-max range.
+        """
+        if not self._exists:
+            raise IOError('File {} does not yet exist. You need to run SWIM first.'.format(osp.relpath(self.path, self.project.projectdir)))
+        # data subset and aggregation
+        times = self.index if times is None else times
+        variables = variables or self.columns.get_level_values('variable').unique()
+        stations = stations or self.columns.get_level_values(self._space).unique()
+        freq = freq or self._time[0]
+        idx = pd.IndexSlice
+        data = utils.aggregate_time(self.loc[times, idx[variables, stations] ], freq=freq,
+                                    resample_method=agg_freq, regime=regime, regime_method=agg_regime)
+        # plot
+        if subplt:
+            legtit = data.columns.names[0] if subplt == 'stations' else data.columns.names[1]
+            vip = variables if subplt == 'stations' else stations
+            vsp = vars()[subplt]
+            nrow = len(vsp)
+            cmap = cm.get_cmap('viridis', len(vip))
+            fig, axes = plt.subplots(nrow, 1, figsize=(9, 6), sharex=True, sharey=False)
+            for ax, s in zip(axes, vsp):
+                sel = idx[:, s] if subplt == 'stations' else idx[s, :]
+                datplt = data.loc[:, sel]
+                datplt.plot(ax=ax, legend=False, title=s, colormap=cmap)
+            fig.tight_layout()
+            patches = [plt.Line2D([0], [0], color=v, label=k) for k, v in zip(vip, cmap.colors)]
+            plt.legend(title=legtit, handles=patches, bbox_to_anchor=(1.06, 1.2), loc='center left', borderaxespad=0, frameon=False)
+        else:
+            data.plot()
+        return fig
+
     def __repr__(self):
         if self._exists:
             rpr = super().__repr__()

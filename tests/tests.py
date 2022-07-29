@@ -226,40 +226,41 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
 #         check_files(run.files.all())
 
 
-# class TestOutputPlotting(ProjectTestCase):
+# TODO: needs revision; how to test plot functions of plugins ('outputFile')?
+class TestOutputPlotting(ProjectTestCase):
 
-#     plot_prefix = 'plot'
-#     default_positional_arguments = {
-#         'station': 'HOF'
-#     }
+    plot_prefix = 'plot'
+    default_positional_arguments = {
+        'station': 'HOF'
+    }
 
-#     @property
-#     def plot_functions(self):
-#         pset = self.project.settings
-#         fd = []
-#         for n in pset.functions.keys():
-#             prts = n.split('.')
-#             if prts[-1].startswith(self.plot_prefix):
-#                 pim = pset.plugins.get('.'.join(prts[:-1]), type).__module__
-#                 if pim == 'swimpy.output':
-#                     fd += [n]
-#         return fd
+    @property
+    def plot_functions(self):
+        pset = self.project.settings
+        fd = []
+        for n in pset.functions.keys():
+            prts = n.split('.')
+            if prts[-1].startswith(plot_prefix):
+                pim = pset.plugins.get('.'.join(prts[:-1]), type).__module__
+                if pim == 'swimpy.output':
+                    fd += [n]
+        return fd
 
-#     def run_with_defaults(self, fname, **kwargs):
-#         panames = self.project.settings.functions[fname].positional_arguments
-#         pargs = [self.default_positional_arguments[a] for a in panames]
-#         return self.project.settings[fname](*pargs, **kwargs)
+    def run_with_defaults(self, fname, **kwargs):
+        panames = self.project.settings.functions[fname].positional_arguments
+        pargs = [self.default_positional_arguments[a] for a in panames]
+        return self.project.settings[fname](*pargs, **kwargs)
 
-#     def test_output(self):
-#         print('Testing plot functions...')
-#         fig = pl.figure()
-#         for a in self.plot_functions:
-#             fig.clear()
-#             print(a)
-#             ppath = osp.join(self.project.projectdir, a+'.png')
-#             self.assertIsNotNone(self.run_with_defaults(a, output=ppath))
-#             self.assertTrue(osp.exists(ppath))
-#         return
+    def test_output(self):
+        print('Testing plot functions...')
+        fig = pl.figure()
+        for a in self.plot_functions:
+            fig.clear()
+            print(a)
+            ppath = osp.join(self.project.projectdir, a+'.png')
+            self.assertIsNotNone(self.run_with_defaults(a, output=ppath))
+            self.assertTrue(osp.exists(ppath))
+        return
 
 #     def test_runs(self):
 #         resfile_interfaces = self.project.output_interfaces
