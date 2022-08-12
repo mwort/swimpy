@@ -14,7 +14,6 @@ instantiating a project using `p = Project(setting=value)`.
 from modelmanager.plugins.browser import browser
 from modelmanager.plugins import clone
 from modelmanager.plugins import templates
-from swimpy.grass import subbasins, hydrotopes, routing, substats
 from swimpy import input
 from swimpy import output
 from swimpy.tests import test
@@ -25,6 +24,26 @@ from swimpy.optimization import SMSEMOA, CommaEA, NSGA2b, CMSAES
 
 #: SWIM executable
 swim = './swim'
+
+#: Catchment default calibration parameters
+catchment_defaults = dict(
+        ecal = 1.0,
+        thc = 1.0,
+        roc2 = 2.0,
+        roc4 = 4.0,
+        cncor = 1.0,
+        sccor = 1.0,
+        tsnfall = 0.0,
+        tmelt = 0.0,
+        smrate = 0.4,
+        gmrate = 10,
+        bff = 1.0,
+        abf = 0.01,
+        delay = 50,
+        revapc = 0.0,
+        rchrgc = 0.0,
+        revapmn = 0.0
+    )
 
 #: Cluster SLURM arguments
 cluster_slurmargs = {'qos': 'short', 'account': 'swim'}

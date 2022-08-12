@@ -7,12 +7,14 @@ import pandas as pd
 grass_db = property(lambda p: osp.join(osp.realpath(p.resourcedir), '..', '..', 'grassdb'))
 grass_location = "utm32n"
 grass_mapset = "swim"
-grass_setup = dict(elevation="elevation@PERMANENT",
+grass_setup = dict(subbasin_id = "subbasins", subbasins = "subbasins",
+                   elevation="elevation@PERMANENT",
                    stations="stations@PERMANENT",
                    upthresh=50, lothresh=1.6, streamthresh=200,
+                   minmainstreams=50, contours=200,
                    predefined="reservoirs@PERMANENT",
-                   landuse="landuse@PERMANENT",
-                   soil="soil@PERMANENT")
+                   landuse_id="landuse@PERMANENT",
+                   soil_id="soil@PERMANENT")
 
 cluster_slurmargs = dict(qos='priority')
 

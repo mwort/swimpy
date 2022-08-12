@@ -1,5 +1,5 @@
 """
-SWIM input functionality.
+SWIM input functionality with interface to GRASS.
 """
 import os.path as osp
 from warnings import warn
@@ -9,12 +9,14 @@ import inspect
 
 import numpy as np
 import pandas as pd
+import f90nml
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.templates import TemplatesDict
 from modelmanager.plugins.pandas import ReadWriteDataFrame
-import f90nml
+from modelmanager.plugins import grass as mmgrass
 
 from swimpy import utils, plot
+from swimpy.grass import reclass_raster
 import matplotlib.pyplot as plt  # after plot
 
 
@@ -200,14 +202,17 @@ class config_parameters(f90nml.Namelist):
         return rpr + pargrp + ')'
 
 
-class inputFile(ReadWriteDataFrame):
+class InputFile(ReadWriteDataFrame):
     """
     Abstract class for generic input file handling. No project attribute.
     """
     
     @property
     def path(self):
-        relpath = osp.join(self.project.inputpath, self.file)
+        if self.file:
+            relpath = osp.join(self.project.inputpath, self.file)
+        else:
+            relpath = None
         return self._path if hasattr(self, '_path') else relpath
 
     @path.setter
@@ -223,10 +228,14 @@ class inputFile(ReadWriteDataFrame):
         **kwargs :
             Keywords to pandas.read_csv.
         """
-        na_values = ['NA', 'NaN', -999, -999.9, -9999]
-        df = pd.read_csv(self.path, skipinitialspace=True,
-                         index_col=self.index_name, na_values=na_values,
-                         **kwargs)
+        if self.path:
+            na_values = ['NA', 'NaN', -999, -999.9, -9999]
+            df = pd.read_csv(self.path, skipinitialspace=True,
+                            index_col=self.index_name, na_values=na_values,
+                            **kwargs)
+            df.columns = df.columns.str.strip()
+        else:
+            df = None
         return df
 
     def write(self, **kwargs):
@@ -237,16 +246,79 @@ class inputFile(ReadWriteDataFrame):
         **kwargs :
             Keywords to pandas.to_csv.
         """
-        self.to_csv(self.path, index = True, na_rep='-9999', **kwargs)
+        if self.path:
+            self.to_csv(self.path, index = True, na_rep='-9999', **kwargs)
+        else:
+            warn("No file has been given, nothing to do!")
         return
 
 
-class hydrotope(inputFile):
+class InputFileGrassModule(InputFile, mmgrass.GrassModulePlugin):
+    """Abstract class for <InputFile>s that are related to m.swim GRASS modules."""
+
+    def __init__(self, projectorpath, read=True, **kwargs):
+        try:
+            InputFile.__init__(self, projectorpath, read, **kwargs)
+        except AssertionError as e:
+            InputFile.__init__(self, projectorpath, read=False, **kwargs)
+            warn(f'{e}. Try to run update() method to (re-)create the input file!')
+        mmgrass.GrassModulePlugin.__init__(self, projectorpath)
+        return
+
+
+    def create(self, **modulekwargs):
+        """Run specific m.swim.* GRASS module.
+        
+        Arguments
+        ---------
+            **modulekwargs :
+                Parameters of m.swim.* (overrides or adds to 'grass_setup'
+                from settings.py).
+        """
+        if 'output' not in modulekwargs:
+            modulekwargs['output'] = self.path
+        return mmgrass.GrassModulePlugin.create(self, **modulekwargs)
+    
+    def update(self, **modulekwargs):
+        """Calls create() and postprocess() methods. Basically running the
+        required m.swim.* module(s).
+        
+        Arguments
+        ---------
+            **modulekwargs :
+                Parameters of m.swim.* (overrides or adds to 'grass_setup'
+                from settings.py).
+        """
+        return mmgrass.GrassModulePlugin.update(self, **modulekwargs)
+
+
+class hydrotope(InputFileGrassModule):
     """
-    Read or write hydrotope.csv
+    Read or write hydrotope.csv and interface to related GRASS module m.swim.hydrotopes.
     """
     file = 'hydrotope.csv'
     index_name = 'hydrotope_id'
+    # grass module
+    argument_setting = 'grass_setup'
+    module = 'm.swim.hydrotopes'
+
+    def reclass(self, values, outrast, mapset=None):
+        """Reclass hydrotopes raster to 'values'.
+
+        Arguments
+        ---------
+        outrast : str
+            Name of raster to be created.
+        values : list-like | <pandas.Series>
+            Values the raster is reclassed to. If a pandas.Series is parsed,
+            the index is used to create the mapping, otherwise the categories
+            are assumed to be ``range(1, len(values)+1)``.
+        mapset : str, optional
+            Different than the default `grass_mapset` mapset to write to.
+        """
+        hydname = self.raster + '@' + self.project.grass_mapset
+        reclass_raster(self.project, hydname, outrast, values, mapset=mapset)
+        return
 
 class structure_file(hydrotope):
 
@@ -257,15 +329,155 @@ class structure_file(hydrotope):
         super().__init__(*args, **kwargs)
 
 
-class catchment(inputFile):
+class subbasin_routing(InputFileGrassModule):
+    """
+    Read or write subbasin_routing.csv and interface to related GRASS module m.swim.routing.
+    """
+    file = 'subbasin_routing.csv'
+    index_name = None
+    # grass module
+    argument_setting = 'grass_setup'
+    module = 'm.swim.routing'
+
+
+class subbasin(InputFileGrassModule):
+    """
+    Read or write subbasin.csv and interface to related GRASS modules m.swim.*.
+    """
+    file = 'subbasin.csv'
+    index_name = 'subbasin_id'
+    # grass module arguments as class variables
+    argument_setting = 'grass_setup'
+    module = 'm.swim.subbasins'
+
+    @propertyplugin
+    class substats(InputFileGrassModule):
+        """Interface to GRASS module m.swim.substats"""
+        file = 'subbasin.csv'
+        index_name = 'subbasin_id'
+        argument_setting = 'grass_setup'
+        module = 'm.swim.substats'
+
+        def __call__(self, **modulekwargs):
+            """Run GRASS module m.swim.substats."""
+            return self.update(**modulekwargs)
+
+    @propertyplugin
+    class attributes(mmgrass.GrassAttributeTable):
+        """The subbasins attribute table as a ``pandas.DataFrame`` object."""
+        vector = property(lambda self: getattr(self.project, 'grass_setup')['subbasins'])
+
+    def postprocess(self, **moduleargs):
+        self.project.subbasin_routing.update(**moduleargs)
+        self.project.subbasin.substats(**moduleargs)
+        self.project.hydrotope.update(**moduleargs)
+        self.project.catchment.update()
+        # TODO: write nc_climate files
+        return
+
+    def reclass(self, values, outrast, mapset=None):
+        """Reclass subbasin raster to 'values'.
+
+        Arguments
+        ---------
+        outrast : str
+            Name of raster to be created.
+        values : list-like | <pandas.Series>
+            Values the raster is reclassed to. If a pandas.Series is parsed,
+            the index is used to create the mapping, otherwise the categories
+            are assumed to be ``range(1, len(values)+1)``.
+        mapset : str, optional
+            Different than the default `grass_mapset` mapset to write to.
+        """
+        sbname = self.raster + '@' + self.project.grass_mapset
+        reclass_raster(self.project, sbname, outrast, values, mapset=mapset)
+        return
+
+
+class catchment(InputFile):
     """
     Read or write catchment.csv
     """
     file = 'catchment.csv'
     index_name = 'station_id'
 
+    def __init__(self, projectorpath, read=True, **kwargs):
+        try:
+            InputFile.__init__(self, projectorpath, read, **kwargs)
+        except AssertionError as e:
+            InputFile.__init__(self, projectorpath, read=False, **kwargs)
+            warn(f'{e}. Try to run update() method to (re-)create the input file!')
+        return
+
+    def update(self, catchments=None, subbasins=None):
+        """Update catchment.csv from the subbasins grass table and
+        stations from settings.py.
+
+        WARNING: default parameters from project.catchment_defaults will be
+        assigned, manual changes to catchment.csv will be lost!
+
+        Arguments
+        ---------
+        catchments : list-like
+            Catchment ids to subset the table to. Takes precedence over
+            subbasins argument.
+        subbasins : list-like
+            Subbasin ids to subset the table to.
+        """
+
+        tbl = self.project.subbasin.attributes
+        # optionally filter
+        if catchments is not None:
+            tbl = tbl[[i in catchments for i in tbl.catchmentID]]
+        elif subbasins is not None:
+            tbl = tbl.filter(items=subbasins, axis=0)
+        # join station names
+        tbl.set_index('catchmentID', inplace=True)
+        scp = self.project.stations
+        scp.reset_index(inplace=True)
+        scp.set_index('stationID', inplace=True)
+        catch = tbl.join(scp, rsuffix = '_t')
+        # select and rename columns
+        catch = catch['NAME']
+        catch.index.name = 'catchment_id'
+        catch.name = 'station_id'
+        # unique catchments
+        catch.drop_duplicates(inplace=True)
+        catch = catch.to_frame()
+        catch.reset_index(inplace=True)
+        # add default parameters
+        pdf = pd.DataFrame(self.project.catchment_defaults, index=[0])
+        pdf = pd.concat([pdf]*len(catch), ignore_index=True)
+        out = pd.concat([catch, pdf], axis = 1)
+        out.set_index('station_id', inplace=True)
+        # save and write
+        self.__call__(out)
+        return
+
+    def subcatch_subbasin_ids(self, catchmentID):
+        """Return all subbasinIDs of the subcatchment."""
+        return self.project.subbasin.loc[lambda df: df['catchment_id'] == catchmentID].index.values
+
+    def catchment_subbasin_ids(self, catchmentID):
+        """Return all subbasins of the catchment respecting the topology.
+
+        The `project.stations` "ds_stationID" column needs to give the from-to
+        topology of catchments/stations.
+        """
+        ft = self.project.stations['ds_stationID']
+        all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
+        ssid = self.subcatch_subbasin_ids
+        return np.concatenate([ssid(i) for i in all_catchments])
+
 class subcatch_parameters(catchment):
 
+    def __init__(self, *args, **kwargs):
+        warn(f'{self.__class__.__name__} is deprecated and will be removed in '
+             'a future version. Use project.catchment instead.',
+             FutureWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
+
+class subcatch_definition(catchment):
     def __init__(self, *args, **kwargs):
         warn(f'{self.__class__.__name__} is deprecated and will be removed in '
              'a future version. Use project.catchment instead.',
@@ -285,7 +497,7 @@ class climate(object):
         return
 
     @propertyplugin
-    class inputdata(inputFile):
+    class inputdata(InputFile):
         """A lazy DataFrame representation of climate.csv.
 
         Rather than being read on instantiation, .read() and .write() need to
@@ -297,6 +509,7 @@ class climate(object):
         def read(self):
             df = pd.read_csv(self.path, skipinitialspace=True,
                              parse_dates=['time'], index_col='time')
+            df.columns = df.columns.str.strip()
             # multi-index columns
             df = pd.pivot_table(df, index='time', columns=['subbasin_id'])
             df.columns.names = ['variable', 'subbasin_id']
@@ -392,6 +605,7 @@ class climate(object):
                            self.parameters["nc_grid"])
             grid = pd.read_csv(pth, skipinitialspace=True,
                                index_col='subbasinID')
+            grid.columns = grid.columns.str.strip()
             return grid
 
         def read_gridded(self, variable, time=None, subbasins=None):
@@ -474,7 +688,7 @@ class climate(object):
                 raise KeyError("%s not in %r" % (key, self.variables))
 
 
-class discharge(inputFile):
+class discharge(InputFile):
     """
     Read and write discharge.csv.
     """
@@ -563,70 +777,6 @@ class station_daily_discharge_observed(discharge):
         super().__init__(*args, **kwargs)
 
 
-# class subcatch_definition(ReadWriteDataFrame):
-#     """
-#     Interface to the subcatchment definition file from DataFrame or grass.
-#     """
-#     path = 'input/subcatch.def'
-#     plugin = ['update']
-
-#     def read(self, **kwargs):
-#         scdef = pd.read_csv(self.path, delim_whitespace=True, index_col=0)
-#         return scdef
-
-#     def write(self, **kwargs):
-#         tbl = self.copy()
-#         tbl.insert(0, 'subbasinID', tbl.index)
-#         tblstr = tbl.to_string(index=False, index_names=False)
-#         with open(self.path, 'w') as f:
-#             f.write(tblstr)
-#         return
-
-#     def update(self, catchments=None, subbasins=None):
-#         """Write the definition file from the subbasins grass table.
-
-#         Arguments
-#         ---------
-#         catchments : list-like
-#             Catchment ids to subset the table to. Takes precedence over
-#             subbasins argument.
-#         subbasins : list-like
-#             Subbasin ids to subset the table to.
-#         """
-#         from modelmanager.plugins.grass import GrassAttributeTable
-
-#         cols = ['subbasinID', 'catchmentID']
-#         tbl = GrassAttributeTable(self.project, subset_columns=cols,
-#                                   vector=self.project.subbasins.vector)
-#         # optionally filter
-#         if catchments is not None:
-#             tbl = tbl[[i in catchments for i in tbl.catchmentID]]
-#         elif subbasins is not None:
-#             tbl = tbl.filter(items=subbasins, axis=0)
-#         # add stationID
-#         scp = {v: k for k, v in
-#                self.project.subcatch_parameters['catchmentID'].items()}
-#         tbl['stationID'] = [scp[i] for i in tbl['catchmentID']]
-#         # save and write
-#         self.__call__(tbl)
-#         return
-
-#     def subcatch_subbasin_ids(self, catchmentID):
-#         """Return all subbasinIDs of the subcatchment."""
-#         return self.index[self.catchmentID == catchmentID].values
-
-#     def catchment_subbasin_ids(self, catchmentID):
-#         """Return all subbasins of the catchment respecting the topology.
-
-#         The `project.stations` "ds_stationID" column needs to give the from-to
-#         topology of catchments/stations.
-#         """
-#         ft = self.project.stations['ds_stationID']
-#         all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
-#         ssid = self.subcatch_subbasin_ids
-#         return np.concatenate([ssid(i) for i in all_catchments])
-
-
 # class station_output(ReadWriteDataFrame):
 #     """
 #     Interface to the station output file.
@@ -662,6 +812,6 @@ class station_daily_discharge_observed(discharge):
 
 # classes attached to project in defaultsettings
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
-           if inspect.isclass(p) and n != 'inputFile' and
+           if inspect.isclass(p) and n != 'InputFile' and
            set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__[1:])}
 PLUGINS.update({n: globals()[n] for n in ['climate', 'config_parameters']})

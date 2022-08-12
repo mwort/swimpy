@@ -86,18 +86,19 @@ class ProjectTestCase(unittest.TestCase):
 
 
 class TestParameters(ProjectTestCase, test_io.Parameters):
-    pass
 
-#     def test_subcatch_definition(self):
-#         scdef = self.project.subcatch_definition
-#         self.assertEqual(list(scdef.index), list(range(1, 11+1)))
-#         scdef.update(catchments=[1])
-#         scdef.read()
-#         self.assertEqual(list(scdef.index), [3, 4, 5, 6, 7, 8, 9, 10, 11])
-#         scdef.update(subbasins=[1, 2])
-#         scdef.read()
-#         self.assertEqual(list(scdef.index), [1, 2])
-#         scdef.update()  # reset to original
+    def test_catchment(self):
+        scdef = self.project.catchment
+        self.assertEqual(list(scdef.index), ['BLANKENSTEIN', 'HOF'])
+        scdef.update(catchments=[1])
+        self.assertEqual(list(scdef.index), ['HOF'])
+        pars = scdef.loc['HOF']
+        pars = pars.drop('catchment_id')
+        pars = pars.to_dict()
+        self.assertEqual(pars, self.project.catchment_defaults)
+        scdef.update(subbasins=[1, 2])
+        self.assertEqual(list(scdef.index), ['BLANKENSTEIN'])
+        scdef.update()  # reset to original
 
 #     def test_changed_parameters(self):
 #         verbose = False

@@ -23,9 +23,7 @@ def skip_if_py3(f):
 
 class TestGrass(ProjectTestCase):
 
-    files_created = ['file.cio', 'blank.str', 'file.cio',
-                     'Sub/groundwater.tab', 'Sub/routing.tab',
-                     'Sub/subbasin.tab']
+    files_created = ['subbasin.csv', 'subbasin_routing.csv', 'hydrotope.csv', 'catchment.csv']
 
     class grassattrtbl(mmgrass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
@@ -36,8 +34,8 @@ class TestGrass(ProjectTestCase):
         with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:
             rasts = grass.list_strings('rast')
             vects = grass.list_strings('vect')
-        self.assertIn(self.project.grass_setup['landuse'], rasts)
-        self.assertIn(self.project.grass_setup['soil'], rasts)
+        self.assertIn(self.project.grass_setup['landuse_id'], rasts)
+        self.assertIn(self.project.grass_setup['soil_id'], rasts)
         self.assertIn(self.project.grass_setup['elevation'], rasts)
         self.assertIn(self.project.grass_setup['stations'], vects)
         return
@@ -47,7 +45,7 @@ class TestGrass(ProjectTestCase):
                          for p in self.files_created]
         [os.remove(p) for p in files_created if osp.exists(p)]
         # update subbasins (runs all other modules in postprocess)
-        self.project.subbasins(verbose=False)
+        self.project.subbasin.update(verbose=False)
         for p in files_created:
             self.assertTrue(osp.exists(p))
 
@@ -60,18 +58,18 @@ class TestGrass(ProjectTestCase):
         self.project.grassattrtbl.read()
         self.assertEqual(self.project.grassattrtbl['new'].mean(), 1000)
 
-    def test_to_raster(self):
-        hyd_file = 'hydrotope_annual_evapotranspiration_actual'
-        sub_file = 'subbasin_daily_waterbalance'
-        with mmgrass.GrassOverwrite(verbose=False):
-            getattr(self.project, hyd_file).to_raster(mapset=hyd_file)
-            ts = slice('1991-01-01', '1991-01-10')
-            getattr(self.project, sub_file).to_raster(
-                'AET', mapset=sub_file, timestep=ts)
-        for f in [hyd_file, sub_file]:
-            with mmgrass.GrassSession(self.project, mapset=f) as grass:
-                rasters = grass.list_strings('raster', f+'*', mapset=f)
-                self.assertEqual(len(rasters), 10)
+    # def test_to_raster(self):
+    #     hyd_file = 'hydrotope_annual_evapotranspiration_actual'
+    #     sub_file = 'subbasin_daily_waterbalance'
+    #     with mmgrass.GrassOverwrite(verbose=False):
+    #         getattr(self.project, hyd_file).to_raster(mapset=hyd_file)
+    #         ts = slice('1991-01-01', '1991-01-10')
+    #         getattr(self.project, sub_file).to_raster(
+    #             'AET', mapset=sub_file, timestep=ts)
+    #     for f in [hyd_file, sub_file]:
+    #         with mmgrass.GrassSession(self.project, mapset=f) as grass:
+    #             rasters = grass.list_strings('raster', f+'*', mapset=f)
+    #             self.assertEqual(len(rasters), 10)
 
 
 if __name__ == '__main__':
