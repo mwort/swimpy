@@ -227,7 +227,7 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
 #         check_files(run.files.all())
 
 
-# TODO: needs revision; how to test plot functions of plugins ('outputFile')?
+# TODO: needs revision; how to test plot functions of plugins ('OutputFile')?
 class TestOutputPlotting(ProjectTestCase):
 
     plot_prefix = 'plot'
@@ -290,7 +290,7 @@ class TestOutput(ProjectTestCase, test_io.Output):
         outf_save = osp.join(self.project.inputpath, 'output_save.nml')
         shutil.copy(outf, outf_save)
         # all defined output files are project attributes
-        from swimpy.output import outputFile as ofileclass
+        from swimpy.output import OutputFile as ofileclass
         for k in self.project.output_files.keys():
             self.assertTrue(hasattr(self.project, k))
             self.assertIsInstance(getattr(self.project, k),

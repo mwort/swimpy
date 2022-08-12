@@ -34,16 +34,19 @@ from modelmanager.plugins.pandas import ProjectOrRunData, ReadWriteDataFrame
 
 from swimpy import utils, plot, hydro
 from swimpy.plot import plot_function as _plot_function
-from swimpy.grass import _subbasin_or_hydrotope_values_to_raster
+from swimpy.grass import _to_raster
 
 
-class outputFile(ReadWriteDataFrame):
+class OutputFile(ReadWriteDataFrame):
     """
     Abstract class for generic output file handling. No project attribute.
     """
     file = None
 
     def __init__(self, project):
+        fbase, ext = osp.splitext(self.file)
+        if ext != '.csv':
+            raise NotImplementedError('Class OutputFile supports only csv files so far!')
         pd.DataFrame.__init__(self)
         self.project = project
         if self._exists:
@@ -73,6 +76,12 @@ class outputFile(ReadWriteDataFrame):
     def _time(self):
         fsplt = self.file.split('_')
         return fsplt[2] if fsplt[1] == 'label' else fsplt[1]
+
+    @property
+    def _name(self):
+        fsplt = self.file.split('_')
+        nameext = fsplt[3] if fsplt[1] == 'label' else fsplt[2]
+        return nameext.removesuffix('.csv')
     
     def read(self, **kwargs):
         """Read output file. Result object inherits from pandas.DataFrame. 
@@ -166,6 +175,16 @@ class outputFile(ReadWriteDataFrame):
         else:
             data.plot()
         return fig
+    
+    def to_grass(self, variable=None, timestep=None, prefix=None,
+                 name=None, strds=True, mapset=None):
+        space = self._space.split('_')[0]
+        reclasser = getattr(getattr(self.project, space), 'reclass')
+        _to_raster(
+            self.project, self, reclasser, variable = variable, timestep=timestep,
+            prefix=prefix, name=name, strds=strds, mapset=mapset)
+        return
+    to_grass.__doc__ = _to_raster.__doc__
 
     def __repr__(self):
         if self._exists:
@@ -199,7 +218,7 @@ class output_files(dict):
         plugins = {}
         for k in self.keys():
             kfle = k + '.' + self.project.output_parameters['output_default_format']
-            class _of(outputFile):
+            class _of(OutputFile):
                 file = kfle
                 project = self.project
             _of.__name__ = k

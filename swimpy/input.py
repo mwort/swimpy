@@ -16,7 +16,7 @@ from modelmanager.plugins.pandas import ReadWriteDataFrame
 from modelmanager.plugins import grass as mmgrass
 
 from swimpy import utils, plot
-from swimpy.grass import reclass_raster
+from swimpy.grass import reclass_raster, get_modulearg
 import matplotlib.pyplot as plt  # after plot
 
 
@@ -265,7 +265,6 @@ class InputFileGrassModule(InputFile, mmgrass.GrassModulePlugin):
         mmgrass.GrassModulePlugin.__init__(self, projectorpath)
         return
 
-
     def create(self, **modulekwargs):
         """Run specific m.swim.* GRASS module.
         
@@ -291,6 +290,26 @@ class InputFileGrassModule(InputFile, mmgrass.GrassModulePlugin):
         """
         return mmgrass.GrassModulePlugin.update(self, **modulekwargs)
 
+    def reclass(self, values, outrast, mapset=None):
+        """Reclass corresponding GRASS raster to 'values'.
+
+        Arguments
+        ---------
+        values : list-like | <pandas.Series>
+            Values the raster is reclassed to. If a pandas.Series is parsed,
+            the index is used to create the mapping, otherwise the categories
+            are assumed to be ``range(1, len(values)+1)``.
+        outrast : str
+            Name of raster to be created.
+        mapset : str, optional
+            Different than the default `grass_mapset` mapset to write to.
+        """
+        if not hasattr(self, 'raster'):
+            raise NotImplementedError('No reclass method implemented for that attribute!')
+        hydname = self.raster + '@' + self.project.grass_mapset
+        reclass_raster(self.project, hydname, outrast, values, mapset=mapset)
+        return
+
 
 class hydrotope(InputFileGrassModule):
     """
@@ -301,24 +320,8 @@ class hydrotope(InputFileGrassModule):
     # grass module
     argument_setting = 'grass_setup'
     module = 'm.swim.hydrotopes'
-
-    def reclass(self, values, outrast, mapset=None):
-        """Reclass hydrotopes raster to 'values'.
-
-        Arguments
-        ---------
-        outrast : str
-            Name of raster to be created.
-        values : list-like | <pandas.Series>
-            Values the raster is reclassed to. If a pandas.Series is parsed,
-            the index is used to create the mapping, otherwise the categories
-            are assumed to be ``range(1, len(values)+1)``.
-        mapset : str, optional
-            Different than the default `grass_mapset` mapset to write to.
-        """
-        hydname = self.raster + '@' + self.project.grass_mapset
-        reclass_raster(self.project, hydname, outrast, values, mapset=mapset)
-        return
+    # other class variables
+    raster = property(lambda self: get_modulearg(self.project, self.module, 'hydrotopes'))
 
 class structure_file(hydrotope):
 
@@ -349,6 +352,9 @@ class subbasin(InputFileGrassModule):
     # grass module arguments as class variables
     argument_setting = 'grass_setup'
     module = 'm.swim.subbasins'
+    # other class variables
+    vector = property(lambda self: get_modulearg(self.project, self.module, 'subbasins'))
+    raster = vector
 
     @propertyplugin
     class substats(InputFileGrassModule):
@@ -365,7 +371,7 @@ class subbasin(InputFileGrassModule):
     @propertyplugin
     class attributes(mmgrass.GrassAttributeTable):
         """The subbasins attribute table as a ``pandas.DataFrame`` object."""
-        vector = property(lambda self: getattr(self.project, 'grass_setup')['subbasins'])
+        vector = property(lambda self: self.project.subbasin.vector)
 
     def postprocess(self, **moduleargs):
         self.project.subbasin_routing.update(**moduleargs)
@@ -375,39 +381,24 @@ class subbasin(InputFileGrassModule):
         # TODO: write nc_climate files
         return
 
-    def reclass(self, values, outrast, mapset=None):
-        """Reclass subbasin raster to 'values'.
 
-        Arguments
-        ---------
-        outrast : str
-            Name of raster to be created.
-        values : list-like | <pandas.Series>
-            Values the raster is reclassed to. If a pandas.Series is parsed,
-            the index is used to create the mapping, otherwise the categories
-            are assumed to be ``range(1, len(values)+1)``.
-        mapset : str, optional
-            Different than the default `grass_mapset` mapset to write to.
-        """
-        sbname = self.raster + '@' + self.project.grass_mapset
-        reclass_raster(self.project, sbname, outrast, values, mapset=mapset)
-        return
-
-
-class catchment(InputFile):
+class catchment(InputFileGrassModule):
     """
     Read or write catchment.csv
     """
     file = 'catchment.csv'
     index_name = 'station_id'
-
-    def __init__(self, projectorpath, read=True, **kwargs):
-        try:
-            InputFile.__init__(self, projectorpath, read, **kwargs)
-        except AssertionError as e:
-            InputFile.__init__(self, projectorpath, read=False, **kwargs)
-            warn(f'{e}. Try to run update() method to (re-)create the input file!')
-        return
+    # grass module arguments as class variables
+    argument_setting = 'grass_setup'
+    module = 'm.swim.subbasins'
+    # other class variables
+    raster = property(lambda self: get_modulearg(self.project, self.module, 'catchments'))
+    vector = raster
+    
+    @propertyplugin
+    class attributes(mmgrass.GrassAttributeTable):
+        """The subbasins attribute table as a ``pandas.DataFrame`` object."""
+        vector = property(lambda self: self.project.catchment.vector)
 
     def update(self, catchments=None, subbasins=None):
         """Update catchment.csv from the subbasins grass table and
