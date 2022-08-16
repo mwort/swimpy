@@ -77,6 +77,7 @@ class Output:
         os.remove('outtest.nml')
         shutil.move(outf_save, outf)
 
+    # TODO: not needed anymore?
     # def test_read_save_output(self):
     #     """Read, save and retrieve all output interfaces."""
     #     resultproperties = [
@@ -106,7 +107,7 @@ class output_sums:
 
     def test_create(self):
         """Create benchmark files (required before compare)."""
-        for o in self.project.output_interfaces:
+        for o in self.project.output_files:
             df = getattr(self.project, o)
             if df.path:
                 path = self._benchmark_path(df.path)
@@ -116,7 +117,7 @@ class output_sums:
 
     def test_compare(self):
         """Compare output sums against benchmark."""
-        for i in self.project.output_interfaces:
+        for i in self.project.output_files:
             df = getattr(self.project, i)
             if df.path is None:
                 continue
@@ -141,7 +142,6 @@ class output_sums:
         return osp.join(self.project.resourcedir, self.resourcedir_name)
 
     def _benchmark_path(self, interface_path):
-        odir = osp.join(self.project.projectdir, 'output')
-        opath = osp.relpath(interface_path, odir)
+        opath = osp.relpath(interface_path, self.project.outputpath)
         path = osp.join(self.resourcedir, opath)+'.pd'
         return path

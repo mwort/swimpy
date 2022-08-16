@@ -114,7 +114,7 @@ class Project(mm.Project):
             kw.update({'functionname': 'run', 'save': save, 'quiet': quiet})
             return self.cluster(cluster, **kw)
 
-        ppn = glob(osp.join(self.projectdir, self.parfile))
+        ppn = glob(osp.join(self.projectdir, self.parfile))[0]
         swimcommand = [self.swim, ppn]
         # silence output
         sof = quiet if type(quiet) == str else os.devnull
@@ -225,31 +225,31 @@ class Project(mm.Project):
             raise IOError(errmsg)
         return f
 
-    @property
-    def output_interfaces(self):
-        """List of output file project or run attributes.
+    # @property
+    # def output_interfaces(self):
+    #     """List of output file project or run attributes.
 
-        Apart from interfacing between current SWIM output files, these
-        attributes may be parsed to the `files` argument to `save_run`. They
-        will then become an attribute of that run.
-        """
-        from modelmanager.plugins.pandas import ProjectOrRunData
-        fi = [n for n, p in self.settings.properties.items()
-              if hasattr(p, 'plugin') and ProjectOrRunData in p.plugin.__mro__]
-        return fi
+    #     Apart from interfacing between current SWIM output files, these
+    #     attributes may be parsed to the `files` argument to `save_run`. They
+    #     will then become an attribute of that run.
+    #     """
+    #     from modelmanager.plugins.pandas import ProjectOrRunData
+    #     fi = [n for n, p in self.settings.properties.items()
+    #           if hasattr(p, 'plugin') and ProjectOrRunData in p.plugin.__mro__]
+    #     return fi
 
-    def output_interface_paths(self, print_=False):
-        """Return dict (or print) of names and absolute (relative) paths."""
-        oi = {}
-        for rf in self.output_interfaces:
-            pth = self.settings.properties[rf].plugin.path
-            if pth:
-                oi[rf] = osp.join(self.projectdir, pth)
-        if print_:
-            for n, p in oi.items():
-                print('%s: %s' % (n, osp.relpath(p, os.getcwd())))
-        else:
-            return oi
+    # def output_interface_paths(self, print_=False):
+    #     """Return dict (or print) of names and absolute (relative) paths."""
+    #     oi = {}
+    #     for rf in self.output_interfaces:
+    #         pth = self.settings.properties[rf].plugin.path
+    #         if pth:
+    #             oi[rf] = osp.join(self.projectdir, pth)
+    #     if print_:
+    #         for n, p in oi.items():
+    #             print('%s: %s' % (n, osp.relpath(p, os.getcwd())))
+    #     else:
+    #         return oi
 
     @parse_settings
     def save_run(self, indicators=None, files=None, parameters=True, **kw):
@@ -269,7 +269,7 @@ class Project(mm.Project):
             to_csv) or a dictionary of any of those.
         parameters : list of dicts | bool
             Save parameter changes with the run. The dicts must contain the
-            parameter table attributes attributes. If True (default) use result
+            parameter table attributes. If True (default) use result
             of ``self.changed_parameters()``, if False dont save any.
         **kw : optional
             Set fields of the run browser table. Default fields: notes, tags.
@@ -283,9 +283,8 @@ class Project(mm.Project):
         assert type(indicators) in [list, dict]
         assert type(files) in [list, dict]
         # config
-        sty, nbyr = self.config_parameters('iyr', 'nbyr')
-        run_kwargs = {'start': dt.date(sty, 1, 1),
-                      'end': dt.date(sty + nbyr - 1, 12, 31)}
+        run_kwargs = {'start': self.config_parameters.start_date,
+                      'end': self.config_parameters.end_date}
         if parameters:
             if parameters is True:
                 parameters = self.changed_parameters()
@@ -332,11 +331,12 @@ class Project(mm.Project):
         """
         changed = []
         # create dicts with (pnam, stationID): value
-        bsnp = self.basin_parameters
-        scp = self.hydrotope.T.stack().to_dict()
+        bsnp = self.config_parameters.parlist
+        scp = self.catchment.T.stack().to_dict()
         for k, v in list(bsnp.items()) + list(scp.items()):
             n, sid = k if type(k) == tuple else (k, None)
             # convert to minimal precision decimal via string
+            v = v if type(v) != bool else int(v)
             dv = Decimal(str(v))
             saved = self.browser.parameters.filter(name=n, tags=sid).last()
             if not saved or saved.value != dv:

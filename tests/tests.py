@@ -100,29 +100,29 @@ class TestParameters(ProjectTestCase, test_io.Parameters):
         self.assertEqual(list(scdef.index), ['BLANKENSTEIN'])
         scdef.update()  # reset to original
 
-#     def test_changed_parameters(self):
-#         verbose = False
-#         from random import random
-#         original = self.project.changed_parameters(verbose=verbose)
-#         bsn = self.project.basin_parameters
-#         scp = self.project.catchment.T.stack().to_dict()
-#         nametags = [(k, None) for k in bsn] + list(scp.keys())
-#         nametags_original = [(e['name'], e['tags']) for e in original]
-#         for nt in nametags:
-#             self.assertIn(nt, nametags_original)
-#         run = self.project.browser.insert('run')
-#         for attr in original:
-#             self.project.browser.insert('parameter', run=run, **attr)
-#         self.project.basin_parameters(roc4=random(), da=random()*1000)
-#         changed = self.project.changed_parameters(verbose=verbose)
-#         self.assertEqual(sorted([e['name'] for e in changed]), ['da', 'roc4'])
-#         self.project.basin_parameters(**bsn)
-#         self.assertEqual(self.project.changed_parameters(verbose=verbose), [])
-#         self.project.catchment(roc4=random())
-#         changed = self.project.changed_parameters(verbose=verbose)
-#         expresult = [('roc4', 'BLANKENSTEIN'), ('roc4', 'HOF')]
-#         nametags = sorted([(e['name'], e['tags']) for e in changed])
-#         self.assertEqual(nametags, expresult)
+    def test_changed_parameters(self):
+        verbose = False
+        from random import random
+        original = self.project.changed_parameters(verbose=verbose)
+        bsn = self.project.config_parameters.parlist
+        scp = self.project.catchment.T.stack().to_dict()
+        nametags = [(k, None) for k in bsn] + list(scp.keys())
+        nametags_original = [(e['name'], e['tags']) for e in original]
+        for nt in nametags:
+            self.assertIn(nt, nametags_original)
+        run = self.project.browser.insert('run')
+        for attr in original:
+            self.project.browser.insert('parameter', run=run, **attr)
+        self.project.config_parameters(iyr=1995, bsubcatch=False)
+        changed = self.project.changed_parameters(verbose=verbose)
+        self.assertEqual(sorted([e['name'] for e in changed]), ['bsubcatch', 'iyr'])
+        self.project.config_parameters(**bsn)
+        self.assertEqual(self.project.changed_parameters(verbose=verbose), [])
+        self.project.catchment(roc4=random())
+        changed = self.project.changed_parameters(verbose=verbose)
+        expresult = [('roc4', 'BLANKENSTEIN'), ('roc4', 'HOF')]
+        nametags = sorted([(e['name'], e['tags']) for e in changed])
+        self.assertEqual(nametags, expresult)
 
 
 class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
@@ -178,53 +178,53 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         self.assertEqual(len(clim.columns.levels), 2)
 
 
-# class TestProcessing(ProjectTestCase, test_running.Cluster):
+class TestProcessing(ProjectTestCase):#, test_running.Cluster):
 
-#     def test_save_run(self):
-#         # test indicators and files
-#         indicators = ['indicator1', 'indicator2']
-#         ri_functions = [lambda p: 5,
-#                         lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
-#         ri_values = {i: f(None) for i, f in zip(indicators, ri_functions)}
-#         files = ['file1', 'file2']
-#         somefile = osp.join(osp.dirname(__file__), 'tests.py')
-#         rf_functions = [lambda p: pd.DataFrame(list(range(100))),
-#                         lambda p: {'HOF': open(__file__),
-#                                    'BLANKENSTEIN': somefile}]
-#         rf_values = {i: f(None) for i, f in zip(files, rf_functions)}
+    def test_save_run(self):
+        # test indicators and files
+        indicators = ['indicator1', 'indicator2']
+        ri_functions = [lambda p: 5,
+                        lambda p: {'HOF': 0.1, 'BLANKENSTEIN': 0.2}]
+        ri_values = {i: f(None) for i, f in zip(indicators, ri_functions)}
+        files = ['file1', 'file2']
+        somefile = osp.join(osp.dirname(__file__), 'tests.py')
+        rf_functions = [lambda p: pd.DataFrame(list(range(100))),
+                        lambda p: {'HOF': open(__file__),
+                                   'BLANKENSTEIN': somefile}]
+        rf_values = {i: f(None) for i, f in zip(files, rf_functions)}
 
-#         def check_files(fileobjects):
-#             self.assertEqual(len(fileobjects), 3)
-#             fdir = osp.join(self.project.browser.settings.filesdir, 'runs')
-#             for fo in fileobjects:
-#                 self.assertTrue(osp.exists(fo.file.path))
-#                 self.assertTrue(fo.file.path.startswith(fdir))
-#                 self.assertIn(fo.tags.split()[0], files)
-#             return
+        def check_files(fileobjects):
+            self.assertEqual(len(fileobjects), 3)
+            fdir = osp.join(self.project.browser.settings.filesdir, 'runs')
+            for fo in fileobjects:
+                self.assertTrue(osp.exists(fo.file.path))
+                self.assertTrue(fo.file.path.startswith(fdir))
+                self.assertIn(fo.tags.split()[0], files)
+            return
 
-#         def check_indicators(indicatorobjects):
-#             self.assertEqual(len(indicatorobjects), 3)
-#             for io in indicatorobjects:
-#                 self.assertIn(io.name, indicators)
-#             return
-#         # save run without any files or indicators
-#         run = self.project.save_run(notes='Some run notes',
-#                                     tags='testing test')
-#         self.assertIsInstance(run, self.project.browser.models['run'])
-#         self.assertTrue(hasattr(run, 'notes'))
-#         self.assertIn('test', run.tags.split())
-#         # pass indicators + files to save_run
-#         run = self.project.save_run(indicators=ri_values, files=rf_values)
-#         check_indicators(run.indicators.all())
-#         check_files(run.files.all())
-#         # pass as settings variables
-#         self.project.settings(**dict(zip(indicators, ri_functions)))
-#         self.project.settings(**dict(zip(files, rf_functions)))
-#         self.project.settings(save_run_files=files,
-#                               save_run_indicators=indicators)
-#         run = self.project.save_run()
-#         check_indicators(run.indicators.all())
-#         check_files(run.files.all())
+        def check_indicators(indicatorobjects):
+            self.assertEqual(len(indicatorobjects), 3)
+            for io in indicatorobjects:
+                self.assertIn(io.name, indicators)
+            return
+        # save run without any files or indicators
+        run = self.project.save_run(notes='Some run notes',
+                                    tags='testing test')
+        self.assertIsInstance(run, self.project.browser.models['run'])
+        self.assertTrue(hasattr(run, 'notes'))
+        self.assertIn('test', run.tags.split())
+        # pass indicators + files to save_run
+        run = self.project.save_run(indicators=ri_values, files=rf_values)
+        check_indicators(run.indicators.all())
+        check_files(run.files.all())
+        # pass as settings variables
+        self.project.settings(**dict(zip(indicators, ri_functions)))
+        self.project.settings(**dict(zip(files, rf_functions)))
+        self.project.settings(save_run_files=files,
+                              save_run_indicators=indicators)
+        run = self.project.save_run()
+        check_indicators(run.indicators.all())
+        check_files(run.files.all())
 
 
 # TODO: needs revision; how to test plot functions of plugins ('OutputFile')?
