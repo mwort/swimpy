@@ -87,7 +87,7 @@ class SwimRun(Run):
         """Attribute to let the Run object map files to plugins.
         """
         p = settings.PROJECT
-        fi = {n: p.settings.properties[n] for n in p.output_interfaces}
+        fi = {n: p.settings.properties[n] for n in p.output_files}
         return dict(files=fi)
 
     @property

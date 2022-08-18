@@ -7,6 +7,7 @@ swimpy.tests package that serves as a test suite to check the validity of any
 project setup.
 """
 from __future__ import print_function, absolute_import
+import os
 import os.path as osp
 import sys
 import subprocess
@@ -286,28 +287,26 @@ class TestOutputPlotting(ProjectTestCase):
 class TestOutput(ProjectTestCase, test_io.Output):
     
     def test_output_attributes(self):
-        outf = osp.join(self.project.output_files.path)
-        outf_save = osp.join(self.project.inputpath, 'output_save.nml')
-        shutil.copy(outf, outf_save)
         # all defined output files are project attributes
         from swimpy.output import OutputFile as ofileclass
         for k in self.project.output_files.keys():
             self.assertTrue(hasattr(self.project, k))
             self.assertIsInstance(getattr(self.project, k),
                                   ofileclass)
-        # new output that does not yet exist
-        self.project.output_files(hydrotope_monthly_testevap=['etp', 'eta'])
-        self.assertTrue(hasattr(self.project, 'hydrotope_monthly_testevap'))
-        testevap = self.project.hydrotope_monthly_testevap
-        self.assertIsInstance(testevap, ofileclass)
-        self.assertEqual(repr(testevap),
-                         '<File output/hydrotope_monthly_testevap.csv does not yet exist. You need to run SWIM first.>')
         # get / indexing methods (format of underlying pd.DataFrame)
+        self.assertIsInstance(self.project.output_files('hydrotope_label_daily_crop_out',
+                                                        'hydrotope_label_daily_htp_prn'),
+                              list)
         self.assertEqual(len(self.project.subbasin_daily_river_discharge.loc['2000-12-27']['river_runoff']), 11)
         self.assertAlmostEqual(self.project.subbasin_label_daily_selected_stations_discharge.loc['1991-01-01']['discharge']['HOF'], 5.187)
-        self.assertEqual(self.project.hydrotope_annual_gis.loc[[1991]]['surface_runoff'].size, 182)
+        self.assertEqual(self.project.hydrotope_annual_gis.loc[['1991']]['surface_runoff'].size, 182)
+        # make sure write function works as expected
+        df = self.project.catchment_daily_bad_prn
+        self.project.catchment_daily_bad_prn.write('test.csv')
+        df_test = self.project.catchment_daily_bad_prn.from_csv('test.csv')
+        pd.testing.assert_frame_equal(df, df_test)
         # clean up
-        shutil.move(outf_save, outf)
+        os.remove('test.csv')
 
 
 # class TestWaterBalance(ProjectTestCase, test_waterbalance.WaterBalance):

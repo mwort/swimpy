@@ -64,17 +64,24 @@ class Output:
     def test_output_files(self):
         outf = osp.join(self.project.output_files.path)
         outf_save = osp.join(self.project.inputpath, 'output_save.nml')
-        shutil.copy(outf, outf_save)
-        self.assertIsInstance(self.project.output_files('hydrotope_label_daily_crop_out', 'hydrotope_label_daily_htp_prn'),
-                              list)
-        self.project.output_files.write('outtest.nml')
+        self.project.output_files.write(outf_save)
+        from swimpy.output import OutputFile as ofileclass
+        # new output that does not yet exist
+        self.assertFalse(hasattr(self.project, 'hydrotope_monthly_testevap'))
         self.project.output_files(hydrotope_monthly_testevap=['etp', 'eta'])
+        self.assertTrue(hasattr(self.project, 'hydrotope_monthly_testevap'))
         self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        testevap = self.project.hydrotope_monthly_testevap
+        self.assertIsInstance(testevap, ofileclass)
+        self.assertEqual(repr(testevap),
+                         '<File output/hydrotope_monthly_testevap.csv does not yet exist. You need to run SWIM first.>')
+        # implicit write() works
         self.project.output_files.read()
         self.assertTrue('hydrotope_monthly_testevap' in self.project.output_files.keys())
+        # different output file associated
         self.project.output_files.read(outf_save)
+        self.assertEqual(self.project.output_files.path, outf_save)
         self.assertFalse('hydrotope_monthly_testevap' in self.project.output_files.keys())
-        os.remove('outtest.nml')
         shutil.move(outf_save, outf)
 
     # TODO: not needed anymore?

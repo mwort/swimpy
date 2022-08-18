@@ -37,21 +37,11 @@ from swimpy.plot import plot_function as _plot_function
 from swimpy.grass import _to_raster
 
 
-class OutputFile(ReadWriteDataFrame):
+class OutputFile(ProjectOrRunData):
     """
     Abstract class for generic output file handling. No project attribute.
     """
     file = None
-
-    def __init__(self, project):
-        fbase, ext = osp.splitext(self.file)
-        if ext != '.csv':
-            raise NotImplementedError('Class OutputFile supports only csv files so far!')
-        pd.DataFrame.__init__(self)
-        self.project = project
-        if self._exists:
-            ReadWriteDataFrame.__init__(self, project)
-        return
 
     @property
     def path(self):
@@ -83,7 +73,10 @@ class OutputFile(ReadWriteDataFrame):
         nameext = fsplt[3] if fsplt[1] == 'label' else fsplt[2]
         return nameext.removesuffix('.csv')
     
-    def read(self, **kwargs):
+    def from_project(self, path=None, **kwargs):
+        return self.from_csv(path, **kwargs)
+
+    def from_csv(self, path=None, **kwargs):
         """Read output file. Result object inherits from pandas.DataFrame. 
 
         Arguments
@@ -91,9 +84,12 @@ class OutputFile(ReadWriteDataFrame):
         **kwargs :
             Keywords to pandas.read_csv.
         """
-        if self._exists:
+        if path == self.path:
+            path = None
+        if self._exists or path:
+            path = path or self.path
             na_values = ['NA', 'NaN', -999, -999.9, -9999]
-            df = pd.read_csv(self.path, skipinitialspace=True,
+            df = pd.read_csv(path, skipinitialspace=True,
                             index_col='time', parse_dates=True,
                             na_values=na_values, **kwargs)
             df.index = df.index.to_period(freq=self._time[0])
@@ -104,8 +100,11 @@ class OutputFile(ReadWriteDataFrame):
         else:
             df = None
         return df
+    
+    def to_csv(self, path=None, **kwargs):
+        return self.write(path, **kwargs)
 
-    def write(self, **kwargs):
+    def write(self, path=None, **kwargs):
         """Write to csv file.
 
         Arguments
@@ -113,8 +112,15 @@ class OutputFile(ReadWriteDataFrame):
         **kwargs :
             Keywords to pandas.to_csv.
         """
-        if self._exists:
-            self.to_csv(self.path, index = True, na_rep='-9999', **kwargs)
+        if path == self.path:
+            path = None
+        if self._exists or path:
+            path = path or self.path
+            spcol = self._space
+            df = self
+            df_stack = df.stack()
+            df_out = df_stack.reset_index(level=[spcol])
+            df_out.to_csv(path, index = True, na_rep='-9999', **kwargs)
         return
     
     # TODO: revise! Works but maybe not as it should (returns no ax object etc.)
@@ -241,7 +247,6 @@ class output_files(dict):
             new = {k: v for k, v in set.items()}
             self.update(new)
             self.write()
-            #self._setattr()
             self.interfaces = self._create_propertyplugins()
             self.project.settings(**self.interfaces)
         if get:
@@ -250,12 +255,17 @@ class output_files(dict):
     
     def read(self, path=None):
         """
-        Read output file definitions from project.output_files.path or a different new .nml file.
+        Read output file definitions from project.output_files.path or a
+        different .nml file.
 
-        Args:
-            path: (Optional) A file name from which output definitions are read.
+        Arguments
+        ---------
+        path: str, optional
+            A file name from which output definitions are read. By default
+            project.output_files.path is used. If given, path will be updated.
         """
         path = path or self.path
+        self._path = path
         nml = f90nml.read(path)
         nml = {'_'.join([v['space'], v['time'], v['name']]): v['variables'] for v in nml.values()}
         # make sure self is fully (re-)initialised
@@ -270,8 +280,12 @@ class output_files(dict):
         """
         Write output file definitions into project.output_files.path or a new .nml file.
 
-        Args:
-            path: (Optional) A file name into which output definitions are written.
+        Arguments
+        ---------
+        path: str, optional
+            A file name into which output definitions are written. By default
+            project.output_files.path is used. If given, path will NOT be
+            updated.
         """
         path = path or self.path
         # order of ospace is important for checks below!
@@ -301,7 +315,6 @@ class output_files(dict):
         odir = "Files with variables in directory '{}':\n".format(self.project.output_parameters['output_dir'])
         files = 'dict {\n'
         for f, v in self.items():
-            #flename = '_'.join([fle['space'], fle['time'], fle['name']])
             vars = ', '.join(v) if isinstance(v, list) else v
             files += f + ': [' + vars + ']\n'
         return rpr + odir + files + '}'
