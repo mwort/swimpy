@@ -803,6 +803,7 @@ class station_daily_discharge_observed(discharge):
 
 # classes attached to project in defaultsettings
 PLUGINS = {n: propertyplugin(p) for n, p in globals().items()
-           if inspect.isclass(p) and n != 'InputFile' and
+           if inspect.isclass(p) and
+           n not in ['InputFile', 'InputFileGrassModule'] and
            set([ReadWriteDataFrame, TemplatesDict]) & set(p.__mro__[1:])}
 PLUGINS.update({n: globals()[n] for n in ['climate', 'config_parameters']})
