@@ -187,7 +187,7 @@ class cluster(object):
 
     @parse_settings
     def run_parallel(self, clones=None, args=None, time=None,
-                     preprocess='basin_parameters', prefix='run_parallel',
+                     preprocess='catchment', prefix='run_parallel',
                      parallelism='jobs', mpi_master=False, **runkw):
         """Run SWIM in parallel using cluster jobs or multiprocessing.
 
@@ -571,7 +571,7 @@ class StationsUnconfigured(object):
     """
 
     #: Default observed discharge file in SWIMpy resource directory
-    daily_discharge_observed_file = 'daily_discharge_observed.csv'
+    daily_discharge_observed_file = 'discharge.csv'
 
     def __init__(self, project):
         u = (swimpy.__docs__ +

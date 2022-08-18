@@ -179,7 +179,7 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         self.assertEqual(len(clim.columns.levels), 2)
 
 
-class TestProcessing(ProjectTestCase):#, test_running.Cluster):
+class TestProcessing(ProjectTestCase, test_running.Cluster):
 
     def test_save_run(self):
         # test indicators and files
