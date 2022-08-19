@@ -140,6 +140,8 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         # write
         self.project.catchment(roc2=1)
         self.assertEqual(self.project.catchment['roc2'].mean(), 1)
+        self.project.catchment['roc2'] = 2
+        self.assertEqual(self.project.catchment['roc2'].mean(), 2)
         self.project.catchment(BLANKENSTEIN=2)
         BLKS = self.project.catchment.loc['BLANKENSTEIN'].mean()
         self.assertEqual(BLKS, 2)
@@ -161,10 +163,6 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         self.assertEqual(len(ro.columns), 2)
         self.assertIn('HOF', ro.columns)
         ro(stations=['BLANKENSTEIN'])
-
-    # def test_station_output(self):
-    #     self.project.station_output.update(stations=['HOF'])
-    #     self.assertEqual(self.project.station_output.index.tolist(), ['HOF'])
 
     def test_netcdf_inputdata(self):
         import datetime as dt
@@ -229,40 +227,40 @@ class TestProcessing(ProjectTestCase, test_running.Cluster):
 
 
 # TODO: needs revision; how to test plot functions of plugins ('OutputFile')?
-class TestOutputPlotting(ProjectTestCase):
+# class TestOutputPlotting(ProjectTestCase):
 
-    plot_prefix = 'plot'
-    default_positional_arguments = {
-        'station': 'HOF'
-    }
+#     plot_prefix = 'plot'
+#     default_positional_arguments = {
+#         'station': 'HOF'
+#     }
 
-    @property
-    def plot_functions(self):
-        pset = self.project.settings
-        fd = []
-        for n in pset.functions.keys():
-            prts = n.split('.')
-            if prts[-1].startswith(plot_prefix):
-                pim = pset.plugins.get('.'.join(prts[:-1]), type).__module__
-                if pim == 'swimpy.output':
-                    fd += [n]
-        return fd
+#     @property
+#     def plot_functions(self):
+#         pset = self.project.settings
+#         fd = []
+#         for n in pset.functions.keys():
+#             prts = n.split('.')
+#             if prts[-1].startswith(plot_prefix):
+#                 pim = pset.plugins.get('.'.join(prts[:-1]), type).__module__
+#                 if pim == 'swimpy.output':
+#                     fd += [n]
+#         return fd
 
-    def run_with_defaults(self, fname, **kwargs):
-        panames = self.project.settings.functions[fname].positional_arguments
-        pargs = [self.default_positional_arguments[a] for a in panames]
-        return self.project.settings[fname](*pargs, **kwargs)
+#     def run_with_defaults(self, fname, **kwargs):
+#         panames = self.project.settings.functions[fname].positional_arguments
+#         pargs = [self.default_positional_arguments[a] for a in panames]
+#         return self.project.settings[fname](*pargs, **kwargs)
 
-    def test_output(self):
-        print('Testing plot functions...')
-        fig = pl.figure()
-        for a in self.plot_functions:
-            fig.clear()
-            print(a)
-            ppath = osp.join(self.project.projectdir, a+'.png')
-            self.assertIsNotNone(self.run_with_defaults(a, output=ppath))
-            self.assertTrue(osp.exists(ppath))
-        return
+#     def test_output(self):
+#         print('Testing plot functions...')
+#         fig = pl.figure()
+#         for a in self.plot_functions:
+#             fig.clear()
+#             print(a)
+#             ppath = osp.join(self.project.projectdir, a+'.png')
+#             self.assertIsNotNone(self.run_with_defaults(a, output=ppath))
+#             self.assertTrue(osp.exists(ppath))
+#         return
 
 #     def test_runs(self):
 #         resfile_interfaces = self.project.output_interfaces

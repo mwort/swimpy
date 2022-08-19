@@ -1,6 +1,8 @@
 """
 SWIM input functionality with interface to GRASS.
 """
+# TODO: implement remaining input files: soil, crop, reservoir etc.
+
 import os.path as osp
 from warnings import warn
 import datetime as dt
@@ -226,6 +228,11 @@ class InputFile(ReadWriteDataFrame):
     @path.setter
     def path(self, value):
         self._path = value
+        return
+    
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self.write()
         return
 
     def read(self, **kwargs):
