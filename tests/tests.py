@@ -137,6 +137,11 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         self.assertIsInstance(BLKS, pd.Series)
         roc2 = self.project.catchment['roc2']
         self.assertIsInstance(roc2, pd.Series)
+        # make sure write function works as expected
+        sbc.write('test.csv')
+        sbc_test = self.project.catchment.read('test.csv')
+        pd.testing.assert_frame_equal(sbc, sbc_test)
+        os.remove('test.csv')
         # write
         self.project.catchment(roc2=1)
         self.assertEqual(self.project.catchment['roc2'].mean(), 1)
@@ -175,6 +180,15 @@ class TestInput(ProjectTestCase, test_io.Input, test_swimpy_config.Stations):
         clim = self.project.climate.netcdf_inputdata[["tmean", "tmin", "tmax"]]
         self.assertEqual(clim.shape, (nd.days, 11*3))
         self.assertEqual(len(clim.columns.levels), 2)
+    
+    def test_climcsv_inputdata(self):
+        # make sure write function works as expected
+        df = self.project.climate.inputdata
+        df.write('test.csv')
+        df_test = self.project.climate.inputdata.read('test.csv')
+        pd.testing.assert_frame_equal(df, df_test)
+        # clean up
+        os.remove('test.csv')
 
 
 class TestProcessing(ProjectTestCase, test_running.Cluster):
@@ -300,7 +314,7 @@ class TestOutput(ProjectTestCase, test_io.Output):
         self.assertEqual(self.project.hydrotope_annual_gis.loc[['1991']]['surface_runoff'].size, 182)
         # make sure write function works as expected
         df = self.project.catchment_daily_bad_prn
-        self.project.catchment_daily_bad_prn.write('test.csv')
+        df.write('test.csv')
         df_test = self.project.catchment_daily_bad_prn.from_csv('test.csv')
         pd.testing.assert_frame_equal(df, df_test)
         # clean up

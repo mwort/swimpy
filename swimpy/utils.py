@@ -674,3 +674,59 @@ class GRDCStation(pd.DataFrame):
         header = self.header.split(u'\n')
         rep = dfrep[0] + '\n' + u'\n'.join(header + dfrep[1:])
         return rep.encode('utf8', 'ignore').decode()
+
+
+def read_csv_multicol(path, indexcol='time', ifreq='d',
+                      spacecol=None, **kwargs):
+    """Read csv files of structure <time>, <spatial>, <variable(s)>.
+
+    Output is a pd.DataFrame with DatetimeIndex and MultiIndex column
+    ['variable', <spacecol>].
+    
+    Arguments
+    ---------
+    path: str
+        File to read.
+    indexcol: str
+        Index name (treated as date index).
+    ifreq: str
+        Index frequency. Passed to pd.index.to_period().
+    spacecol: str
+        Name of column that is a spatial identifier (other columns are treated
+        as 'variable' in the final MultiIndex column).
+    **kwargs :
+        Keywords to pandas.read_csv.
+    """
+    na_values = ['NA', 'NaN', -999, -999.9, -9999]
+    df = pd.read_csv(path, skipinitialspace=True,
+                    index_col=indexcol, parse_dates=True,
+                    na_values=na_values, **kwargs)
+    df.index = df.index.to_period(freq=ifreq)
+    # multi-index columns
+    df = pd.pivot_table(df, index='time', columns=[spacecol])
+    df.columns.names = ['variable', spacecol]
+    return df
+
+
+def write_csv_multicol(df, path, spacecol=None, **kwargs):
+    """Write pd.DataFrame with DatetimeIndex and MultiIndex column
+    ['variable', <spacecol>] (e.g. read with read_csv_multicol()) to a csv file
+    of structure <time>, <spatial>, <variable(s)>.
+    
+    Arguments
+    ---------
+    df: pd.DataFrame
+        pd.DataFrame object with DatetimeIndex and MultiIndex column
+        ['variable', <spacecol>].
+    path: str
+        File to write to.
+    spacecol: str
+        Name of column that is a spatial identifier (other columns are treated
+        as 'variable' in the final MultiIndex column).
+    **kwargs :
+        Keywords to pandas.to_csv.
+    """
+    df_stack = df.stack()
+    df_out = df_stack.reset_index(level=[spacecol])
+    df_out.to_csv(path, index = True, na_rep='-9999', **kwargs)
+    return

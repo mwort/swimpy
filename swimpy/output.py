@@ -32,7 +32,7 @@ from matplotlib import cm
 from modelmanager.utils import propertyplugin
 from modelmanager.plugins.pandas import ProjectOrRunData, ReadWriteDataFrame
 
-from swimpy import utils, plot, hydro
+from swimpy import utils
 from swimpy.plot import plot_function as _plot_function
 from swimpy.grass import _to_raster
 
@@ -78,6 +78,8 @@ class OutputFile(ProjectOrRunData):
 
         Arguments
         ---------
+        path: str, optional
+            File other than default to read.
         **kwargs :
             Keywords to pandas.read_csv.
         """
@@ -85,15 +87,8 @@ class OutputFile(ProjectOrRunData):
             path = None
         if self._exists or path:
             path = path or self.path
-            na_values = ['NA', 'NaN', -999, -999.9, -9999]
-            df = pd.read_csv(path, skipinitialspace=True,
-                            index_col='time', parse_dates=True,
-                            na_values=na_values, **kwargs)
-            df.index = df.index.to_period(freq=self._time[0])
-            # multi-index columns
-            spcol = self._space
-            df = pd.pivot_table(df, index='time', columns=[spcol])
-            df.columns.names = ['variable', spcol]
+            df = utils.read_csv_multicol(path, 'time', self._time[0],
+                                self._space, **kwargs)
         else:
             df = None
         return df
@@ -105,6 +100,8 @@ class OutputFile(ProjectOrRunData):
 
         Arguments
         ---------
+        path: str, optional
+            File other than default to write to.
         **kwargs :
             Keywords to pandas.to_csv.
         """
@@ -112,11 +109,7 @@ class OutputFile(ProjectOrRunData):
             path = None
         if self._exists or path:
             path = path or self.path
-            spcol = self._space
-            df = self
-            df_stack = df.stack()
-            df_out = df_stack.reset_index(level=[spcol])
-            df_out.to_csv(path, index = True, na_rep='-9999', **kwargs)
+            utils.write_csv_multicol(self, path, self._space, **kwargs)
         return
     
     to_csv = write

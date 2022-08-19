@@ -235,17 +235,20 @@ class InputFile(ReadWriteDataFrame):
         self.write()
         return
 
-    def read(self, **kwargs):
+    def read(self, path=None, **kwargs):
         """Read input file. Result object inherits from pandas.DataFrame. 
 
         Arguments
         ---------
+        path: str, optional
+            File other than default to read.
         **kwargs :
             Keywords to pandas.read_csv.
         """
-        if self.path:
+        path = path or self.path
+        if path:
             na_values = ['NA', 'NaN', -999, -999.9, -9999]
-            df = pd.read_csv(self.path, skipinitialspace=True,
+            df = pd.read_csv(path, skipinitialspace=True,
                             index_col=self.index_name, na_values=na_values,
                             **kwargs)
             df.columns = df.columns.str.strip()
@@ -253,16 +256,19 @@ class InputFile(ReadWriteDataFrame):
             df = None
         return df
 
-    def write(self, **kwargs):
+    def write(self, path=None, **kwargs):
         """Write to csv file.
 
         Arguments
         ---------
+        path: str, optional
+            File other than default to write to.
         **kwargs :
             Keywords to pandas.to_csv.
         """
-        if self.path:
-            self.to_csv(self.path, index = True, na_rep='-9999', **kwargs)
+        path = path or self.path
+        if path:
+            self.to_csv(path, index = True, na_rep='-9999', **kwargs)
         else:
             warn("No file has been given, nothing to do!")
         return
@@ -520,14 +526,34 @@ class climate(object):
         file = 'climate.csv'
         plugin = ['print_stats', 'plot_temperature', 'plot_precipitation']
 
-        def read(self):
-            df = pd.read_csv(self.path, skipinitialspace=True,
-                             parse_dates=['time'], index_col='time')
-            df.columns = df.columns.str.strip()
-            # multi-index columns
-            df = pd.pivot_table(df, index='time', columns=['subbasin_id'])
-            df.columns.names = ['variable', 'subbasin_id']
+        def read(self, path=None, **kwargs):
+            """Read input file. Result object inherits from pandas.DataFrame. 
+
+            Arguments
+            ---------
+            path: str, optional
+                File other than default to read.
+            **kwargs :
+                Keywords to pandas.read_csv.
+            """
+            path = path or self.path
+            df = utils.read_csv_multicol(path, 'time', 'd',
+                                'subbasin_id', **kwargs)
             return df
+        
+        def write(self, path=None, **kwargs):
+            """Write to csv file.
+
+            Arguments
+            ---------
+            path: str, optional
+                File other than default to write to.
+            **kwargs :
+                Keywords to pandas.to_csv.
+            """
+            path = path or self.path
+            utils.write_csv_multicol(self, path, 'subbasin_id', **kwargs)
+            return
 
         def print_stats(self):
             """Print statistics for all variables."""
