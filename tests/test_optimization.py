@@ -37,7 +37,7 @@ class TestEvoalgos(ProjectTestCase):
         # only run algorithm if output doesnt exist to speed up output tests
         if not osp.exists(self.output):
             self.project.config_parameters(nbyr=2)
-            self.project.basin_parameters(subcatch=0)
+            #self.project.basin_parameters(subcatch=0)
             run = self.project.SMSEMOA(**self.algorithm_kwargs)
             self.populations = run.optimization_populations
         else:

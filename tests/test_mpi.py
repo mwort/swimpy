@@ -1,3 +1,6 @@
+# In case of problems see
+# https://gitlab.pik-potsdam.de/linstead/test-project/-/blob/8de47fff7d62c99eeb5db4fd8821ed977ee1721c/SLURM.md#mpi-and-python-mpi4py
+
 import unittest
 import cProfile, pstats
 

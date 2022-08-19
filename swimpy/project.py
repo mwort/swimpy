@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function
 import os
 import os.path as osp
 import sys
+from warnings import warn
 from glob import glob
 import shutil
 import datetime as dt
@@ -225,31 +226,23 @@ class Project(mm.Project):
             raise IOError(errmsg)
         return f
 
-    # @property
-    # def output_interfaces(self):
-    #     """List of output file project or run attributes.
+    @property
+    def output_interfaces(self):
+        warn('project.output_interfaces is deprecated and will be removed in '
+            'a future version. Use project.output_files instead.',
+            FutureWarning, stacklevel=2)
+        return self.output_files
 
-    #     Apart from interfacing between current SWIM output files, these
-    #     attributes may be parsed to the `files` argument to `save_run`. They
-    #     will then become an attribute of that run.
-    #     """
-    #     from modelmanager.plugins.pandas import ProjectOrRunData
-    #     fi = [n for n, p in self.settings.properties.items()
-    #           if hasattr(p, 'plugin') and ProjectOrRunData in p.plugin.__mro__]
-    #     return fi
-
-    # def output_interface_paths(self, print_=False):
-    #     """Return dict (or print) of names and absolute (relative) paths."""
-    #     oi = {}
-    #     for rf in self.output_interfaces:
-    #         pth = self.settings.properties[rf].plugin.path
-    #         if pth:
-    #             oi[rf] = osp.join(self.projectdir, pth)
-    #     if print_:
-    #         for n, p in oi.items():
-    #             print('%s: %s' % (n, osp.relpath(p, os.getcwd())))
-    #     else:
-    #         return oi
+    def output_interface_paths(self, print_=False):
+        warn('project.output_interface_paths is deprecated and will be removed in '
+            'a future version. Use project.outputpath instead.',
+            FutureWarning, stacklevel=2)
+        """Return dict (or print) of names and absolute (relative) paths."""
+        if print_:
+            for n in self.output_files.keys():
+                print('%s: %s' % (n+'.csv', self.output_parameters['output_dir']))
+        else:
+            return self.outputpath
 
     @parse_settings
     def save_run(self, indicators=None, files=None, parameters=True, **kw):
@@ -316,8 +309,8 @@ class Project(mm.Project):
 
     def changed_parameters(self, verbose=False):
         """
-        Compare currently set basin and subcatch parameters with the last in
-        the parameter browser table.
+        Compare currently set config_parameters and catchment parameters with
+        the last in the parameter browser table.
 
         Arguments
         ---------

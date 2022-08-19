@@ -381,6 +381,14 @@ class subbasin(InputFileGrassModule):
         # TODO: write nc_climate files
         return
 
+class station_output(subbasin):
+    def __init__(self, *args, **kwargs):
+        warn(f'{self.__class__.__name__} is deprecated and will be removed in '
+             'a future version. Use project.subbasin instead (different '
+             'output structure but contains relevant information).',
+             FutureWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
+
 
 class catchment(InputFileGrassModule):
     """

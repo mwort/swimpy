@@ -72,9 +72,6 @@ class OutputFile(ProjectOrRunData):
         fsplt = self.file.split('_')
         nameext = fsplt[3] if fsplt[1] == 'label' else fsplt[2]
         return nameext.removesuffix('.csv')
-    
-    def from_project(self, path=None, **kwargs):
-        return self.from_csv(path, **kwargs)
 
     def from_csv(self, path=None, **kwargs):
         """Read output file. Result object inherits from pandas.DataFrame. 
@@ -101,8 +98,7 @@ class OutputFile(ProjectOrRunData):
             df = None
         return df
     
-    def to_csv(self, path=None, **kwargs):
-        return self.write(path, **kwargs)
+    from_project = from_csv
 
     def write(self, path=None, **kwargs):
         """Write to csv file.
@@ -122,6 +118,8 @@ class OutputFile(ProjectOrRunData):
             df_out = df_stack.reset_index(level=[spcol])
             df_out.to_csv(path, index = True, na_rep='-9999', **kwargs)
         return
+    
+    to_csv = write
     
     # TODO: revise! Works but maybe not as it should (returns no ax object etc.)
     def plot(self, times=None, variables=None, stations=None, subplt=None,
