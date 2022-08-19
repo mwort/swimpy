@@ -9,6 +9,7 @@ class Parameters:
 
     def test_config_parameters(self):
         import f90nml
+        # set and get operations
         cod = self.project.config_parameters
         self.assertGreater(len(cod), 0)
         for k in cod:
@@ -19,6 +20,9 @@ class Parameters:
         self.project.config_parameters['iyr'] += 1
         self.assertEqual(self.project.config_parameters('iyr'),
                          self.project.time_parameters('iyr'))
+        nml = f90nml.read(osp.join(self.project.projectdir, self.project.parfile))
+        self.assertEqual(self.project.config_parameters['iyr'],
+                         nml['time_parameters']['iyr'])
         self.project.time_parameters(iyr=1996)
         self.assertEqual(self.project.config_parameters('iyr'),
                          self.project.time_parameters('iyr'))

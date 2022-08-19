@@ -30,7 +30,9 @@ class ParamGroupNamelist(f90nml.Namelist):
         self.project = project
         self._pargrp = pargrp
         self._defaults = self.defaults
-        super().__init__(nml)
+        super().__init__()
+        for k, v in nml.items():
+            self.__setitem__(k, v, write=False)
     
     def __getitem__(self, key):
         # return default value if not found
@@ -40,10 +42,13 @@ class ParamGroupNamelist(f90nml.Namelist):
             return self.defaults[key]
         return super().__getitem__(key)
     
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value, write=True):
         if not key in self.defaults.keys():
             raise KeyError("Parameter '{}' not implemented!".format(key))
-        return super().__setitem__(key, value)
+        super().__setitem__(key, value)
+        if write:
+            self.project.config_parameters.write()
+        return
 
     @property
     def defaults(self):
@@ -64,7 +69,7 @@ class ParamGroupNamelist(f90nml.Namelist):
         assert get or set
         if set:
             self.update(set)
-            self.project.config_parameters.write()
+            #self.project.config_parameters.write()
         if get:
             return [self[k] for k in get]
         return
@@ -87,15 +92,16 @@ class config_parameters(f90nml.Namelist):
         self.project = project
         nml = f90nml.read(osp.join(self.project.projectdir,
                                    self.project.parfile))
-        super().__init__(nml)
+        super().__init__() # empty Namelist
+        # namelist groups (<group>_parameters) as project attributes
+        for k, nl in nml.items():
+            v = ParamGroupNamelist(nl, k, self.project)
+            self.__setitem__(k, v, write=False)
+            setattr(self.project, k, self[k])
         # empty Namelist for groups not in .nml file
         mis = {k: f90nml.Namelist() for k in self.defaults.keys() if k not in self.keys()}
         if len(mis) > 0:
             self(**mis)
-        # namelist groups (<group>_parameters) as project attributes
-        for k, nl in self.items():
-            self[k] = ParamGroupNamelist(nl, k, self.project)
-            setattr(self.project, k, self[k])
         return
     
     @property
@@ -122,13 +128,16 @@ class config_parameters(f90nml.Namelist):
             raise KeyError("Parameter or parameter group '{}' not implemented!".format(key))
         return super().__getitem__(key)
     
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value, write=True):
         if not key in self.defaults.keys():
             for gr, nl in self.defaults.items():
                 if key in nl:
                     return self[gr].__setitem__(key, value)
             raise KeyError("Parameter or parameter group '{}' not implemented!".format(key))
-        return super().__setitem__(key, value)
+        super().__setitem__(key, value)
+        if write:
+            self.write()
+        return
     
     @property
     def parlist(self):
@@ -152,7 +161,6 @@ class config_parameters(f90nml.Namelist):
                 # k is a specific parameter
                 else:
                     self.__setitem__(k, v)
-                self.write()
         if get:
             return [self[k] for k in get]
         return
