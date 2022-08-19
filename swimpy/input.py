@@ -531,7 +531,7 @@ class climate(object):
 
         def print_stats(self):
             """Print statistics for all variables."""
-            stats = self.mean(axis=1, level=0).describe().round(2).to_string()
+            stats = self.groupby(axis=1, level=0).mean().describe().round(2).to_string()
             print(stats)
             return stats
 
@@ -547,7 +547,7 @@ class climate(object):
                 Keywords to utils.aggregate_time.
             """
             vars = variables or self.columns.levels[0].tolist()
-            subs = self[vars].mean(axis=1, level='variable')
+            subs = self[vars].groupby(axis=1, level='variable').mean()
             aggm = {v: 'sum' if v == 'precipitation' else 'mean' for v in vars}
             aggregated = utils.aggregate_time(subs, resample_method=aggm, **kw)
             return aggregated
