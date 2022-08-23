@@ -185,7 +185,8 @@ class config_parameters(f90nml.Namelist):
         """
         Write current parameters into project.parfile or a new .nml file.
 
-        Args:
+        Arguments
+        ---------
             file: (Optional) A file name into which parameters are written.
         """
         path = file or osp.join(self.project.projectdir,

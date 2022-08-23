@@ -114,14 +114,14 @@ class Project(mm.Project):
         if cluster:
             kw.update({'functionname': 'run', 'save': save, 'quiet': quiet})
             return self.cluster(cluster, **kw)
-
+        # swim command
         ppn = glob(osp.join(self.projectdir, self.parfile))[0]
         swimcommand = [self.swim, ppn]
         # silence output
         sof = quiet if type(quiet) == str else os.devnull
         stdout = open(sof, 'w') if quiet else None
         # run
-        subprocess.check_call(swimcommand, stdout=stdout)
+        subprocess.check_call(swimcommand, stdout=stdout, cwd=self.projectdir)
         if quiet:
             stdout.close()
         delta = dt.datetime.now() - st

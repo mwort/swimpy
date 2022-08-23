@@ -238,6 +238,13 @@ class TestProcessing(ProjectTestCase, test_running.Cluster):
         run = self.project.save_run()
         check_indicators(run.indicators.all())
         check_files(run.files.all())
+    
+    def test_run(self):
+        # check that swim has run via logfile
+        logfile = osp.join(self.project.outputpath, 'swim.log')
+        os.remove(logfile)
+        self.project.run(save=False, quiet=True)
+        self.assertTrue(osp.exists(logfile))
 
 
 # TODO: needs revision; how to test plot functions of plugins ('OutputFile')?
