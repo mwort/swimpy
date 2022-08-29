@@ -142,60 +142,60 @@ def flow_duration(series, nbins=100):
     return series
 
 
-def peak_over_threshold(q, percentile=1, threshold=None, maxgap=None):
+def peak_over_threshold(data, percentile=1, threshold=None, maxgap=None):
     '''An efficient method to identify all peaks over a threshold (POT).
 
     Arguments
     ---------
-    q : pd.Series
-        The discharge series, preferable with a datetime/period index. If index
+    data : pd.Series
+        The data series, preferable with a datetime/period index. If index
         is not datetime/period, daily frequency is assumed to calculate the
         recurrence interval (years).
     percentile : number
-        The percentile threshold of q., e.g. 1 means Q1.
+        The percentile threshold of data, e.g. 1 means Q1 (probability of exceedance).
     threshold : number, optional
         Absolute threshold to use for peak identification.
     maxgap : int, optional
         Largest gap between two threshold exceedance periods to count as single
-        flood event. Number of timesteps. If not given, every exceedance is
-        counted as individual flood event.
+        peak event. Number of timesteps. If not given, every exceedance is
+        counted as individual peak event.
 
     Returns
     -------
     pd.DataFrame :
-        Peak discharge ordered dataframe with order index and peak q, length,
+        Peak values ordered dataframe with order index and peak, length,
         peak date and recurrence columns.
     '''
     def find_steps(bools):
-        # at each day before flood start 1, at each last day a -1
+        # at each day before peak event start 1, at each last day a -1
         flgi = np.append(0, (bools[:-1].astype(int) - bools[1:].astype(int)))
         # remove -1
         flgi[flgi < 0] = 0
         # make steps
         return flgi.cumsum()
-    # get flood groups index
-    thresh = threshold or q.dropna().quantile(1 - percentile / 100.)
-    iflood = (q > thresh).values
-    flgisteps = find_steps(iflood)
-    # pretend gaps smaller than maxgap are also floods
+    # get peak groups index
+    thresh = threshold or data.dropna().quantile(1 - percentile / 100.)
+    ipeak = (data > thresh).values
+    flgisteps = find_steps(ipeak)
+    # pretend gaps smaller than maxgap are also peaks
     if maxgap:
         assert type(maxgap) == int
-        gaps = q[~iflood].groupby(flgisteps[~iflood]).count()
+        gaps = data[~ipeak].groupby(flgisteps[~ipeak]).count()
         gaps[0] = maxgap
-        iflood[gaps[flgisteps] < maxgap] = True
-        flgisteps = find_steps(iflood)
-    # get floods
-    qfl = q[iflood]
-    qpotgrp = qfl.groupby(flgisteps[iflood])
-    qpot = qpotgrp.max().to_frame('q')
+        ipeak[gaps[flgisteps] < maxgap] = True
+        flgisteps = find_steps(ipeak)
+    # get peaks
+    qfl = data[ipeak]
+    qpotgrp = qfl.groupby(flgisteps[ipeak])
+    qpot = qpotgrp.max().to_frame('peak')
     qpot['length'] = qpotgrp.count()
     qpot['start_date'] = qpotgrp.apply(lambda df: df.index[0])
     qpot['peak_date'] = qpotgrp.idxmax()
     qpot['end_date'] = qpotgrp.apply(lambda df: df.index[-1])
-    qpot.sort_values('q', ascending=False, inplace=True)
+    qpot.sort_values('peak', ascending=False, inplace=True)
     qpot.index = np.arange(1, len(qpot) + 1)
-    nyears = (q.index.year[-1] - q.index.year[0] + 1
-              if hasattr(q.index, 'year') else len(q.index) / 365.25)
+    nyears = (data.index.year[-1] - data.index.year[0] + 1
+              if hasattr(data.index, 'year') else len(data.index) / 365.25)
     qpot['recurrence'] = float(nyears) / qpot.index
     return qpot
 

@@ -22,11 +22,13 @@ import os
 import numpy as np
 import pandas as pd
 from modelmanager.settings import FunctionInfo, parse_settings
+from swimpy import utils
 import matplotlib as mpl
 # needed to prevent pyplot from picking a fancy backend that messes with
 # django and plotly/dash. Does not affect interactive plotting in ipython
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 def save(output, figure=None, tight_layout=True, **savekwargs):
@@ -59,6 +61,67 @@ def save(output, figure=None, tight_layout=True, **savekwargs):
         except RuntimeError:
             warnings.warn('Figure doesnt allow tight layout.')
     figure.savefig(output, **savekwargs)
+    return
+
+
+def plot(data, spacecol, times=None, variables=None, stations=None, subplt=None,
+            regime=False, agg_regime='mean', freq='D', agg_freq='mean'):
+    """Line plot of selected data with preprocessing.
+
+    Arguments
+    ---------
+    data : pandas.DataFrame
+        Data to plot.
+    spacecol : str
+        Name of MultiIndex column referring to spatial entities.
+    times : pandas.PeriodIndex
+        Selection of times to plot, e.g. pd.period_range(start='1992-01-01', end='1996-12-31').
+        Default: all times.
+    variables : list
+        Selection of variables for plotting. Default: all variables.
+    stations : list
+        Selection of catchments / subbasins / hydrotopes top plot.
+        Default: all stations.
+    subplt : None | 'variables' | 'stations'
+        Create subplots per 'variables', per 'stations' or all into one
+        plot (default).
+    regime : bool
+        Plot regime, i.e. day-in-year or month-in-year aggregation.
+    agg_regime : 
+        Method of regime aggregation. See DataFrame.groupby.agg.
+    freq : <pandas frequency>
+        Any pandas frequency to aggregate to. Can only aggregate to a
+        frequency lower than in the data! Default: D(aily).
+    agg_freq : 
+        Method of frequency aggregation. See DataFrame.groupby.agg.
+    minmax : bool
+        Show min-max range.
+    """
+    # data subset and aggregation
+    times = data.index if times is None else times
+    variables = variables or data.columns.get_level_values('variable').unique()
+    stations = stations or data.columns.get_level_values(spacecol).unique()
+
+    idx = pd.IndexSlice
+    data = utils.aggregate_time(data.loc[times, idx[variables, stations] ], freq=freq,
+                                resample_method=agg_freq, regime=regime, regime_method=agg_regime)
+    # plot
+    if subplt:
+        legtit = data.columns.names[0] if subplt == 'stations' else data.columns.names[1]
+        vip = variables if subplt == 'stations' else stations
+        vsp = vars()[subplt]
+        nrow = len(vsp)
+        cmap = cm.get_cmap('viridis', len(vip))
+        fig, axes = plt.subplots(nrow, 1, figsize=(9, 6), sharex=True, sharey=False)
+        for ax, s in zip(axes, vsp):
+            sel = idx[:, s] if subplt == 'stations' else idx[s, :]
+            datplt = data.loc[:, sel]
+            datplt.plot(ax=ax, legend=False, title=s, colormap=cmap)
+        fig.tight_layout()
+        patches = [plt.Line2D([0], [0], color=v, label=k) for k, v in zip(vip, cmap.colors)]
+        plt.legend(title=legtit, handles=patches, bbox_to_anchor=(1.06, 1.2), loc='center left', borderaxespad=0, frameon=False)
+    else:
+        data.plot()
     return
 
 

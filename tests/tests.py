@@ -326,6 +326,19 @@ class TestOutput(ProjectTestCase, test_io.Output):
         pd.testing.assert_frame_equal(df, df_test)
         # clean up
         os.remove('test.csv')
+    
+    def test_output_methods(self):
+        # peak over threshold
+        for k in self.project.output_files.keys():
+            self.assertTrue(hasattr(getattr(self.project, k), 'peak_over_threshold'))
+        dat = self.project.subbasin_daily_river_discharge.peak_over_threshold(stations=1)
+        self.assertTrue(dat.index.names == ['subbasin', 'variable', 'order'])
+        dat = self.project.subbasin_label_daily_selected_stations_discharge.peak_over_threshold(stations='BLANKENSTEIN', variables='discharge')
+        self.assertTrue(dat.index.names == ['order'])
+        # discharge methods
+        for m in ['obs_sim_overlap', 'NSE', 'rNSE', 'pbias', 'pbias_abs', 'plot_discharge_comparison']:
+            self.assertTrue(hasattr(self.project.subbasin_label_daily_selected_stations_discharge, m))
+            self.assertFalse(hasattr(self.project.hydrotope_annual_gis, m))
 
 
 # class TestWaterBalance(ProjectTestCase, test_waterbalance.WaterBalance):
