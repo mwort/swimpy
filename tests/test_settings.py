@@ -19,6 +19,7 @@ grass_setup = dict(subbasin_id = "subbasins", subbasins = "subbasins",
 cluster_slurmargs = dict(qos='priority')
 
 
+# import of discharge observations
 def _read_q():
     path = osp.join(osp.dirname(__file__), '../input/discharge.csv')
     q = pd.read_csv(path, index_col=0, parse_dates=[0], na_values=[-9999])
@@ -27,7 +28,12 @@ def _read_q():
     return q
 
 
+# discharge station data
 class stations(_GAT):
+    # GRASS vector file of station locations
     vector = 'stations_snapped@swim'
+    # key column in station vector file; used as 'station_id' in catchment.csv
+    # which is linked to column names in discharge.csv
     key = 'NAME'
+    # corresponding discharge observations as pd.DataFrame
     daily_discharge_observed = _read_q()

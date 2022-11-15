@@ -459,7 +459,7 @@ class catchment(InputFileGrassModule):
         scp.set_index('stationID', inplace=True)
         catch = tbl.join(scp, rsuffix = '_t')
         # select and rename columns
-        catch = catch['NAME']
+        catch = catch[self.project.stations.key]
         catch.index.name = 'catchment_id'
         catch.name = 'station_id'
         # unique catchments
