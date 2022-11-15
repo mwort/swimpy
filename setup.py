@@ -14,7 +14,7 @@ requirements = [
     "parse>=1.9, <2.0",
     "matplotlib>=2.2.3",
     "model-manager>=0.7",
-    "f90nml>=1.0.2",
+    "f90nml>=1.4",
     "evoalgos>=1.0"
 ]
 
