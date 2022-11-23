@@ -394,14 +394,17 @@ class climate(object):
             msg = variable+" not in %r" % self.variables
             assert variable in self.variables, msg
             vfn = zip(self.parameters["vnames"], self.parameters["fnames"])
+            grid = self.grid_mapping
+            # guess precision from precision in grid file
+            prec = grid.lon.abs().astype(str).str.split(".").apply(lambda d: len(d[1])).mode()[0]
+
             vname, file_path = dict(zip(self.variables, vfn))[variable]
             ds = nc.Dataset(osp.join(self.path, file_path))
             # get space indeces
-            lon = ds[self.parameters["lon_vname"]][:]
+            lon = ds[self.parameters["lon_vname"]][:].round(prec)
             lonix = pd.Series(range(len(lon)), index=lon)
-            lat = ds[self.parameters["lat_vname"]][:]
+            lat = ds[self.parameters["lat_vname"]][:].round(prec)
             latix = pd.Series(range(len(lat)), index=lat)
-            grid = self.grid_mapping
             if subbasins:
                 grid = grid.loc[subbasins]
             lons = lonix[grid.lon.unique()].sort_values()
@@ -461,6 +464,16 @@ class climate(object):
         path = 'ncinfo.nml'
         _nml = None
         plugin = ['__call__']
+        default_values = {
+            "ncgrid": "ncgrid.dat",
+            "offset": [0] * 6,
+            "scale_factor": [1] * 6,
+            "offset_days": 0,
+            "ref_year": -1,  # will be replaced in __init__
+            "lat_vname": "lat",
+            "lon_vname": "lon",
+            "time_vname": "time",
+        }
 
         def __init__(self, project):
             self.path = osp.join(project.projectdir,
@@ -470,12 +483,22 @@ class climate(object):
             nml = f90nml.read(self.path)
             self.update(nml['nc_parameters'])
             self._nml = nml
+            self.default_values["ref_year"] = project.config_parameters["iyr"]
             return
 
         def write(self, path=None):
             self._nml["nc_parameters"].update(self)
             self._nml.write(path or self.path, force=True)
             return
+
+        def __getitem__(self, key):
+            # inject defaults into lookup
+            try:
+                return super().__getitem__(key)
+            except KeyError as e:
+                if key in self.default_values:
+                    return self.default_values[key]
+                raise e
 
         def __setitem__(self, key, value):
             f90nml.Namelist.__setitem__(self, key, value)
