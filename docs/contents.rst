@@ -8,6 +8,7 @@ Contents
 
    installation
    usage
+   dashboard
    examples
    modules
    development

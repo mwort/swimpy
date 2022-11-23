@@ -1,6 +1,6 @@
 #tabs-header-parent {
   width: 100% !important;
-  padding: 0 32px;
+  padding-left: 32px;
   margin-top: 52px;
   font-size: 20px;
   height: fit-content;
@@ -35,14 +35,22 @@ input:focus, select:focus {
   border: none;
 }
 
-button:focus {
-  box-shadow: none !important;
+#download-upload-menu > .btn {
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+  border-top-width: 0;
+  padding-top: 0px;
+  padding-bottom: 2px;
+  color: #c3ccd5;
+  border-color: #a8aeb3;
 }
 
-.dash-graph {
-  /* box-shadow: rgba(136, 165, 191, 0.48) 6px 2px 16px 0px, rgba(255, 255, 255, 0.8) -6px -2px 16px 0px; */
-  height: 300px;
-  margin-top: 40px;
+[id*=run-dropdown] {
+  min-width: 400px;
+}
+
+button:focus {
+  box-shadow: none !important;
 }
 
 p {

@@ -29,19 +29,20 @@ RUN pip3 install -e /code/swimpy
 
 # compile swim
 RUN make -C dependencies/swim/code clean && \
-    make -C dependencies/swim/code
+    make -C dependencies/swim/code CLIMNCDF=1
 
 # dedicated user
 RUN useradd -m -U swim
 USER swim
 
-WORKDIR dependencies/swim/project
+#WORKDIR dependencies/swim/project
+WORKDIR tests/project
 # test swimpy and make sure there is a complete run in outputs
-RUN swimpy run
+RUN swimpy run --kw notes="Baseline"
 
 # launch dashboard
 EXPOSE 8054
-CMD [ "python3", "../../../swimpy/scripts/swim-dashboard"]
+CMD ["swimpy", "dashboard", "start", "--debug"]
 
 
 

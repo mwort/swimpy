@@ -1,0 +1,14 @@
+&nc_parameters
+    fnames(1:6) = 'MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2/tas.nc',
+                  'MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2/tasmin.nc',
+                  'MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2/tasmax.nc',
+                  'MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2/pr.nc',
+                  'MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2/rsds.nc',
+                  'MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2/hurs.nc'
+    vnames(1:6) = 'tas', 'tasmin', 'tasmax', 'pr', 'rsds', 'hurs'
+    lat_vname = 'rlat'
+    lon_vname = 'rlon'
+    ref_year = 1950
+    offset_days = -31
+    debug = .false.
+/

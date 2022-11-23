@@ -1,0 +1,23 @@
+&NC_PARAMETERS
+FNAMES(1)="EOBSv25_MDK_grid/tas_E-OBS_v25.0e_day_merge_grid_04.round.nc"     ! tmean (dg C)
+VNAMES(1)="tas"
+FNAMES(2)="EOBSv25_MDK_grid/tasmin_E-OBS_v25.0e_day_merge_grid_04.round.nc"     ! tmin (dg C)
+VNAMES(2)="tasmin"
+FNAMES(3)="EOBSv25_MDK_grid/tasmax_E-OBS_v25.0e_day_merge_grid_04.round.nc"     ! tmax (dg C)
+VNAMES(3)="tasmax"
+FNAMES(4)="EOBSv25_MDK_grid/pr_E-OBS_v25.0e_day_merge_grid_04.round.nc"     ! precipitation (mm/d)
+VNAMES(4)="pr"
+FNAMES(5)="EOBSv25_MDK_grid/rsds_E-OBS_v25.0e_day_merge_grid_04.round.nc"     ! radiation (l/cm2/d)
+VNAMES(5)="rsds"
+FNAMES(6)="EOBSv25_MDK_grid/hurs_E-OBS_v25.0e_day_merge_grid_04.round.nc"     ! humidity (%)
+VNAMES(6)="hurs"
+LAT_VNAME="rlat"
+LON_VNAME="rlon"
+TIME_VNAME="time"               ! integer variable with days since January 1 of
+REF_YEAR=1950                   ! reference year, leave out or negative to ignore time
+OFFSET_DAYS=0                   ! offset time variable in days
+NCGRID="MDK_subbasin_grid.dat"             ! grid-subbasin mapping file
+DEBUG=.FALSE.                   ! write debug info to stdout (.TRUE.|.FALSE.)
+/
+! file path are relative to climate/ directory or absolute paths
+! all parameters except FNAMES and VNAMES are optional
