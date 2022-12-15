@@ -63,6 +63,11 @@ class Project(mm.Project):
         # load settings with overridden settings
         self.settings.load(defaults=self.settings.defaults, resourcedir=True,
                            **settings)
+        # create input and output dirs if they do not exist
+        if not osp.exists(self.inputpath):
+            os.makedirs(self.inputpath, exist_ok=True)
+        if not osp.exists(self.outputpath):
+            os.makedirs(self.outputpath, exist_ok=True)
         return
     
     @property

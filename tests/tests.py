@@ -46,6 +46,7 @@ class TestSetup(unittest.TestCase):
         self.assertTrue(osp.exists(self.resourcedir))
         self.assertTrue(osp.exists(self.project.resourcedir))
         self.assertTrue(osp.exists(osp.join(self.projectdir, 'input')))
+        self.assertTrue(osp.exists(osp.join(self.projectdir, 'output')))
         self.assertTrue(osp.exists(osp.join(self.projectdir, 'test.nml')))
         self.assertTrue(osp.islink(osp.join(self.projectdir, 'swim')))
         for a in ['browser', 'clone', 'templates']:
