@@ -6,6 +6,7 @@ Overview
 
    installation
    usage
+   tutorial
    theproject
    examples
    modules

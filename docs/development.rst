@@ -29,8 +29,17 @@ To run the SWIMpy tests, install the version-frozen requirements
 (``pip install -r requirements.txt``) and then by running ``make`` in the
 ``tests/`` directory. Individual tests can be run like this (e.g.)::
 
-   $ python tests.py TestParameters.test_subcatch_parameters
+   $ python -m unittest -v tests.py
+   $ python tests.py TestParameters.test_catchment
 
+Tests can also be run via SWIMpy's commandline interface inside a test setup::
+
+   cd tests/
+   make setup
+   cd project/
+   swimpy test -h
+   swimpy test parameters
+   
 
 =============
 Documentation

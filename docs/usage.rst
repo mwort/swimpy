@@ -39,9 +39,12 @@ to the database.
 
 .. code-block:: console
 
-    $ swimpy run --notes='A test run with XYZ.' --tags=test
+    $ swimpy run --kw notes='A test run with XYZ.' tags=test
 
-Arguments are first parsed as Python code and if that fails as strings.
+*Note: In this example `notes` and `tags` are actually arguments of `save_run()`
+which is called by `run()` and therefore have to be given via `--kw`.*
+
+In general, arguments are first parsed as Python code and if that fails as strings.
 
 
 Python API
@@ -54,20 +57,20 @@ current directory or with a path to the project directory:
     import swimpy
 
     project = swimpy.Project()
-    project = swimpy.Project('path/to/project')
+    project = swimpy.Project('path/to/project/<config>.nml')
 
     # get and set parameters like dictionaries
-    ecal = project.basin_parameters['ecal']
-    project.config_parameters['nbyr'] = 20
+    ecal = project.catchment['ecal']
+    project.config_parameters(nbyr = 20)
 
     # run and save
-    run = project.run(notes='test run', files=['station_daily_discharge'])
+    run = project.run(notes='test run', files=['subbasin_label_daily_selected_stations_discharge'])
 
     # plot results from project
-    project.station_daily_discharge.plot()
+    project.subbasin_label_daily_selected_stations_discharge.plot()
 
     # or plot saved result
-    run.station_daily_discharge.plot()
+    run.subbasin_label_daily_selected_stations_discharge.plot()
 
 Check out the :ref:`examples:Examples`.
 

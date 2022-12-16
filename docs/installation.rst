@@ -61,7 +61,7 @@ New packages can be installed with pip (see above) or conda. To install
 *swimpy* follow the `Quick install`_ now.
 
 
-.. _virtualenv: https://virtualenv.pypa.io/en/stable/installation/
+.. _virtualenv: https://virtualenv.pypa.io/en/latest/
 
 
 Install from source
