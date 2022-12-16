@@ -26,8 +26,12 @@ cluster_slurmargs = {'qos': 'priority',
 
 # stations and observed discharge
 class stations(_GAT):
+    # GRASS vector file of station locations
     vector = 'stations_snapped@swim'
+    # key column in station vector file; used as 'station_id' in catchment.csv
+    # which is linked to column names in discharge.csv
     key = 'NAME'
+    # corresponding discharge observations as pd.DataFrame
     daily_discharge_observed = pd.read_csv(
         osp.join(_here, 'daily_discharge_observed.csv'),
         index_col=0, parse_dates=[0], date_parser=pd.Period)

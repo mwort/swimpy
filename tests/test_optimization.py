@@ -6,8 +6,8 @@ import cProfile, pstats
 from tests import ProjectTestCase
 
 
-OBJECTIVES = ['station_daily_discharge.rNSE.BLANKENSTEIN',
-              'station_daily_discharge.pbias_abs.BLANKENSTEIN']
+OBJECTIVES = ['subbasin_label_daily_selected_stations_discharge.rNSE.BLANKENSTEIN',
+              'subbasin_label_daily_selected_stations_discharge.pbias_abs.BLANKENSTEIN']
 PARAMETERS = {'smrate': (0.2, 0.7),
               'sccor': (0.1, 10),
               'ecal': (0.7, 1.3),
@@ -37,9 +37,11 @@ class TestEvoalgos(ProjectTestCase):
         # only run algorithm if output doesnt exist to speed up output tests
         if not osp.exists(self.output):
             self.project.config_parameters(nbyr=2)
-            #self.project.basin_parameters(subcatch=0)
             run = self.project.SMSEMOA(**self.algorithm_kwargs)
-            self.populations = run.optimization_populations
+            # TODO: check why next line does not work; in meantime use workaround
+            # self.populations = run.optimization_populations
+            self.populations = self.project.SMSEMOA.read_populations(
+                                self.output)
         else:
             self.populations = self.project.SMSEMOA.read_populations(
                                 self.output)

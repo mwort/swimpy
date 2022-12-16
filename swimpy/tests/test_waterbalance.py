@@ -19,7 +19,7 @@ class WaterBalance:
 
     @cached
     def subbasin_area(self):
-        sba = self.project.hydrotopes.attributes.groupby('subbasin_id')['area']
+        sba = self.project.hydrotope.groupby('subbasin_id')['area']
         return sba.sum()
 
     @cached
@@ -29,14 +29,17 @@ class WaterBalance:
         totpc = totpsb.mul(sba/sba.sum(), axis=1).sum(axis=1)
         return totpc
 
+    # TODO: catchment_annual_* file with precipitation, river_runoff, eta
     @cached
     def catchment_annual_waterbalance(self):
-        return self.project.catchment_annual_waterbalance
+        df = self.project.catchment_daily_bad_prn
+        df_catch = df.iloc[:,df.columns.get_level_values(1) == 0]
+        return df_catch.resample('a').sum()
 
     def test_catchment_annual_precipitation_output(self):
         """Fails if precipitation correction is active (xgrad1 != 0)"""
         p_in = self.catchment_daily_precipitation_input().resample('a').sum()
-        p_out = self.catchment_annual_waterbalance()['PREC']
+        p_out = self.catchment_annual_waterbalance()['precipitation']
         msg = 'Input precipitation unequal output precipitation in year %s'
         for y in p_out.index:
             self.assertAlmostEqual(p_in[y], p_out[y], 2, msg=msg % y)
@@ -45,9 +48,10 @@ class WaterBalance:
         """Missing components: snow weq., ..."""
         accept_dev = 1
         wb = self.catchment_annual_waterbalance().sum()
-        msg = ('Total 3Q+AET is deviating by more than %d%% from total PREC.'
+        runeta = wb['river_runoff'] + wb['eta']
+        msg = ('River runoff + eta is deviating by more than %d%% from total precipitation.'
                % accept_dev)
-        self.assertLess(pbias(wb['3Q+AET'], wb['PREC']), accept_dev, msg=msg)
+        self.assertLess(pbias(runeta, wb['precipitation']), accept_dev, msg=msg)
 
     def test_catchment_total_discharge(self):
         """Missing components: transmission losses, snow weq., deep groundwater
@@ -55,10 +59,10 @@ class WaterBalance:
         accept_dev = 3
         a = self.subbasin_area().sum()
         p_vol = self.catchment_daily_precipitation_input().sum()*1e-3*a
-        eta_vol = self.catchment_annual_waterbalance()['AET'].sum()*1e-3*a
-        q_volume = self.project.subbasin_daily_discharge[1].sum()*24*60**2
+        eta_vol = self.catchment_annual_waterbalance()['eta'].sum()*1e-3*a
+        q_volume = self.project.subbasin_daily_river_discharge['discharge'][1].sum()*24*60**2
         msg = ('Total discharge is deviating by more than %d%% from total '
-               'total PREC - AET.' % accept_dev)
+               'total precipitation - eta.' % accept_dev)
         self.assertLess(pbias(p_vol-eta_vol, q_volume), accept_dev, msg=msg)
 
     def test_catchment_discharge_eq_3q(self):
@@ -66,8 +70,8 @@ class WaterBalance:
         ...?"""
         accept_dev = 5
         wb = self.catchment_annual_waterbalance().sum()
-        vol3q = wb['3Q']*1e-3*self.subbasin_area().sum()
-        volq = self.project.subbasin_daily_discharge[1].sum()*24*60**2
-        msg = ("Total discharge is deviating by more than %d%% from 3Q runoff"
+        vol3q = wb['river_runoff']*1e-3*self.subbasin_area().sum()
+        volq = self.project.subbasin_daily_discharge['discharge'][1].sum()*24*60**2
+        msg = ("Total discharge is deviating by more than %d%% from river runoff"
                % accept_dev)
         self.assertLess(pbias(vol3q, volq), accept_dev, msg=msg)

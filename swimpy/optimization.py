@@ -59,6 +59,8 @@ class _EvoalgosSwimProblem(Problem):
         self.clones = []
         self.__call__.__func__.__doc__ = getattr(algo, self.algorithm).__doc__
         # output interface
+        # TODO: does not work, i.e. output object has no
+        # optimization_populations attribute (worked in old swimpy)
         self.project.settings(propertyplugin(optimization_populations))
         return
 
@@ -361,9 +363,7 @@ class _EvoalgosSwimProblem(Problem):
         parameters : dict
             Parameters to set.
         """
-        if bool(self.project.basin_parameters['subcatch']):
-            warnings.warn('subcatch parameters are active.')
-        clonedproject.basin_parameters(**parameters)
+        clonedproject.catchment(**parameters)
         return
 
     def observe_population(self, ea, initial=False):
