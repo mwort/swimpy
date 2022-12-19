@@ -453,6 +453,7 @@ class catchment(InputFileGrassModule):
         elif subbasins is not None:
             tbl = tbl.filter(items=subbasins, axis=0)
         # join station names
+        # TODO: many implicit assumptions on user-defined project.stations
         tbl.set_index('catchmentID', inplace=True)
         scp = self.project.stations
         scp.reset_index(inplace=True)
@@ -485,6 +486,7 @@ class catchment(InputFileGrassModule):
         The `project.stations` "ds_stationID" column needs to give the from-to
         topology of catchments/stations.
         """
+        # TODO: many implicit assumptions on user-defined project.stations
         ft = self.project.stations['ds_stationID']
         all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
         ssid = self.subcatch_subbasin_ids
@@ -777,6 +779,7 @@ class discharge(InputFile):
             data.insert(0, self.outlet_station, osq[self.outlet_station])
 
         # update subbasins
+        # TODO: many implicit assumptions on user-defined project.stations
         self.subbasins = self.project.stations.loc[data.columns, 'subbasinID']
         # assign to self
         pd.DataFrame.__init__(self, data)
@@ -798,6 +801,7 @@ class discharge(InputFile):
         stat = [self.outlet_station]
         stat += [s for s in stations if s != self.outlet_station]
         # unpack series from dataframe, in right order!
+        # TODO: many implicit assumptions on user-defined project.stations
         stationsq = self.project.stations.daily_discharge_observed
         si = [s for s in stat if s not in stationsq.columns]
         assert not si, ('%s not found in stations.daily_discharge_observed: %s'

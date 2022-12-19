@@ -48,8 +48,9 @@ class OutputFile(ProjectOrRunData):
         super().__init__(projectrunorpath)
 
         # dynamically add further postprocessing methods
-        vars = self.columns.get_level_values('variable').unique()
-        stats = self.columns.get_level_values(self._space).unique()
+        if self._exists:
+            vars = self.columns.get_level_values('variable').unique()
+            stats = self.columns.get_level_values(self._space).unique()
 
         # discharge methods
         def obs_sim_overlap(warmupyears=1):
@@ -64,7 +65,7 @@ class OutputFile(ProjectOrRunData):
             -------
             (pd.DataFrame, pd.DataFrame) : observed and simulated discharge.
             """
-            obs = self.project.stations.daily_discharge_observed
+            obs = getattr(self.project.stations, self._time + '_discharge_observed')
             # exclude warmup period
             sim = self[str(self.index[0].year+warmupyears):]['discharge']
             obsa, sima = obs.align(sim, join='inner')
@@ -109,13 +110,17 @@ class OutputFile(ProjectOrRunData):
             plot.plot(df, 'station', freq=freq, **plotkw)
             return
 
-        if ('discharge' in vars and
-            any(s in self.project.stations.daily_discharge_observed.columns for s in stats)):
-            setattr(self, 'obs_sim_overlap', obs_sim_overlap)
-            # methods as attributes without pandas columns warning
-            for a in ['NSE', 'rNSE', 'pbias', 'pbias_abs',
-                      'plot_discharge_comparison']:
-                self._set_attr(a, locals()[a]())
+        if (self._exists and 'discharge' in vars and
+            hasattr(self.project, 'stations') and
+            hasattr(self.project.stations, self._time+'_discharge_observed')):
+            
+            obs = getattr(self.project.stations, self._time+'_discharge_observed')
+            if(any(s in obs.columns for s in stats)):
+                setattr(self, 'obs_sim_overlap', obs_sim_overlap)
+                # methods as attributes without pandas columns warning
+                for a in ['NSE', 'rNSE', 'pbias', 'pbias_abs',
+                        'plot_discharge_comparison']:
+                    self._set_attr(a, locals()[a]())
         
         def plot_flow_duration(stations=None, ax=None, **linekw):
             stations = stations or self.columns.get_level_values(self._space).unique()
@@ -149,7 +154,7 @@ class OutputFile(ProjectOrRunData):
                                             colormap=colormap, **barkw)
             return ax
         
-        if 'discharge' in vars:
+        if self._exists and 'discharge' in vars:
             setattr(self, 'plot_flow_duration', plot_flow_duration)
             setattr(self, 'plot_flow_duration_polar', plot_flow_duration_polar)
 
