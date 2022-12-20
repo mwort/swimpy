@@ -335,13 +335,18 @@ class Project(mm.Project):
             n, sid = k if type(k) == tuple else (k, None)
             # convert to minimal precision decimal via string
             v = v if type(v) != bool else int(v)
-            dv = Decimal(str(v))
-            saved = self.browser.parameters.filter(name=n, tags=sid).last()
-            if not saved or saved.value != dv:
-                changed += [dict(name=n, value=v, tags=sid)]
-                if verbose:
-                    sv = saved[-1]['value'] if saved else None
-                    print('%s: %s > %s' % (k, sv, dv))
+            # TODO: enable string parameters, see
+            # models.py here and/or in modelmanager
+            # dv = Decimal(str(v))
+            if isinstance(v, Number):
+                dv = Decimal(str(v))
+                saved = self.browser.parameters.filter(name=n, tags=sid).last()
+                if not saved or saved.value != dv:
+                    changed += [dict(name=n, value=v, tags=sid)]
+                    if verbose:
+                        sv = saved[-1]['value'] if saved else None
+                        print('%s: %s > %s' % (k, sv, dv))
+
         return changed
 
 
