@@ -19,10 +19,10 @@ Conventions
 """
 import os.path as osp
 import itertools
+import warnings
 # from glob import glob
 # import datetime as dt
 # import calendar
-# import warnings
 # import inspect
 
 # import numpy as np
@@ -71,7 +71,11 @@ class OutputFile(ProjectOrRunData):
             obsa, sima = obs.align(sim, join='inner')
             # obsa can still have columns with only NAs
             obsa.dropna(how='all', axis=1, inplace=True)
-            return obsa, sima[obsa.columns]
+            simout = sima[obsa.columns]
+            # give warning if empty
+            if obsa.empty or simout.empty:
+                warnings.warn('Simulation and observation data do not overlap, discharge metrics are empty!')
+            return obsa, simout
 
         def NSE():
             """pandas.Series of Nash-Sutcliff efficiency excluding warmup year."""
@@ -104,10 +108,11 @@ class OutputFile(ProjectOrRunData):
             """
             freq = freq or self._time[0]
             df_obssim = pd.concat(self.obs_sim_overlap(), keys=['obs', 'sim'])
-            df = df_obssim.unstack(level=0)
-            df.columns.names = ['station', 'variable']
-            df.columns=df.columns.swaplevel(0,1)
-            plot.plot(df, 'station', freq=freq, **plotkw)
+            if not df_obssim.empty:
+                df = df_obssim.unstack(level=0)
+                df.columns.names = ['station', 'variable']
+                df.columns=df.columns.swaplevel(0,1)
+                plot.plot(df, 'station', freq=freq, **plotkw)
             return
 
         if (self._exists and 'discharge' in vars and
