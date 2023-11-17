@@ -18,6 +18,7 @@ def station_daily_discharge(station_daily_discharge, start, end):
         )
         q.time = q.time.dt.to_timestamp()
         fig = px.line(q, x="time", y="discharge", color="station")
+        fig.update_layout(xaxis_title="Time [days]", yaxis_title="Discharge [m&#179;/s]")
         graph = dcc.Graph(figure=fig, style=dict(height="70vh"))
     else:
         graph = dcc.Graph(figure=px.line([]))
@@ -98,20 +99,19 @@ def plotly_station_daily_and_regime_discharge(project, run=None, reference=None)
     qan = q.groupby(list({"year"} | set(level_cols) - {"time", "discharge"})).mean().reset_index()
 
     linekw = dict(zip(levels, level_cols))
-    layoutkw = dict(legend_y=-(0.35 if reference else 0.2), legend_x=0, legend_title="",
-                    margin=dict(r=20, l=20, t=40))
+    layoutkw = dict(legend_title="", margin=dict(r=20, l=20, t=40), yaxis_title="Discharge [m&#179;/s]")
     fig_daily = px.line(q, title="Daily discharge", **linekw)
     fig_daily.update_layout(**layoutkw)
     graph_daily = dcc.Graph(figure=fig_daily, style=dict(width="90vw", height="60vh"))
 
     linekw["x"] = "DOY"
     fig_doy = px.line(qdoy, title="Day of year mean", **linekw)
-    fig_doy.update_layout(**layoutkw)
+    fig_doy.update_layout(showlegend=False, **layoutkw)
     graph_doy = dcc.Graph(figure=fig_doy, style=dict(width="40vw", height="60vh"))
 
     linekw["x"] = "year"
     fig_an = px.line(qan, title="Annual mean discharge", **linekw)
-    fig_an.update_layout(**layoutkw)
+    fig_an.update_layout(showlegend=False, **layoutkw)
     graph_an = dcc.Graph(figure=fig_an, style=dict(width="55vw", height="60vh"))
     return [dbc.Row(graph_daily), dbc.Row([graph_an, graph_doy])]
 
@@ -121,14 +121,17 @@ def plotly_station_daily_and_regime_discharge_component(project, run=None, refer
     q3.columns = "surface", "subsurface", "groundwater"
     q = q3.stack().reset_index().set_axis(['time', "discharge component", "discharge"], axis=1)
     q.time = q.time.dt.to_timestamp()
-    fig_daily = px.line(q, x="time", y="discharge", color="discharge component", title="Discharge component")
-    fig_daily.update_layout(legend_y=-0.5, legend_x=0)
-    graph_daily = dcc.Graph(figure=fig_daily, style=dict(width="55vw", height="50vh"))
-
     qdoy = q3.groupby(q3.index.dayofyear).mean()
     qdoyst = qdoy.stack().reset_index().set_axis(['DOY', "discharge component", "discharge"], axis=1)
+
+    layoutkw = dict(legend_title="", margin=dict(r=20, l=20, t=100), yaxis_title="Discharge [m&#179;/s]")
+
+    fig_daily = px.line(q, x="time", y="discharge", color="discharge component", title="Discharge component")
+    fig_daily.update_layout(**layoutkw)
+    graph_daily = dcc.Graph(figure=fig_daily, style=dict(width="55vw", height="50vh"))
+
     fig_doy = px.line(qdoyst, x="DOY", y="discharge", color="discharge component", title="Day of year mean")
-    fig_doy.update_layout(showlegend=False)
+    fig_doy.update_layout(showlegend=False, **layoutkw)
     graph_doy = dcc.Graph(figure=fig_doy, style=dict(width="35vw", height="50vh"))
     return dbc.Row([graph_daily, graph_doy])
 
