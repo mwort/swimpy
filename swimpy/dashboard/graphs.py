@@ -43,21 +43,21 @@ def plotly_station_daily_discharge(project):
 def hydrotopes_daily_waterbalance(hydrotope_daily_waterbalance, start, end):
     rename = {"SURQ": "surface runoff", "SUBQ": "subsurface runoff",
               "PERC": "percolation", "PLANT_ET": "plant transpiration", "SOIL_ET": "soil evapotranspiration"}
-    if hydrotope_daily_waterbalance is not None:
-        hydv = (hydrotope_daily_waterbalance[["SURQ", "SUBQ", "PERC", "PLANT_ET", "SOIL_ET"]]
-                .groupby(level=[2]).mean()).rename(columns=rename)
-        hydv.index = hydv.index.to_timestamp()
-        hydv = hydv.stack().reset_index().set_axis(['time', "variable", "mm"], axis=1)
-        fig = px.line(hydv, x="time", y="mm", color="variable", title="Water balance")
-        graph = dcc.Graph(figure=fig, style=dict(height="60vh"))
-    else:
-        graph = dcc.Graph(figure=px.line([]))
 
-    graph.figure.update_xaxes(
-        range=[str(start), str(end)],
-        autorange = False
-        )
-    return graph
+    hydv = (hydrotope_daily_waterbalance[["SURQ", "SUBQ", "PERC", "PLANT_ET", "SOIL_ET"]]
+            .groupby(level=[2]).mean()).rename(columns=rename)
+    hydv.index = hydv.index.to_timestamp()
+    doy = hydv.groupby(hydv.index.dayofyear).mean().loc[:365]
+    hydv, doy = (df.stack().reset_index().set_axis(['time', "variable", "mm"], axis=1) for df in (hydv, doy))
+
+    daily = px.line(hydv, x="time", y="mm", color="variable", title="Daily")
+    daily.update_layout(legend_title="", yaxis_title="mm/d")
+    dailygraph = dcc.Graph(figure=daily, style=dict(height="60vh", width="60vw"))
+    dy = px.line(doy, x="time", y="mm", color="variable", title="Day of year mean")
+    dy.update_layout(showlegend=False, xaxis_title="Day of year", yaxis_title="mm/d")
+    doygraph = dcc.Graph(figure=dy, style=dict(height="60vh", width="35vw"))
+
+    return dbc.Row([dailygraph, doygraph])
 
 
 def plotly_hydrotopes_daily_waterbalance(project, run=None, reference=None):
@@ -69,8 +69,16 @@ def plotly_hydrotopes_daily_waterbalance(project, run=None, reference=None):
     )
     hydv = (hydwb["ALAI"].groupby(level=[2]).mean())
     hydv.index = hydv.index.to_timestamp()
+    doylai = hydv.groupby(hydv.index.dayofyear).mean().loc[:365]
+
     fig = px.line(x=hydv.index, y=hydv, title="Leaf area index")
-    laigraph = dcc.Graph(figure=fig, style=dict(height="50vh"))
+    fig.update_layout(xaxis_title="Time [days]", yaxis_title="LAI [~]")
+    laigraphdaily = dcc.Graph(figure=fig, style=dict(height="50vh", width="60vw"))
+    fig = px.line(x=doylai.index, y=doylai)
+    fig.update_layout(xaxis_title="Day of year", yaxis_title="LAI [~]")
+    laigraphdoy = dcc.Graph(figure=fig, style=dict(height="50vh", width="35vw"))
+    laigraph = dbc.Row([laigraphdaily, laigraphdoy])
+
     return dbc.Col([graph, laigraph])
 
 
@@ -304,7 +312,7 @@ def plotly_reservoir(project, run=None, reference=None):
     cont = dbc.Col([
         dbc.Row([
             html.H3("Inflow / outflow", className="pt-4"),
-            dcc.Graph(figure=px.line(df, x="time", y=['Inflow_m3/s', 'Outflow_m3/s'], labels={"value": "m^3/s"}),  style=dict(width="80vw")),
+            dcc.Graph(figure=px.line(df, x="time", y=['Inflow_m3/s', 'Outflow_m3/s'], labels={"value": "m&#179;/s"}),  style=dict(width="80vw")),
         ]),
         dbc.Row([
             html.H3("Water level", className="pt-4"),
