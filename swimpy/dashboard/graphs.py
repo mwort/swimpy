@@ -135,44 +135,65 @@ def plotly_station_daily_and_regime_discharge_component(project, run=None, refer
 
 def plotly_basin_daily_weather(project, run, reference=None):
     bm = run.catchment_daily_temperature_precipitation
-    if reference:
+    if reference and run != reference:
         bm = pd.concat([bm, reference.catchment_daily_temperature_precipitation],
                         keys=[str(run), str(reference)],
                         names=["run", "variable"], axis=1).swaplevel(axis=1)
     else:
         bm.columns = pd.MultiIndex.from_tuples([(s, str(run)) for s in bm.columns])
-    doy = bm.groupby(bm.index.dayofyear).mean()
-    annual = bm.resample("a").mean()
-    annual["precipitation"] = bm["precipitation"].resample("a").agg(pd.Series.sum, skipna=False)
+    doy = bm[["precipitation", "tmean"]].groupby(bm.index.dayofyear).mean().loc[:365]
+    annual = bm[["precipitation", "tmean"]].resample("a").mean()
+    annual["precipitation"] = bm["precipitation"].resample("a").agg( pd.Series.sum, skipna=False)
     dayix = bm.index.to_timestamp()
-    vars = ["precipitation"]
-    units = ["mm", "l/cm^2/day", "%"]
+
+    v = "precipitation"
+    barkw = dict(bargap=0., barmode="group")
+    daily_ax = px.bar(bm[v], x=dayix, y=list(bm[v].columns))
+    daily_ax.update_layout(showlegend=bool(reference), yaxis_title="Precipitation [mm/d]",
+                           xaxis_title="Time [days]", title="Daily", legend_title="Runs", **barkw)
+
+    doy_ax = px.bar(doy[v], x=doy.index.values, y=list(doy[v].columns))
+    doy_ax.update_layout(showlegend=False, yaxis_title="Precipitation [mm/d]",
+                         title="Day of year mean", xaxis_title="Time [day of year]", **barkw)
+
+    annual_ax = px.bar(annual[v], x=annual.index.year, y=list(annual[v].columns))
+    annual_ax.update_layout(showlegend=False, yaxis_title="Precipitation [mm/a]", xaxis_title="Time [year]",
+                            title="Annual sum", **barkw)
+
     graphs = [
         dbc.Row([
             html.H3(v.title()),
-            dcc.Graph(figure=px.line(bm[v], x=dayix, y=list(bm[v].columns),
-                                     labels=dict(x="time", **{c: u for c in bm[v].columns})),
-                      style=dict(width="55vw")),
-            dcc.Graph(figure=px.line(doy[v], x=doy.index.values, y=list(doy[v].columns),
-                                     labels={"y": u, "x": "day of year"}),
-                      style=dict(width="35vw")),
-            dcc.Graph(figure=px.line(annual[v], x=annual.index.year, y=list(annual[v].columns),
-                                     labels={"y": u, "x": "year"}),
-                      style=dict(width="90vw")),
-        ])
-        for v, u in zip(vars, units)
+            dcc.Graph(figure=daily_ax, style=dict(width="100vw")),
+        ]),
+        dbc.Row([
+            dcc.Graph(figure=doy_ax, style=dict(width="45vw")),
+            dcc.Graph(figure=annual_ax, style=dict(width="45vw")),
+        ]),
     ]
+
     tvars = "tmean"
-    graphs.insert(1, dbc.Row([
-        html.H3("Temperature"),
-        dcc.Graph(figure=px.line(bm[tvars], x=dayix, y=list(bm[tvars].columns),
-                                 labels={"y": "dg C", "x": "time"}),  style=dict(width="55vw")),
-        dcc.Graph(figure=px.line(doy[tvars], x=doy.index, y=list(doy[tvars].columns),
-                                 labels={"y": "dg C", "x": "time"}), style=dict(width="35vw")),
-        dcc.Graph(figure=px.line(annual[tvars], x=annual.index.year, y=list(annual[tvars].columns),
-                                     labels={"y": "dg C", "x": "year"}),
-                      style=dict(width="90vw")),
-    ]))
+    tmpkw = dict(yaxis_title="Temperature [&deg;C]")
+
+    daily_ax = px.line(bm[tvars], x=dayix, y=list(bm[tvars].columns))
+    daily_ax.update_layout(showlegend=bool(reference), xaxis_title="Time [days]", title="Daily",
+                           legend_title="Runs", **tmpkw)
+
+    doy_ax = px.line(doy[tvars], x=doy.index, y=list(doy[tvars].columns))
+    doy_ax.update_layout(showlegend=False, title="Day of year mean", xaxis_title="Time [day of year]", **tmpkw)
+
+    annual_ax = px.line(annual[tvars], x=annual.index.year, y=list(annual[tvars].columns))
+    annual_ax.update_layout(showlegend=False, xaxis_title="Time [year]", title="Annual mean", **tmpkw)
+
+    graphs += [
+        dbc.Row([
+            html.H3("Temperature"),
+            dcc.Graph(figure=daily_ax, style=dict(width="100vw")),
+        ]),
+        dbc.Row([
+            dcc.Graph(figure=doy_ax, style=dict(width="45vw")),
+            dcc.Graph(figure=annual_ax, style=dict(width="45vw")),
+        ])
+    ]
     return dbc.Col(graphs)
 
 
