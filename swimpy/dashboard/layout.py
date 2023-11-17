@@ -49,7 +49,14 @@ class Layout:
         ("basin_parameters", "roc4"),
         ("run_parameters", "notes"),
     ]
-    
+    parameters_long_names = {
+        "iyr": "Start year",
+        "nbyr": "Number of years",
+        "sccor": "Sat. conductivity",
+        "ecal": "ETa coefficient",
+        "roc2": "Routing quick",
+        "roc4": "Routing slow",
+    }
     tab_labels = ["Run model", "Parameters"] + list(output_tabs_functions.keys())
 
     callbacks = {
@@ -196,7 +203,7 @@ class Layout:
             ] + [
             dbc.Col(className="mt-2 col-6",
                     children=[
-                        html.P(pname),
+                        html.P(self.parameters_long_names[pname]),
                         dbc.Input(
                             id=f"input-{group}-{pname}",
                             type="number",
@@ -207,7 +214,7 @@ class Layout:
             dbc.Col(
                 className="col-6 mt-2",
                 children=[
-                    html.P(pname),
+                    html.P(self.parameters_long_names[pname]),
                     dbc.Input(
                         step="0.1",
                         id=f"input-{group}-{pname}",
