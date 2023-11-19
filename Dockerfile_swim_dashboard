@@ -36,8 +36,11 @@ RUN useradd -m -U swim
 USER swim
 
 #WORKDIR dependencies/swim/project
-WORKDIR tests/project
-# test swimpy and make sure there is a complete run in outputs
+WORKDIR tests/
+RUN make setup
+WORKDIR project/
+# test swim, swimpy and make sure there is a complete run in outputs
+RUN ./swim ./
 RUN swimpy run --kw notes="Baseline"
 
 # launch dashboard

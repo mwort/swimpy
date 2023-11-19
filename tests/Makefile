@@ -12,7 +12,7 @@ clean:
 mpi:
 	srun -n 16 --mpi=pmi2 --qos=priority python test_mpi.py
 
-setup: clean
+setup: #clean
 	$(PY) tests.py setup
 	$(eval $@_dirs := $(shell cd ../dashboard_resources/project; find . -type d))
 	$(eval $@_files := $(shell cd ../dashboard_resources/project; find . -type f) \

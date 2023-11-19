@@ -18,7 +18,7 @@ def station_daily_discharge(station_daily_discharge, start, end):
         )
         q.time = q.time.dt.to_timestamp()
         fig = px.line(q, x="time", y="discharge", color="station")
-        fig.update_layout(xaxis_title="Time [days]", yaxis_title="Discharge [m&#179;/s]")
+        fig.update_layout(xaxis_title="Time", yaxis_title="Discharge [m&#179;/s]")
         graph = dcc.Graph(figure=fig, style=dict(height="70vh"))
     else:
         graph = dcc.Graph(figure=px.line([]))

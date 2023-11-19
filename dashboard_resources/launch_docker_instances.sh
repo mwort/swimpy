@@ -1,13 +1,18 @@
 
 
 # ON LOCAL
+
+# make sure tests/project is working
+# make sure nothing unintended is copied from swimpy/*
+
 # build image
 docker build -t mwort/swim-dashboard -f Dockerfile_swim_dashboard .
 
 # push to docker Hub
 docker push mwort/swim-dashboard
 
-# ON SERVER
+# ON SERVER as root
+su root
 n=12
 container_id_file="swim_dashboard_containers.txt"
 random_strings_file="random_strings.txt"
@@ -25,3 +30,5 @@ for i in $(seq 1 $n); do
     echo https://deltaclimateservices.com$url
 done
 
+
+# then configure proxy rules to the echo'ed URLs
