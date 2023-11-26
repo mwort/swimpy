@@ -454,7 +454,7 @@ class optimization_populations(ProjectOrRunData):
     index_col = (0, 1)
     _metadata = ['parameters', 'parameter_ranges', 'objectives', 'indicators']
     plugin = ['plot_generation_objectives', 'plot_objective_scatter',
-              'plot_parameter_distribution', 'best_tradeoff']
+              'plot_parameter_distribution', 'best_tradeoff', "from_path"]
 
     def from_csv(self, path, **readkw):
         """Read csv file and interpret objectives and parameter ranges from

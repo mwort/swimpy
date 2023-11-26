@@ -188,7 +188,7 @@ class cluster(object):
     @parse_settings
     def run_parallel(self, clones=None, args=None, time=None,
                      preprocess='catchment', prefix='run_parallel',
-                     parallelism='jobs', mpi_master=False, **runkw):
+                     parallelism='jobs', mpi_master=False, mp_max_cpus=None, **runkw,):
         """Run SWIM in parallel using cluster jobs or multiprocessing.
 
         Arguments
@@ -248,6 +248,9 @@ class cluster(object):
         else:
             rank = 0
 
+        if parallelism== 'mp' and mp_max_cpus:
+           runkw['max_cpus'] = mp_max_cpus
+
         # create or convert clones to names
         if type(clones) == int:
             assert args and preprocess
@@ -287,10 +290,10 @@ class cluster(object):
         self.wait(slurm_jobs)
         return
 
-    def _run_mp(self, clones, tag, preprocess, args, **runkw):
+    def _run_mp(self, clones, tag, preprocess, args, max_cpus=None,**runkw):
         """Run the clones through multiprocessing."""
         import multiprocessing
-        ncpu = min(len(clones), multiprocessing.cpu_count())
+        ncpu = min(len(clones), max_cpus or multiprocessing.cpu_count())
         msg = 'Using multiprocessing on %s CPUs.' % ncpu
         warnings.warn(msg)
         mp_jobs = []

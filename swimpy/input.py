@@ -417,7 +417,7 @@ class catchment(InputFileGrassModule):
     Read or write catchment.csv
     """
     file = 'catchment.csv'
-    index_name = 'station_id'
+    index_name = 'catchment_id'
     # grass module arguments as class variables
     argument_setting = 'grass_setup'
     module = 'm.swim.subbasins'
@@ -471,7 +471,7 @@ class catchment(InputFileGrassModule):
         pdf = pd.DataFrame(self.project.catchment_defaults, index=[0])
         pdf = pd.concat([pdf]*len(catch), ignore_index=True)
         out = pd.concat([catch, pdf], axis = 1)
-        out.set_index('station_id', inplace=True)
+        out.set_index(self.index_name, inplace=True)
         # save and write
         self.__call__(out)
         return
@@ -491,6 +491,9 @@ class catchment(InputFileGrassModule):
         all_catchments = [catchmentID] + utils.upstream_ids(catchmentID, ft)
         ssid = self.subcatch_subbasin_ids
         return np.concatenate([ssid(i) for i in all_catchments])
+
+
+
 
 class subcatch_parameters(catchment):
 
