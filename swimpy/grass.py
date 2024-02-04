@@ -263,7 +263,6 @@ def reclass_raster(project, inrast, outrast, values, mapset=None,
         values = (values*10**float_precision).astype(int)
         outrast += '__int'
     columns = np.column_stack([ix, values])
-    mapset = mapset or project.grass_mapset
     with mmgrass.GrassSession(project, mapset=mapset) as grass:
         tf = grass.tempfile()
         np.savetxt(tf, columns, delimiter='=', fmt="%i")
