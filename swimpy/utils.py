@@ -187,8 +187,8 @@ class cluster(object):
 
     @parse_settings
     def run_parallel(self, clones=None, args=None, time=None,
-                     preprocess='catchment', prefix='run_parallel',
-                     parallelism='jobs', mpi_master=False, mp_max_cpus=None, **runkw,):
+                     preprocess='config_parameters', prefix='run_parallel',
+                     parallelism='jobs', mpi_master=False, mp_max_cpus=None, **runkw):
         """Run SWIM in parallel using cluster jobs or multiprocessing.
 
         Arguments

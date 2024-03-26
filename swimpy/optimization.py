@@ -66,8 +66,8 @@ class _EvoalgosSwimProblem(Problem):
 
     @parse_settings
     def __call__(self, parameters=None, objectives=None, population_size=10,
-                 max_generations=10, output=None, restart=False,
-                 test=None, prefix=None, keep_clones=False, **kwargs):
+                 max_generations=10, output=None, restart=False, test=None, prefix=None,
+                 keep_clones=False, parameter_setter="config_parameters", **kwargs):
         """Run the optimisation algorithm.
 
         Arguments
@@ -101,6 +101,10 @@ class _EvoalgosSwimProblem(Problem):
         keep_clones : bool
             Do not remove the project clones when completed and run the final
             population in them.
+        parameter_setter : str
+            Project method that receives the parameter dict to set it. E.g. this could
+            be "catchment" for catchment specific calibrations.
+            Defaults to config_parameters.
         kwargs :
             Any overriding parameter parsed to the algorithm (for details see
             the algorithm descriptions at:
@@ -122,6 +126,8 @@ class _EvoalgosSwimProblem(Problem):
         defout = osp.join(self.project.projectdir, do+'_populations.csv')
         self.output = output or defout
         self.restart = restart and osp.exists(self.output)
+        self.parameter_setter = parameter_setter
+        assert hasattr(self.project, self.parameter_setter)
         # init problem
         Problem.__init__(self, lambda dummy: dummy,
                          num_objectives=len(objectives),
@@ -363,7 +369,7 @@ class _EvoalgosSwimProblem(Problem):
         parameters : dict
             Parameters to set.
         """
-        clonedproject.catchment(**parameters)
+        getattr(clonedproject, self.parameter_setter, "config_parameters")(**parameters)
         return
 
     def observe_population(self, ea, initial=False):
