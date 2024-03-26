@@ -372,8 +372,7 @@ class output_files(dict):
     def __call__(self, *get, **set):
         assert get or set
         if set:
-            new = {k: v for k, v in set.items()}
-            self.update(new)
+            self.update(set)
             self.write()
             self.interfaces = self._create_propertyplugins()
             self.project.settings(**self.interfaces)
@@ -395,7 +394,8 @@ class output_files(dict):
         path = path or self.path
         self._path = path
         nml = f90nml.read(path)
-        nml = {'_'.join([v['space'], v['time'], v['name']]): v['variables'] for v in nml.values()}
+        nml = {'_'.join([v.get('space_name', v['space']), v['time'], v['name']]): v['variables']
+               for v in nml.values()}
         # make sure self is fully (re-)initialised
         self.clear()
         super().__init__(nml)
