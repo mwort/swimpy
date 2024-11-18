@@ -13,6 +13,7 @@ import dash_bootstrap_components as dbc
 import datetime as dt
 import io, zipfile
 import tempfile
+from flask import request
 
 import dash_bootstrap_components as dbc
 
@@ -22,8 +23,13 @@ from . import graphs
 class Callbacks:
 
     def __init__(self, project, layout, **overwrite):
-        self.project = project
+        self.root_project = project
         self.layout = layout
+
+    @property
+    def project(self):
+        username = request.authorization['username']
+        return self.root_project.clone(username)
 
     def render_content(self, tab):
         isoutput = tab.replace("-tab", "").replace("-", " ").title()

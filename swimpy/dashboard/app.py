@@ -16,6 +16,7 @@ from .callbacks import Callbacks
 
 
 DASHBOARD_BASE_URL = os.environ.get("DASHBOARD_BASE_URL", "/swim-dashboard/")
+DASHBOARD_USERS = os.environ.get("DASHBOARD_USERS", None)
 
 
 @propertyplugin
@@ -48,7 +49,15 @@ class App:
 
         return
 
-    def start(self, port=8054, debug=False, host='0.0.0.0'):
+    def start(self, port=8054, users=None, debug=False, host='0.0.0.0'):
+
+        if users is None and DASHBOARD_USERS:
+            users = dict([tuple(u.split(":")) for u in DASHBOARD_USERS.split()])
+
+        if users:
+            import dash_auth
+            self.auth = dash_auth.BasicAuth(self.app, users)
+
         self.app.run_server(
             debug=debug,
             port=port,

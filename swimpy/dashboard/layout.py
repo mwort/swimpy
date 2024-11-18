@@ -152,7 +152,7 @@ class Layout:
             dbc.ButtonGroup([
                 dbc.Button("Download input", id="btn-download-input", **itemkw),
                 dbc.Button("Download output", id="btn-download-output", **itemkw),
-                dbc.Button(dcc.Upload("Upload input", id="upload-input", accept=".zip"), **itemkw),
+                dbc.Button(dcc.Upload("Upload input", id="upload-input", accept=".zip", max_size=1024**3), **itemkw),
                 dbc.Button("Reset runs", id="reset-runs-button", **itemkw),
             ], id="download-upload-menu", size="sm"),
             dcc.Download(id="download-input"),
