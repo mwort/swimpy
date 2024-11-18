@@ -13,7 +13,7 @@ docker push mwort/swim-dashboard
 
 # ON SERVER as root
 su root
-n=12
+n=8
 container_id_file="swim_dashboard_containers.txt"
 random_strings_file="random_strings.txt"
 
