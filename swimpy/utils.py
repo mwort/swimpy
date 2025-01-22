@@ -117,7 +117,7 @@ class cluster(object):
                       (functionname, funcargs))
         # submit to slurm
         rid = self.submit_job(jobname, script, self.resourcedir, dryrun=dryrun,
-                              workdir=self.project.projectdir, **slurmargs)
+                              chdir=self.project.projectdir, **slurmargs)
         return rid
 
     @staticmethod
@@ -139,13 +139,13 @@ class cluster(object):
         **slurmkwargs
             Any additional slurm header arguments, some useful ones:
                 * qos: job class (short, medium, long)
-                * workdir: working directory
+                * chdir: change to working directory
                 * account: CPU accounting
 
         Example
         -------
         >>> submit_job('testjob', 'import swimpy; swimpy.Project().run()',
-        ...            workdir='project/', dryrun=True)  # doctest: +ELLIPSIS
+        ...            chdir='project/', dryrun=True)  # doctest: +ELLIPSIS
         Would execute: sbatch .../testjob.py
         '''
         import ast
