@@ -1,6 +1,6 @@
 import os.path as osp
 import warnings
-from distutils.spawn import find_executable
+from shutil import which
 
 
 class Cluster:
@@ -31,7 +31,7 @@ class Cluster:
         self.project.config_parameters(nbyr=oyrs)
 
     def test_run_parallel_jobs(self):
-        if find_executable('sbatch'):
+        if which('sbatch'):
             self.run_parallel('jobs')
         else:
             warnings.warn(
