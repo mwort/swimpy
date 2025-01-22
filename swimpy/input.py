@@ -46,7 +46,7 @@ class ParamGroupNamelist(f90nml.Namelist):
     
     def __setitem__(self, key, value, write=True):
         if not key in self.defaults.keys():
-            raise KeyError("Parameter '{}' not implemented!".format(key))
+            warn("Parameter '{}' not implemented!".format(key))
         super().__setitem__(key, value)
         if write:
             self.project.config_parameters.write()
@@ -59,7 +59,11 @@ class ParamGroupNamelist(f90nml.Namelist):
         """
         if self._defaults is None:
             nml = f90nml.reads(subprocess.check_output([self.project.swim, "-d"]).decode())
-            nl = nml[self._pargrp]
+            if self._pargrp not in nml:
+                warn(f"Cant get defaults for {self._pargrp} from swim -d")
+                nl = {}
+            else:
+                nl = nml[self._pargrp]
             # trim whitespaces
             for k, v in nl.items():
                 if isinstance(v, str):
@@ -135,7 +139,7 @@ class config_parameters(f90nml.Namelist):
             for gr, nl in self.defaults.items():
                 if key in nl:
                     return self[gr].__setitem__(key, value)
-            raise KeyError("Parameter or parameter group '{}' not implemented!".format(key))
+            warn("Parameter or parameter group '{}' not implemented!".format(key))
         super().__setitem__(key, value)
         if write:
             self.write()
