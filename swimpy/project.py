@@ -408,6 +408,8 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
         # default parameters .nml
         shutil.copyfile(osp.join(repopath, 'project/blankenstein_parameters.nml'),
                         osp.join(projectdir, name+'.nml'))
+        # empty output, otherwise swim wont run
+        os.makedirs(osp.abspath(osp.join(projectdir, 'output')), exist_ok=True)
     # load as a swim project
     project = Project(projectdir)
     return project
