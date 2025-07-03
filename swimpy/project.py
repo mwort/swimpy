@@ -350,7 +350,7 @@ class Project(mm.Project):
         return changed
 
 
-def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
+def setup(projectdir='.', name=None, gitrepo=None, branch="redesign", resourcedir='swimpy'):
     """
     Setup a swimpy project.
 
@@ -393,7 +393,7 @@ def setup(projectdir='.', name=None, gitrepo=None, resourcedir='swimpy'):
             repopath = gitrepo
         else:
             repopath = osp.join(mmproject.resourcedir, 'swim')
-            subprocess.check_call(['git', 'clone', '-q', gitrepo, repopath])
+            subprocess.check_call(['git', 'clone', '-q', '-b', branch, gitrepo, repopath])
     else:
         repopath = None
 
