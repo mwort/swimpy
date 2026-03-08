@@ -349,6 +349,22 @@ class Project(mm.Project):
 
         return changed
 
+    def shell(self):
+        """
+        Create an IPython shell with the project instance as p or project variables.
+        """
+        try:
+            from IPython.terminal.embed import InteractiveShellEmbed
+        except ImportError:
+            raise ImportError('IPython is not installed. Please install it to use the shell command.')
+
+        # define variables for the shell here
+        project = p = self
+
+        ipshell = InteractiveShellEmbed()
+        ipshell(header="Access the swimpy project with the p or project variable", local_ns=locals())
+        return
+
 
 def setup(projectdir='.', name=None, gitrepo=None, branch="redesign", resourcedir='swimpy'):
     """
