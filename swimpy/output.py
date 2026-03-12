@@ -400,11 +400,13 @@ class output_files(dict):
         path = path or self.path
         self._path = path
         nml = f90nml.read(path)
-        nml = {'_'.join([v.get('space_name', v['space']), v['time'], v['name']]): v['variables']
-               for v in nml.values()}
+        self.file_names = ['_'.join([v.get('space_name', v['space']), v['time'], v['name']]) for v in nml.values()]
+        self.variables = {n: v['variables'] for n, v in zip(self.file_names, nml.values())}
+        self.space = {n: v['space'] for n, v in zip(self.file_names, nml.values())}
+        self.time = {n: v['time'] for n, v in zip(self.file_names, nml.values())}
         # make sure self is fully (re-)initialised
         self.clear()
-        super().__init__(nml)
+        super().__init__(self.variables)
         # output files as project attributes
         self.interfaces = self._create_propertyplugins()
         self.project.settings(**self.interfaces)
@@ -423,20 +425,21 @@ class output_files(dict):
         """
         path = path or self.path
         # order of ospace is important for checks below!
-        ospace = ('hydrotope_label', 'hydrotope',
-                  'subbasin_label', 'subbasin', 'catchment')
+        ospace = ('hydrotope', 'subbasin', 'catchment')
         otime = ('daily', 'monthly', 'annual')
         nml = []
         for k, v in self.items():
             ksplt = k.split('_')
-            space = '_'.join(ksplt[0:2]) if ksplt[1] == 'label' else ksplt[0]
-            if space not in ospace:
-                raise KeyError("Invalid file name '{}'; unsupported space attribute (first element)!".format(k))
-            time = ksplt[2] if ksplt[1] == 'label' else ksplt[1]
+            space, time = ksplt[0], ksplt[1]
             if time not in otime:
                 raise KeyError("Invalid file name '{}'; unsupported time attribute (second element)!".format(k))
-            name = '_'.join(ksplt[3:]) if ksplt[1] == 'label' else '_'.join(ksplt[2:])
-            knml = f90nml.Namelist({'file': {'name': name, 'space': space, 'time': time, 'variables': v}})
+            name = '_'.join(ksplt[2:])
+            attr = {'name': name, 'space': space, 'time': time, 'variables': v}
+            if space not in ospace:
+                assert k in self.space, f"{k} has an unusual space name and is not in self.space, cant assign the space attribute!"
+                attr['space_name'] = space
+                attr['space'] = self.space[k]
+            knml = f90nml.Namelist({'file': attr})
             nml.append(knml)
         with open(path, "w") as f:
             for fe in nml:
