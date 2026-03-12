@@ -67,7 +67,7 @@ class OutputFile(ProjectOrRunData):
             """
             obs = getattr(self.project.stations, self._time + '_discharge_observed')
             # exclude warmup period
-            sim = self[str(self.index[0].year+warmupyears):]['discharge']
+            sim = self.loc[str(self.index[0].year+warmupyears):]['discharge']
             obsa, sima = obs.align(sim, join='inner')
             # obsa can still have columns with only NAs
             obsa.dropna(how='all', axis=1, inplace=True)
@@ -199,6 +199,12 @@ class OutputFile(ProjectOrRunData):
         return fsplt[2] if fsplt[1] == 'label' else fsplt[1]
 
     @property
+    def _time_pandas(self):
+        """Translate swim file name frequency to pandas frequency str."""
+        t = self._time[0].upper()
+        return {"A": "Y"}.get(t, t).upper()
+
+    @property
     def _name(self):
         fsplt = self.file.split('_')
         nameext = fsplt[3] if fsplt[1] == 'label' else fsplt[2]
@@ -224,7 +230,7 @@ class OutputFile(ProjectOrRunData):
             path = None
         if self._exists or path:
             path = path or self.path
-            df = utils.read_csv_multicol(path, 'time', self._time[0],
+            df = utils.read_csv_multicol(path, 'time', self._time_pandas,
                                 self._space, **kwargs)
         else:
             df = None

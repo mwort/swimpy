@@ -421,7 +421,7 @@ class catchment(InputFileGrassModule):
     Read or write catchment.csv
     """
     file = 'catchment.csv'
-    index_name = 'catchment_id'
+    index_name = 'station_id'
     # grass module arguments as class variables
     argument_setting = 'grass_setup'
     module = 'm.swim.subbasins'
@@ -671,7 +671,10 @@ class climate(object):
             subbasins : list-like, optional
                 Only read for a subset of subbasins.
             """
-            import netCDF4 as nc
+            try:
+                import netCDF4 as nc
+            except ImportError:
+                raise ImportError("Please install netCDF4 to read netcdf climate data.")
             msg = variable+" not in %r" % self.variables
             assert variable in self.variables, msg
             vfn = zip(self.parameters["nc_vnames"], self.parameters["nc_fnames"])

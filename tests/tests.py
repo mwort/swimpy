@@ -70,6 +70,11 @@ class ProjectTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # copy swim and m.swim test projects
+        # Overwrite existing directories if they exist
+        if osp.exists(SWIM_TEST_PROJECT):
+            shutil.rmtree(SWIM_TEST_PROJECT)
+        if osp.exists(TEST_GRASSDB):
+            shutil.rmtree(TEST_GRASSDB)
         shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT)
         shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB)
         # new test project with Blankenstein project

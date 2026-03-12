@@ -729,7 +729,7 @@ def write_csv_multicol(df, path, spacecol=None, **kwargs):
     **kwargs :
         Keywords to pandas.to_csv.
     """
-    df_stack = df.stack()
+    df_stack = df.stack(future_stack=True)
     df_out = df_stack.reset_index(level=[spacecol])
     df_out.to_csv(path, index = True, na_rep='-9999', **kwargs)
     return
