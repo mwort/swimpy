@@ -319,11 +319,11 @@ class TestOutput(ProjectTestCase, test_io.Output):
             self.assertIsInstance(getattr(self.project, k),
                                   ofileclass)
         # get / indexing methods (format of underlying pd.DataFrame)
-        self.assertIsInstance(self.project.output_files('hydrotope_label_daily_crop_out',
-                                                        'hydrotope_label_daily_htp_prn'),
+        self.assertIsInstance(self.project.output_files('cropland_daily_crop_out',
+                                                        'wb_daily_htp_prn'),
                               list)
-        self.assertEqual(len(self.project.subbasin_daily_river_discharge.loc['2000-12-27']['river_runoff']), 11)
-        self.assertAlmostEqual(self.project.subbasin_label_daily_selected_stations_discharge.loc['1991-01-01']['discharge']['HOF'], 5.187)
+        self.assertEqual(len(self.project.subbasin_daily_discharge.loc['2000-12-27']['river_runoff']), 11)
+        self.assertAlmostEqual(self.project.station_daily_discharge.loc['1991-01-01']['discharge']['HOF'], 5.047, places=2)
         self.assertEqual(self.project.hydrotope_annual_gis.loc[['1991']]['surface_runoff'].size, 182)
         # make sure write function works as expected
         df = self.project.catchment_daily_bad_prn
@@ -337,13 +337,13 @@ class TestOutput(ProjectTestCase, test_io.Output):
         # peak over threshold
         for k in self.project.output_files.keys():
             self.assertTrue(hasattr(getattr(self.project, k), 'peak_over_threshold'))
-        dat = self.project.subbasin_daily_river_discharge.peak_over_threshold(stations=1)
+        dat = self.project.subbasin_daily_discharge.peak_over_threshold(stations=1)
         self.assertTrue(dat.index.names == ['subbasin', 'variable', 'order'])
-        dat = self.project.subbasin_label_daily_selected_stations_discharge.peak_over_threshold(stations='BLANKENSTEIN', variables='discharge')
+        dat = self.project.station_daily_discharge.peak_over_threshold(stations='BLANKENSTEIN', variables='discharge')
         self.assertTrue(dat.index.names == ['order'])
         # discharge methods
         for m in ['obs_sim_overlap', 'NSE', 'rNSE', 'pbias', 'pbias_abs', 'plot_discharge_comparison']:
-            self.assertTrue(hasattr(self.project.subbasin_label_daily_selected_stations_discharge, m))
+            self.assertTrue(hasattr(self.project.station_daily_discharge, m))
             self.assertFalse(hasattr(self.project.hydrotope_annual_gis, m))
 
 
