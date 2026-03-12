@@ -1,7 +1,8 @@
 PY = python
+DEPENDENCIES = ../dependencies/swim/project/output
 
 
-default:
+default: ${DEPENDENCIES}
 	$(PY) tests.py -v
 
 all: clean default hydro grass optimization
@@ -12,7 +13,7 @@ clean:
 mpi:
 	srun -n 16 --mpi=pmi2 --qos=priority python test_mpi.py
 
-setup:
+setup: $(DEPENDENCIES)
 	$(PY) tests.py setup
 
 coverage:
@@ -20,5 +21,8 @@ coverage:
 	coverage html -i --include=../swimpy/*
 	rm .coverage
 
-%:
+$(DEPENDENCIES):
+	$(MAKE) -C $@
+
+%: $(DEPENDENCIES)
 	$(PY) test_$@.py
