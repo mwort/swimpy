@@ -37,7 +37,7 @@ TEST_SETTINGS = './test_settings.py'
 class TestSetup(unittest.TestCase):
 
     projectdir = SWIM_TEST_PROJECT
-    resourcedir = osp.join(projectdir, 'swimpy')
+    resourcedir = osp.join(projectdir, 'swimpy-project')
 
     def test_setup(self):
         self.project = swimpy.project.setup(self.projectdir, name='test',

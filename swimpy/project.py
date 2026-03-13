@@ -366,7 +366,7 @@ class Project(mm.Project):
         return
 
 
-def setup(projectdir='.', name=None, gitrepo=None, branch="redesign", resourcedir='swimpy'):
+def setup(projectdir='.', name=None, gitrepo=None, branch="redesign", resourcedir='swimpy-project'):
     """
     Setup a swimpy project.
 
