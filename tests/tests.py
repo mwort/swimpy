@@ -34,12 +34,27 @@ MSWIM_GRASSDB = '../dependencies/m.swim/test/grassdb'
 TEST_SETTINGS = './test_settings.py'
 
 
+def _rmtree_nfs(path):
+    """shutil.rmtree that silently ignores NFS-busy (.nfs*) files."""
+    import errno
+    def onexc(func, fpath, exc):
+        # EBUSY: NFS lock file can't be unlinked
+        # ENOTEMPTY: parent dir can't be rmdir'd while NFS lock file still exists
+        if isinstance(exc, OSError) and exc.errno in (errno.EBUSY, errno.ENOTEMPTY):
+            pass
+        else:
+            raise exc
+    if osp.exists(path):
+        shutil.rmtree(path, onexc=onexc)
+
+
 class TestSetup(unittest.TestCase):
 
     projectdir = SWIM_TEST_PROJECT
     resourcedir = osp.join(projectdir, 'swimpy-project')
 
     def test_setup(self):
+        _rmtree_nfs(self.projectdir)  # ensure clean slate even if previous test left NFS leftovers
         self.project = swimpy.project.setup(self.projectdir, name='test',
                                             gitrepo=SWIM_REPO)
         self.assertTrue(isinstance(self.project, swimpy.Project))
@@ -61,8 +76,9 @@ class TestSetup(unittest.TestCase):
         self.project = swimpy.Project(self.projectdir)
 
     def tearDown(self):
-        self.project.browser.settings.unset()
-        shutil.rmtree(self.projectdir)
+        if hasattr(self, 'project'):
+            self.project.browser.settings.unset()
+        _rmtree_nfs(self.projectdir)
 
 
 class ProjectTestCase(unittest.TestCase):
@@ -71,12 +87,10 @@ class ProjectTestCase(unittest.TestCase):
     def setUpClass(self):
         # copy swim and m.swim test projects
         # Overwrite existing directories if they exist
-        if osp.exists(SWIM_TEST_PROJECT):
-            shutil.rmtree(SWIM_TEST_PROJECT)
-        if osp.exists(TEST_GRASSDB):
-            shutil.rmtree(TEST_GRASSDB)
-        shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT)
-        shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB)
+        _rmtree_nfs(SWIM_TEST_PROJECT)
+        _rmtree_nfs(TEST_GRASSDB)
+        shutil.copytree(SWIM_REPO_PROJECT, SWIM_TEST_PROJECT, dirs_exist_ok=True)
+        shutil.copytree(MSWIM_GRASSDB, TEST_GRASSDB, dirs_exist_ok=True)
         # new test project with Blankenstein project
         p = swimpy.project.setup(SWIM_TEST_PROJECT)
         # add test_settings.py
@@ -88,8 +102,9 @@ class ProjectTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.project.browser.settings.unset()
-        shutil.rmtree(self.project.projectdir)
-        shutil.rmtree(TEST_GRASSDB)
+        _rmtree_nfs(self.project.projectdir)
+        _rmtree_nfs(TEST_GRASSDB)
+ 
 
 
 class TestParameters(ProjectTestCase, test_io.Parameters):
