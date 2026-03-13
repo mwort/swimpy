@@ -16,7 +16,7 @@ class Cluster:
     def run_parallel(self, parallelism):
         oyrs = self.project.config_parameters['nbyr']
         self.project.config_parameters(nbyr=2)
-        args = [dict(smrate=i) for i in [0.1, 0.3, 0.6]]
+        args = [dict(smrate0=i) for i in [0.1, 0.3, 0.6]]
         runs = self.project.cluster.run_parallel(
                 clones=2, args=args, prefix='test', parallelism=parallelism,
                 time=1)

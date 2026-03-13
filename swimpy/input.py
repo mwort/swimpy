@@ -46,7 +46,7 @@ class ParamGroupNamelist(f90nml.Namelist):
     
     def __setitem__(self, key, value, write=True):
         if not key in self.defaults.keys():
-            warn("Parameter '{}' not implemented!".format(key))
+            raise KeyError("Parameter '{}' not implemented!".format(key))
         super().__setitem__(key, value)
         if write:
             self.project.config_parameters.write()
@@ -139,7 +139,7 @@ class config_parameters(f90nml.Namelist):
             for gr, nl in self.defaults.items():
                 if key in nl:
                     return self[gr].__setitem__(key, value)
-            warn("Parameter or parameter group '{}' not implemented!".format(key))
+            raise KeyError("Parameter or parameter group '{}' not implemented!".format(key))
         super().__setitem__(key, value)
         if write:
             self.write()

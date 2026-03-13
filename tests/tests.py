@@ -125,10 +125,12 @@ class TestParameters(ProjectTestCase, test_io.Parameters):
     def test_changed_parameters(self):
         verbose = False
         from random import random
+        from numbers import Number
+        self.project.browser.parameters.all().delete()
         original = self.project.changed_parameters(verbose=verbose)
         bsn = self.project.config_parameters.parlist
         scp = self.project.catchment.T.stack().to_dict()
-        nametags = [(k, None) for k in bsn] + list(scp.keys())
+        nametags = [(k, None) for k, v in bsn.items() if isinstance(v, Number)] + list(scp.keys())
         nametags_original = [(e['name'], e['tags']) for e in original]
         for nt in nametags:
             self.assertIn(nt, nametags_original)
