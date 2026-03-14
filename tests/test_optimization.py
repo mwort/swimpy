@@ -6,12 +6,12 @@ import cProfile, pstats
 from tests import ProjectTestCase
 
 
-OBJECTIVES = ['subbasin_label_daily_selected_stations_discharge.rNSE.BLANKENSTEIN',
-              'subbasin_label_daily_selected_stations_discharge.pbias_abs.BLANKENSTEIN']
-PARAMETERS = {'smrate': (0.2, 0.7),
-              'sccor': (0.1, 10),
-              'ecal': (0.7, 1.3),
-              'roc2': (0.5, 10)}
+OBJECTIVES = ['station_daily_discharge.rNSE.BLANKENSTEIN',
+              'station_daily_discharge.pbias_abs.BLANKENSTEIN']
+PARAMETERS = {'smrate0': (0.2, 0.7),
+              'sccor0': (0.1, 10),
+              'ecal0': (0.7, 1.3),
+              'roc2_0': (0.5, 10)}
 
 
 class TestEvoalgos(ProjectTestCase):

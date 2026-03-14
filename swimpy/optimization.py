@@ -558,7 +558,7 @@ class optimization_populations(ProjectOrRunData):
         gen = self.loc[generation] if generation else self.lastgen
 
         if best is not None:
-            selected = self.best_tradeoff(best)
+            selected = self.best_tradeoff(best if type(best) in [dict, pd.Series] else None)
 
         ax = plot_objective_scatter(gen[self.objectives], selected=selected,
                                     ax=ax, **scatterkwargs)
