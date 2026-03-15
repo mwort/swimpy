@@ -20,9 +20,9 @@ Both these dependencies are git submodules in the ``dependencies/`` directory
 and their tests need to be run before running SWIMpy's tests::
 
    git submodule update --init --recursive
-   cd dependencies/SWIM/project
+   cd dependencies/swim/project
    make
-   cd ../m.swim/tests
+   cd ../../m.swim/tests
    make
 
 To run the SWIMpy tests, install the version-frozen requirements
@@ -74,4 +74,4 @@ A reminder for the maintainers on how to deploy:
 4. Commit changes (e.g. ``$ git commit -m "Release 0.1.8"``).
 5. Tag commit with version number, e.g. `v1.2.0`
 6. Push commits and tags: ``$ git push ; git push --tags``
-7. Update docs: ``$ make servedocs``
+7. Update docs: ``$ make publish``

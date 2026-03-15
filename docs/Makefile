@@ -18,3 +18,8 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+publish: html
+	rsync -avz _build/html/ swim.pik-potsdam.de:/webservice/swim.pik-potsdam.de/swimpy-docs
+
+.PHONY: publish

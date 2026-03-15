@@ -64,13 +64,13 @@ current directory or with a path to the project directory:
     project.config_parameters(nbyr = 20)
 
     # run and save
-    run = project.run(notes='test run', files=['subbasin_label_daily_selected_stations_discharge'])
+    run = project.run(notes='test run', files=['station_daily_discharge'])
 
     # plot results from project
-    project.subbasin_label_daily_selected_stations_discharge.plot()
+    project.station_daily_discharge.plot()
 
     # or plot saved result
-    run.subbasin_label_daily_selected_stations_discharge.plot()
+    run.station_daily_discharge.plot()
 
 Check out the :ref:`examples:Examples`.
 
