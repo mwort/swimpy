@@ -76,17 +76,20 @@ servedocs: docs ## upload docs once versioned and unversioned
 	rsync -crzP docs/_build/html/ wortmann@cluster.pik-potsdam.de:www/swimpy
 	rsync -crzP docs/_build/html/ wortmann@cluster.pik-potsdam.de:www/swimpy/`python -c "import swimpy; print(swimpy.__version__)"`
 
-release: clean ## package and upload a release
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+release: dist ## bump version, build and upload a release to PyPI
+	@command -v bump-my-version >/dev/null 2>&1 || { echo "bump-my-version not found. Run: pip install bump-my-version"; exit 1; }
+	@command -v twine >/dev/null 2>&1 || { echo "twine not found. Run: pip install twine"; exit 1; }
+	@printf "Release type? [patch/minor/major]: "; read BUMP_PART; \
+	bump-my-version bump $$BUMP_PART && \
+	$(MAKE) dist && \
+	python -m twine upload dist/*
 
 dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
+	python -m build
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+	pip install .
 
 docker_build:
 	make -C dependencies/m.swim/test clean
