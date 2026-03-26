@@ -5,7 +5,7 @@ source dependencies/swim/project/activate_foote
 
 # create venv if it doesn't exist and install the package in editable mode
 if [ ! -d "venv" ]; then
-    python -m venv venv
+    python3 -m venv venv
     venv/bin/pip install -e .
 fi
 
