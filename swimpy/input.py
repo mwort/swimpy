@@ -692,7 +692,7 @@ class climate(object):
             lats = latix[grid.lat.unique()].sort_values()
             cl = pd.MultiIndex.from_product((lats.index, lons.index))
             # get space indeces
-            st = pd.Period(str(self.parameters["nc_ref_year"]), freq="d")
+            st = pd.Period(str(self.parameters["nc_ref_year"]), freq="D")
             timeint = np.array(ds[self.parameters["nc_time_vname"]][:], dtype=int)
             pix = st + self.parameters["nc_offset_days"] + timeint
             tix = pd.Series(range(len(timeint)), index=pix)

@@ -495,22 +495,23 @@ def aggregate_time(obj, freq='d', regime=False, resample_method='mean',
         Aggregate to different frequency, any pandas frequency string
         or object is allowed.
     regime : bool
-        Aggregate to month or day-of-year mean regime. freq must be 'm' | 'd'.
+        Aggregate to month or day-of-year mean regime. freq must be 'M' | 'D'.
     resample_method :
         The aggregator for the resample method. See DataFrame.groupby.agg.
     regime_method :
         The aggregator for the regime groupby.agg. See DataFrame.groupby.agg.
     """
     assert hasattr(obj, 'index') and hasattr(obj.index, 'freq')
+    freq = freq.upper() if type(freq) == str else freq
     if freq != obj.index.freq:
         obj = obj.resample(freq).aggregate(resample_method)
     if regime:
-        if freq == 'd':
+        if freq == 'D':
             igb = obj.index.dayofyear
-        elif freq == 'm':
+        elif freq == 'M':
             igb = obj.index.month
         else:
-            raise TypeError("freq must be either 'm' or 'd' with "
+            raise TypeError("freq must be either 'M' or 'D' with "
                             "regime=True.")
         obj = obj.groupby(igb).agg(regime_method)
     return obj
@@ -679,7 +680,7 @@ class GRDCStation(pd.DataFrame):
         return rep.encode('utf8', 'ignore').decode()
 
 
-def read_csv_multicol(path, indexcol='time', ifreq='d',
+def read_csv_multicol(path, indexcol='time', ifreq='D',
                       spacecol=None, **kwargs):
     """Read csv files of structure <time>, <spatial>, <variable(s)>.
 
