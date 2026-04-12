@@ -30,6 +30,7 @@ dependencies = [
     "f90nml>=1.4",
     "evoalgos>=1.0",
     "netCDF4>=1.7",
+    "scipy>=1.17",
 ]
 
 [project.urls]
@@ -61,3 +62,14 @@ replace = "__version__ = '{new_version}'"
 
 [tool.flake8]
 exclude = ["docs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "mpi: tests requiring mpi4py and srun (deselect with '-m not mpi')",
+    "grass: tests requiring a GRASS GIS installation (deselect with '-m not grass')",
+    "slow: long-running tests such as model runs and optimisation",
+]

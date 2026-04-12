@@ -1,51 +1,45 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Tests for the `swimpy.hydro` module.
-"""
-import unittest
-import cProfile, pstats
-
+"""Tests for the swimpy.hydro module (standalone, no project fixture needed)."""
 import numpy as np
 import pandas as pd
+import pytest
 
 from swimpy import hydro
 
 
-class TestHydro(unittest.TestCase):
-
-    def obs_sim_data(self):
-        """Create obs series with mean 1.5 and a nan hole and sim series."""
-        obs = pd.Series(1, index=range(100))
-        obs[50:] = 2
-        obs[40:60] = np.nan
-        sim = pd.Series(1.5, index=range(100))
-        return obs, sim
-
-    def test_NSE(self):
-        obs, sim = self.obs_sim_data()
-        self.assertEqual(hydro.NSE(obs, sim), 0)
-        sim[50:] = 2
-        self.assertAlmostEqual(hydro.NSE(obs, sim), 0.5)
-
-    def test_mNSE(self):
-        obs, sim = self.obs_sim_data()
-        self.assertEqual(hydro.mNSE(obs, sim), 0)
-        sim[50:] = 2
-        self.assertAlmostEqual(hydro.mNSE(obs, sim), 2./3)
-
-    def test_pbias(self):
-        obs, sim = self.obs_sim_data()
-        self.assertEqual(hydro.pbias(obs, sim), 0)
-        sim = sim * 1.1
-        self.assertAlmostEqual(hydro.pbias(obs, sim), 10)
-
-    def test_dist_recurrence(self):
-        sim = np.random.rand(1000)
-        rec = hydro.dist_recurrence(sim, 100./np.arange(1, 11))
-        self.assertLess(rec[10.], rec[100.])
+@pytest.fixture
+def obs_sim():
+    """obs series with mean 1.5 and a nan hole, plus flat sim series."""
+    obs = pd.Series(1, index=range(100), dtype=float)
+    obs[50:] = 2
+    obs[40:60] = np.nan
+    sim = pd.Series(1.5, index=range(100))
+    return obs, sim
 
 
-if __name__ == '__main__':
-    cProfile.run('unittest.main()', 'pstats')
-    # print profile stats ordered by time
-    pstats.Stats('pstats').strip_dirs().sort_stats('time').print_stats(5)
+def test_NSE(obs_sim):
+    obs, sim = obs_sim
+    assert hydro.NSE(obs, sim) == 0
+    sim = sim.copy()
+    sim[50:] = 2
+    assert hydro.NSE(obs, sim) == pytest.approx(0.5)
+
+
+def test_mNSE(obs_sim):
+    obs, sim = obs_sim
+    assert hydro.mNSE(obs, sim) == 0
+    sim = sim.copy()
+    sim[50:] = 2
+    assert hydro.mNSE(obs, sim) == pytest.approx(2.0 / 3)
+
+
+def test_pbias(obs_sim):
+    obs, sim = obs_sim
+    assert hydro.pbias(obs, sim) == 0
+    sim = sim * 1.1
+    assert hydro.pbias(obs, sim) == pytest.approx(10)
+
+
+def test_dist_recurrence():
+    sim = np.random.rand(1000)
+    rec = hydro.dist_recurrence(sim, 100.0 / np.arange(1, 11))
+    assert rec[10.0] < rec[100.0]

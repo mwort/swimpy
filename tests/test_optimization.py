@@ -1,9 +1,10 @@
+"""Tests for evolutionary optimisation algorithms (slow, requires swim run)."""
 from __future__ import print_function, absolute_import
 import os.path as osp
-import unittest
-import cProfile, pstats
 
-from tests import ProjectTestCase
+import pytest
+
+from conftest import ProjectTestCase
 
 
 OBJECTIVES = ['station_daily_discharge.rNSE.BLANKENSTEIN',
@@ -14,6 +15,7 @@ PARAMETERS = {'smrate0': (0.2, 0.7),
               'roc2_0': (0.5, 10)}
 
 
+@pytest.mark.slow
 class TestEvoalgos(ProjectTestCase):
 
     outputfile = 's01_SMSEMOA_populations.csv'
@@ -29,45 +31,32 @@ class TestEvoalgos(ProjectTestCase):
                       'plot_parameter_distribution']
 
     @classmethod
-    def setUpClass(self):
-        super(TestEvoalgos, self).setUpClass()
-        # run with multiprocessing to also run on single machine
-        self.project.settings(cluster_run_parallel_parallelism='mp')
-        self.output = osp.join(self.project.projectdir, self.outputfile)
-        # only run algorithm if output doesnt exist to speed up output tests
-        if not osp.exists(self.output):
-            self.project.config_parameters(nbyr=2)
-            run = self.project.SMSEMOA(**self.algorithm_kwargs)
-            # TODO: check why next line does not work; in meantime use workaround
-            # self.populations = run.optimization_populations
-            self.populations = self.project.SMSEMOA.read_populations(
-                                self.output)
-        else:
-            self.populations = self.project.SMSEMOA.read_populations(
-                                self.output)
+    def setup_class(cls):
+        # run with multiprocessing to also work on a single machine
+        cls.project.settings(cluster_run_parallel_parallelism='mp')
+        cls.output = osp.join(cls.project.projectdir, cls.outputfile)
+        # only run algorithm if output does not already exist (speed up reruns)
+        if not osp.exists(cls.output):
+            cls.project.config_parameters(nbyr=2)
+            cls.project.SMSEMOA(**cls.algorithm_kwargs)
+        cls.populations = cls.project.SMSEMOA.read_populations(cls.output)
 
     def test_output(self):
-        """Only makes sense if algorithm was run!"""
-        self.assertEqual(len(self.project.clone.names()), 0)
-        self.assertTrue(osp.exists(self.output))
+        """Only makes sense if algorithm was run."""
+        assert len(self.project.clone.names()) == 0
+        assert osp.exists(self.output)
         output_pops = self.project.SMSEMOA.read_populations(self.output)
         run_pops = self.populations
-        self.assertEqual(list(output_pops.columns), list(run_pops.columns))
+        assert list(output_pops.columns) == list(run_pops.columns)
         for pops in [output_pops, run_pops]:
-            self.assertEqual(len(pops), 16)
-            self.assertEqual(pops.objectives, sorted(OBJECTIVES))
-            self.assertEqual(pops.parameters, sorted(PARAMETERS.keys()))
+            assert len(pops) == 16
+            assert pops.objectives == sorted(OBJECTIVES)
+            assert pops.parameters == sorted(PARAMETERS.keys())
 
     def test_plots(self):
         pops = self.populations
         args = {'plot_objective_scatter': dict(best=True)}
         for pf in self.plot_functions:
-            opath = osp.join(self.project.projectdir, pf+'.png')
-            getattr(pops, pf)(output=opath, **(args[pf] if pf in args else {}))
-            self.assertTrue(osp.exists(opath))
-
-
-if __name__ == '__main__':
-    cProfile.run('unittest.main()', 'pstats')
-    # print profile stats ordered by time
-    pstats.Stats('pstats').strip_dirs().sort_stats('time').print_stats(5)
+            opath = osp.join(self.project.projectdir, pf + '.png')
+            getattr(pops, pf)(output=opath, **(args.get(pf, {})))
+            assert osp.exists(opath)

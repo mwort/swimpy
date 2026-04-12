@@ -1,29 +1,19 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Tests for the grass linking of `swimpy` using the Blankenstein test case.
-"""
-from __future__ import print_function, absolute_import
+"""Tests for the GRASS GIS integration of swimpy."""
 import os
 import os.path as osp
-import sys
-import unittest
-import cProfile, pstats
 
 import pandas as pd
+import pytest
 from modelmanager.plugins import grass as mmgrass
 
-from tests import ProjectTestCase
+from conftest import ProjectTestCase
 
 
-def skip_if_py3(f):
-    """Unittest skip test if PY3 decorator."""
-    PY2 = sys.version_info < (3, 0)
-    return f if PY2 else lambda self: print('not run in PY3.')
-
-
+@pytest.mark.grass
 class TestGrass(ProjectTestCase):
 
-    files_created = ['subbasin.csv', 'subbasin_routing.csv', 'hydrotope.csv', 'catchment.csv']
+    files_created = ['subbasin.csv', 'subbasin_routing.csv',
+                     'hydrotope.csv', 'catchment.csv']
 
     class grassattrtbl(mmgrass.GrassAttributeTable):
         vector = 'stations@PERMANENT'
@@ -34,34 +24,33 @@ class TestGrass(ProjectTestCase):
         with mmgrass.GrassSession(self.project, mapset='PERMANENT') as grass:
             rasts = grass.list_strings('rast')
             vects = grass.list_strings('vect')
-        self.assertIn(self.project.grass_setup['landuse_id'], rasts)
-        self.assertIn(self.project.grass_setup['soil_id'], rasts)
-        self.assertIn(self.project.grass_setup['elevation'], rasts)
-        self.assertIn(self.project.grass_setup['stations'], vects)
-        return
+        assert self.project.grass_setup['landuse_id'] in rasts
+        assert self.project.grass_setup['soil_id'] in rasts
+        assert self.project.grass_setup['elevation'] in rasts
+        assert self.project.grass_setup['stations'] in vects
 
     def test_mswim_setup(self):
         files_created = [osp.join(self.project.projectdir, 'input', p)
                          for p in self.files_created]
-        [os.remove(p) for p in files_created if osp.exists(p)]
-        # update subbasins (runs all other modules in postprocess)
+        for p in files_created:
+            if osp.exists(p):
+                os.remove(p)
         self.project.subbasin.update(verbose=False)
         for p in files_created:
-            self.assertTrue(osp.exists(p))
+            assert osp.exists(p)
 
     def test_attribute_table(self):
         self.project.settings(self.grassattrtbl)
-        self.assertTrue(hasattr(self.project, 'grassattrtbl'))
-        self.assertIsInstance(self.project.grassattrtbl.obs.HOF, pd.Series)
+        assert hasattr(self.project, 'grassattrtbl')
+        assert isinstance(self.project.grassattrtbl.obs.HOF, pd.Series)
         self.project.grassattrtbl['new'] = 1000
         self.project.grassattrtbl.write()
         self.project.grassattrtbl.read()
-        self.assertEqual(self.project.grassattrtbl['new'].mean(), 1000)
+        assert self.project.grassattrtbl['new'].mean() == 1000
 
     def test_to_grass(self):
         hyd_file = 'hydrotope_annual_gis'
-        sub_file = 'subbasin_daily_river_discharge'
-
+        sub_file = 'subbasin_daily_discharge'
         with mmgrass.GrassOverwrite(verbose=False):
             getattr(self.project, hyd_file).to_grass(
                 variable=['surface_runoff', 'crop_yield'],
@@ -72,11 +61,5 @@ class TestGrass(ProjectTestCase):
                 timestep=slice('1991-01-01', '1991-01-10'))
         for f in [hyd_file, sub_file]:
             with mmgrass.GrassSession(self.project, mapset=f) as grass:
-                rasters = grass.list_strings('raster', f+'*', mapset=f)
-                self.assertEqual(len(rasters), 10)
-
-
-if __name__ == '__main__':
-    cProfile.run('unittest.main()', 'pstats')
-    # print profile stats ordered by time
-    pstats.Stats('pstats').strip_dirs().sort_stats('time').print_stats(5)
+                rasters = grass.list_strings('raster', f + '*', mapset=f)
+                assert len(rasters) == 10

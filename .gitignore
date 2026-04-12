@@ -1,5 +1,4 @@
 # swimpy specific
-tests/*
 docs/theproject.rst
 
 # Byte-compiled / optimized / DLL files

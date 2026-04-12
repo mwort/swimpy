@@ -524,7 +524,7 @@ class optimization_populations(ProjectOrRunData):
     def plot_generation_objectives(self, ax=None, output=None, **kw):
         """Show the median (min-max) objective values over all generations.
         """
-        genperf = self[self.objectives].groupby(axis=0, level=0)
+        genperf = self[self.objectives].groupby(level=0)
         axs = genperf.median().plot(subplots=True, ax=ax, legend=False, rot=0,
                                     sharex=True, title=self.objectives)
         for a, col in zip(axs, self.objectives):
