@@ -17,6 +17,23 @@ import pytest
 import swimpy
 
 # ---------------------------------------------------------------------------
+# Skip slow-marked tests unless --run-slow is passed
+# ---------------------------------------------------------------------------
+def pytest_addoption(parser):
+    parser.addoption('--run-slow', action='store_true', default=False,
+                     help='Run tests marked as slow (skipped by default)')
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption('--run-slow'):
+        return
+    skip_slow = pytest.mark.skip(reason='slow test; use --run-slow to run')
+    for item in items:
+        if item.get_closest_marker('slow'):
+            item.add_marker(skip_slow)
+
+
+# ---------------------------------------------------------------------------
 # paths (mirroring the constants that used to live in tests.py)
 # ---------------------------------------------------------------------------
 SWIM_REPO = osp.join(osp.dirname(__file__), '..', 'dependencies', 'swim')
@@ -147,8 +164,12 @@ def swim_project():
 # ---------------------------------------------------------------------------
 # Autouse fixture that injects swim_project into every ProjectTestCase instance
 # ---------------------------------------------------------------------------
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="class")
 def _inject_project(request):
-    """Inject the session project into ProjectTestCase instances."""
-    if isinstance(request.instance, ProjectTestCase):
-        request.instance.project = request.getfixturevalue('swim_project')
+    """Inject the session project into ProjectTestCase subclasses.
+
+    Class scope ensures this runs before ``setup_class``, so ``cls.project``
+    is available when class-level setup methods access it.
+    """
+    if request.cls is not None and issubclass(request.cls, ProjectTestCase):
+        request.cls.project = request.getfixturevalue('swim_project')

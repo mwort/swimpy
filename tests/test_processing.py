@@ -9,7 +9,7 @@ from conftest import ProjectTestCase
 from swimpy.tests import test_running
 
 
-class TestProcessing(ProjectTestCase, test_running.Cluster):
+class TestProcessing(ProjectTestCase):
 
     def test_save_run(self):
         indicators = ['indicator1', 'indicator2']
@@ -61,3 +61,8 @@ class TestProcessing(ProjectTestCase, test_running.Cluster):
             os.remove(logfile)
         self.project.run(save=False, quiet=True)
         assert osp.exists(logfile)
+
+
+@pytest.mark.slow
+class TestProcessingCluster(ProjectTestCase, test_running.Cluster):
+    pass

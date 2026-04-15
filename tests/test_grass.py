@@ -2,9 +2,14 @@
 import os
 import os.path as osp
 
+import shutil
+
 import pandas as pd
 import pytest
 from modelmanager.plugins import grass as mmgrass
+
+if shutil.which('grass') is None:
+    pytest.skip('GRASS GIS not found on PATH', allow_module_level=True)
 
 from conftest import ProjectTestCase
 

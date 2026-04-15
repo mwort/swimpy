@@ -705,7 +705,7 @@ def read_csv_multicol(path, indexcol='time', ifreq='D',
     df = pd.read_csv(path, skipinitialspace=True,
                     index_col=indexcol, parse_dates=True,
                     na_values=na_values, **kwargs)
-    df.index = df.index.to_period(freq=ifreq)
+    df.index = df.index.to_period(freq=ifreq.upper() if type(ifreq) == str else ifreq)
     # multi-index columns
     df = pd.pivot_table(df, index='time', columns=[spacecol])
     df.columns.names = ['variable', spacecol]
