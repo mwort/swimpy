@@ -16,22 +16,6 @@ import shutil
 import pytest
 import swimpy
 
-# ---------------------------------------------------------------------------
-# Skip slow-marked tests unless --run-slow is passed
-# ---------------------------------------------------------------------------
-def pytest_addoption(parser):
-    parser.addoption('--run-slow', action='store_true', default=False,
-                     help='Run tests marked as slow (skipped by default)')
-
-
-def pytest_collection_modifyitems(config, items):
-    if config.getoption('--run-slow'):
-        return
-    skip_slow = pytest.mark.skip(reason='slow test; use --run-slow to run')
-    for item in items:
-        if item.get_closest_marker('slow'):
-            item.add_marker(skip_slow)
-
 
 # ---------------------------------------------------------------------------
 # paths (mirroring the constants that used to live in tests.py)
